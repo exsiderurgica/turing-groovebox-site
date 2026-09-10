@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   publish:
@@ -18,10 +19,14 @@ jobs:
       - name: Checkout site
         uses: actions/checkout@v6
 
-      - name: Download signed layout fix artifact
+      - name: Download latest signed layout fix artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          curl -L 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-cd54-8210-9cab-f770aa949f47/raw?se=2026-09-10T12%3A54%3A52Z&sp=r&sv=2026-02-06&sr=b&scid=fa99568d-981b-58a4-8672-e57c9f8465d9&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-10T06%3A32%3A27Z&ske=2026-09-11T06%3A32%3A27Z&sks=b&skv=2026-02-06&sig=R65qqo0LxLjeDnDtJR8a6n/SeS5SUQGysX83AGUzlkU%3D' -o /tmp/layout-fix.zip
+          gh api -H 'Accept: application/vnd.github+json' \
+            /repos/exsiderurgica/turing-groovebox/actions/artifacts/10153107361/zip \
+            > /tmp/layout-fix.zip
           mkdir -p /tmp/layout-fix
           unzip -o /tmp/layout-fix.zip -d /tmp/layout-fix
           APK=$(find /tmp/layout-fix -type f -name 'TTG-R16-STABLE-LAYOUT-FIX-signed.apk' -print -quit)
@@ -36,5 +41,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add TTG-R16-BREAK-SYNC-DEFAULTS-TEST-signed.apk
           git diff --cached --quiet && exit 0
-          git commit -m 'Replace site APK with R16 stable layout fix'
+          git commit -m 'Replace site APK with latest R16 stable layout fix'
           git push
