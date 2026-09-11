@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=TTG Release, OU=Exsiderurgica, O=Exsiderurgica, L=Arezzo, ST=Tuscany, C=IT
+Signer #1 certificate SHA-256 digest: dc077d55a794fe353ea45464095cd57dd21451e7fddd28425b5cf0ac8859409f
+Signer #1 certificate SHA-1 digest: 924a2b9308268c2ec55816120330e6113ea976ad
+Signer #1 certificate MD5 digest: db9cc46813e0a7640aa74e0794a6ecec
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 3072
+Signer #1 public key SHA-256 digest: fec6484691d921f8faf733bcfeea0b526b352dbe33fcb178cd5d0546754b3bba
+Signer #1 public key SHA-1 digest: 25e27a84794f3f6afd01ecd884de710203c4ff81
+Signer #1 public key MD5 digest: 22f6a9179d3583020c46e1b139aca992
