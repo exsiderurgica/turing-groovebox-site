@@ -4,6 +4,10 @@ on:
   push:
     paths:
       - 'tools/build_ttg_manual.py'
+      - 'TTG-DEV-BETA2-Mixer.jpg'
+      - 'TTG-DEV-BETA2-Sound.jpg'
+      - 'TTG-DEV-BETA2-Turing.jpg'
+      - 'TTG-DEV-BETA2-Break.jpg'
       - 'Screenshot_20260910-015633.png'
       - 'Screenshot_20260910-014315.png'
       - 'Screenshot_20260910-015644.png'
@@ -24,11 +28,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install reportlab
-      - run: python tools/build_ttg_manual.py
+      - run: |
+          python tools/build_ttg_manual.py
+          sha256sum TTG-DEV-BETA2.apk > SHA256.txt
+          sha256sum TTG-Manual.pdf >> SHA256.txt
       - name: Commit PDF
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add TTG-Manual.pdf
+          git add TTG-Manual.pdf SHA256.txt
           git diff --cached --quiet || git commit -m "Build updated TTG manual PDF"
           git push
