@@ -21,7 +21,7 @@ jobs:
         run: |
           set -euo pipefail
           for name in Mixer Sound Turing Break-Slice Break-Texture; do
-            cat assets/fullres/${name}.b64.* | tr -d '\n\r' | base64 -d > "TTG-DEV-BETA3-${name}.jpg"
+            cat assets/fullres/${name}.hex.* | tr -d '\n\r' | xxd -r -p > "TTG-DEV-BETA3-${name}.jpg"
           done
           file TTG-DEV-BETA3-*.jpg
           rm -rf assets/fullres assets/fullres-gallery.ready
