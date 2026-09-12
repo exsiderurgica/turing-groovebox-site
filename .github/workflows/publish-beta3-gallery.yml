@@ -16,34 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore original full-resolution screenshots
+      - name: Restore full-resolution Beta 3 screenshots
         shell: bash
         run: |
           set -euo pipefail
           for name in Mixer Sound Turing Break-Slice Break-Texture; do
-            cat assets/fullres/${name}.hex.* | tr -d '\n\r' | xxd -r -p > "TTG-DEV-BETA3-${name}.jpg"
+            cat assets/fullres/${name}.b64.* | tr -d '\n\r' | base64 -d > "TTG-DEV-BETA3-${name}.webp"
           done
-          file TTG-DEV-BETA3-*.jpg
+          file TTG-DEV-BETA3-*.webp
           rm -rf assets/fullres assets/fullres-gallery.ready
-
-      - name: Point site and manual to full-resolution originals
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          replacements = {
-              'TTG-DEV-BETA3-Mixer.webp':'TTG-DEV-BETA3-Mixer.jpg',
-              'TTG-DEV-BETA3-Sound.webp':'TTG-DEV-BETA3-Sound.jpg',
-              'TTG-DEV-BETA3-Turing.webp':'TTG-DEV-BETA3-Turing.jpg',
-              'TTG-DEV-BETA3-Break-Slice.webp':'TTG-DEV-BETA3-Break-Slice.jpg',
-              'TTG-DEV-BETA3-Break-Texture.webp':'TTG-DEV-BETA3-Break-Texture.jpg',
-          }
-          for path in [Path('index.html'), Path('manual/index.html')]:
-              s=path.read_text()
-              for old,new in replacements.items():
-                  s=s.replace(old,new)
-              path.write_text(s)
-          PY
 
       - name: Commit full-resolution gallery
         shell: bash
@@ -51,7 +32,7 @@ jobs:
           set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html manual/index.html TTG-DEV-BETA3-*.jpg assets
+          git add TTG-DEV-BETA3-*.webp assets
           git add -u assets 2>/dev/null || true
           git commit -m 'site: restore full-resolution Beta 3 screenshots'
           git push
