@@ -5,12 +5,11 @@ on:
     branches:
       - main
     paths:
-      - .github/workflows/publish-layout-fix.yml
+      - transfer/beta3.ready
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   publish:
@@ -19,31 +18,22 @@ jobs:
       - name: Checkout site
         uses: actions/checkout@v6
 
-      - name: Download signed DEV Beta 3 artifact
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Rebuild signed DEV Beta 3 APK from transfer chunks
+        shell: bash
         run: |
           set -e
-          gh api -H 'Accept: application/vnd.github+json' \
-            /repos/exsiderurgica/turing-groovebox/actions/artifacts/10296550713/zip \
-            > /tmp/ttg-beta3.zip
-          mkdir -p /tmp/ttg-beta3
-          unzip -o /tmp/ttg-beta3.zip -d /tmp/ttg-beta3
-          APK=$(find /tmp/ttg-beta3 -type f -name 'TTG-DEV-BETA3.apk' -print -quit)
-          SIG=$(find /tmp/ttg-beta3 -type f -name 'SIGNATURE-INFO.txt' -print -quit)
-          test -n "$APK"
-          test -n "$SIG"
-          cp "$APK" TTG-DEV-BETA3.apk
-          cp "$SIG" SIGNATURE-INFO.txt
+          cat transfer/beta3.part* | base64 -d > TTG-DEV-BETA3.apk
+          echo '98901c37add1e6d89606adf478929a839307a096df5098927cb57a0bbe03e1e9  TTG-DEV-BETA3.apk' | sha256sum -c -
           sha256sum TTG-DEV-BETA3.apk > SHA256.txt
           if [ -f TTG-Manual.pdf ]; then sha256sum TTG-Manual.pdf >> SHA256.txt; fi
 
       - name: Publish signed DEV Beta 3
+        shell: bash
         run: |
           set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add TTG-DEV-BETA3.apk SIGNATURE-INFO.txt SHA256.txt
+          git add TTG-DEV-BETA3.apk SHA256.txt
           git diff --cached --quiet && exit 0
           git commit -m 'Publish signed TTG DEV Beta 3 build 1'
           git push
