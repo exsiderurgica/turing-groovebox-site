@@ -1,10 +1,10 @@
 {
   "status": "DEV BETA 3",
-  "version": "0.3.0-beta.2",
-  "build": "B02",
+  "version": "0.3.0-beta.3",
+  "build": "B03",
   "apk": "TTG-DEV-BETA3.apk",
-  "sha256": "2f9745ababf70501263008f25ca36275382f3e377701b04ae52785b27eda9fb2",
+  "sha256": "fae952c9104b9807e5f1b01b583f412cdb92bf0f50e4669b959f84e3de15d115",
   "published": "2026-09-12",
-  "source_commit": "ff3ca97d858ef5ca525cdaddcce9ccb98d465b1e",
-  "notes": "DEV Beta 3 B02 introduces the new dense Hall/Plate reverb with longer sustained tail and dynamic tail lift, keeps the kick-driven SIDECHAIN macro, and sets the default reverb level to 5%."
+  "source_commit": "e1470b5bde2e153f709926d41a7765265b7c2203",
+  "notes": "DEV Beta 3 B03 adds the verified Android bottom-inset compatibility fix for Galaxy devices while retaining the Hall/Plate reverb, dynamic tail lift, SIDECHAIN macro and 5% default reverb level."
 }
