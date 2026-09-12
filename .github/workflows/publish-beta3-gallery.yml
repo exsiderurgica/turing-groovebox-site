@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - assets/gallery-beta3.zip.b64
+      - assets/gallery-beta3.ready
 
 permissions:
   contents: write
@@ -20,14 +20,14 @@ jobs:
         shell: bash
         run: |
           set -e
-          base64 -d assets/gallery-beta3.zip.b64 > /tmp/gallery.zip
+          cat assets/gallery-beta3.b64.* | base64 -d > /tmp/gallery.zip
           unzip -o /tmp/gallery.zip -d .
-          test -f TTG-DEV-BETA3-Mixer.jpg
-          test -f TTG-DEV-BETA3-Sound.jpg
-          test -f TTG-DEV-BETA3-Turing.jpg
-          test -f TTG-DEV-BETA3-Break-Slice.jpg
-          test -f TTG-DEV-BETA3-Break-Texture.jpg
-          rm assets/gallery-beta3.zip.b64
+          test -f TTG-DEV-BETA3-Mixer.webp
+          test -f TTG-DEV-BETA3-Sound.webp
+          test -f TTG-DEV-BETA3-Turing.webp
+          test -f TTG-DEV-BETA3-Break-Slice.webp
+          test -f TTG-DEV-BETA3-Break-Texture.webp
+          rm -f assets/gallery-beta3.b64.* assets/gallery-beta3.ready
           rm -f assets/TTG-DEV-BETA3-Mixer.webp.b64
 
       - name: Update gallery references
@@ -38,7 +38,7 @@ jobs:
           p=Path('index.html')
           s=p.read_text()
           old='''<section><div class="w"><div class="k">INTERFACE</div><h2>TTG interface.</h2><div class="gallery">\n<a href="TTG-DEV-BETA2-Mixer.jpg"><img src="TTG-DEV-BETA2-Mixer.jpg" alt="TTG mixer"></a>\n<a href="TTG-DEV-BETA2-Sound.jpg"><img src="TTG-DEV-BETA2-Sound.jpg" alt="TTG sound controls"></a>\n<a href="TTG-DEV-BETA2-Turing.jpg"><img src="TTG-DEV-BETA2-Turing.jpg" alt="TTG Turing matrix and LFOs"></a>\n<a href="TTG-DEV-BETA2-Break.jpg"><img src="TTG-DEV-BETA2-Break.jpg" alt="TTG BREAK processor"></a>\n</div></div></section>'''
-          new='''<section><div class="w"><div class="k">INTERFACE</div><h2>DEV BETA 3 interface.</h2><div class="gallery">\n<a href="TTG-DEV-BETA3-Mixer.jpg"><img src="TTG-DEV-BETA3-Mixer.jpg" alt="TTG DEV BETA 3 mixer with sidechain"></a>\n<a href="TTG-DEV-BETA3-Sound.jpg"><img src="TTG-DEV-BETA3-Sound.jpg" alt="TTG DEV BETA 3 sound controls"></a>\n<a href="TTG-DEV-BETA3-Turing.jpg"><img src="TTG-DEV-BETA3-Turing.jpg" alt="TTG DEV BETA 3 Turing matrix and LFOs"></a>\n<a href="TTG-DEV-BETA3-Break-Slice.jpg"><img src="TTG-DEV-BETA3-Break-Slice.jpg" alt="TTG DEV BETA 3 BREAK slice mode"></a>\n<a href="TTG-DEV-BETA3-Break-Texture.jpg"><img src="TTG-DEV-BETA3-Break-Texture.jpg" alt="TTG DEV BETA 3 BREAK texture mode"></a>\n</div></div></section>'''
+          new='''<section><div class="w"><div class="k">INTERFACE</div><h2>DEV BETA 3 interface.</h2><div class="gallery">\n<a href="TTG-DEV-BETA3-Mixer.webp"><img src="TTG-DEV-BETA3-Mixer.webp" alt="TTG DEV BETA 3 mixer with sidechain"></a>\n<a href="TTG-DEV-BETA3-Sound.webp"><img src="TTG-DEV-BETA3-Sound.webp" alt="TTG DEV BETA 3 sound controls"></a>\n<a href="TTG-DEV-BETA3-Turing.webp"><img src="TTG-DEV-BETA3-Turing.webp" alt="TTG DEV BETA 3 Turing matrix and LFOs"></a>\n<a href="TTG-DEV-BETA3-Break-Slice.webp"><img src="TTG-DEV-BETA3-Break-Slice.webp" alt="TTG DEV BETA 3 BREAK slice mode"></a>\n<a href="TTG-DEV-BETA3-Break-Texture.webp"><img src="TTG-DEV-BETA3-Break-Texture.webp" alt="TTG DEV BETA 3 BREAK texture mode"></a>\n</div></div></section>'''
           if old not in s:
               raise SystemExit('Old gallery block not found')
           s=s.replace(old,new,1)
@@ -52,7 +52,7 @@ jobs:
           set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html TTG-DEV-BETA3-*.jpg assets
-          git add -u assets/gallery-beta3.zip.b64 assets/TTG-DEV-BETA3-Mixer.webp.b64 2>/dev/null || true
+          git add index.html TTG-DEV-BETA3-*.webp assets
+          git add -u assets 2>/dev/null || true
           git commit -m 'site: update gallery to DEV Beta 3 screenshots'
           git push
