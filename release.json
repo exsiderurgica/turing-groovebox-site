@@ -1,9 +1,10 @@
 {
-  "status": "DEV BETA 2",
-  "version": "Beta 2",
-  "build": "stable baseline",
-  "apk": "TTG-DEV-BETA2.apk",
-  "sha256": "dd7781e162a740b7c763f6af2fbf3d2b7812d04650e5c371ce80a4bf392170f8",
-  "published": "2026-09-11",
-  "notes": "Official signed TTG development build. This metadata file is now the single source used by the website for release information."
+  "status": "DEV BETA 3",
+  "version": "0.3.0-beta.1",
+  "build": "B01",
+  "apk": "TTG-DEV-BETA3.apk",
+  "sha256": "98901c37add1e6d89606adf478929a839307a096df5098927cb57a0bbe03e1e9",
+  "published": "2026-09-12",
+  "source_commit": "dacc13d9b9c42353f50393b66a21e0883a67d805",
+  "notes": "DEV Beta 3 adds the kick-driven SIDECHAIN macro and consolidates the current hats, sync-feedback and mixer refinements into the new development line."
 }
