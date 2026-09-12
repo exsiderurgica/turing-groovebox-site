@@ -1,10 +1,10 @@
 {
   "status": "DEV BETA 3",
-  "version": "0.3.0-beta.1",
-  "build": "B01",
+  "version": "0.3.0-beta.2",
+  "build": "B02",
   "apk": "TTG-DEV-BETA3.apk",
-  "sha256": "98901c37add1e6d89606adf478929a839307a096df5098927cb57a0bbe03e1e9",
+  "sha256": "2f9745ababf70501263008f25ca36275382f3e377701b04ae52785b27eda9fb2",
   "published": "2026-09-12",
-  "source_commit": "dacc13d9b9c42353f50393b66a21e0883a67d805",
-  "notes": "DEV Beta 3 adds the kick-driven SIDECHAIN macro and consolidates the current hats, sync-feedback and mixer refinements into the new development line."
+  "source_commit": "ff3ca97d858ef5ca525cdaddcce9ccb98d465b1e",
+  "notes": "DEV Beta 3 B02 introduces the new dense Hall/Plate reverb with longer sustained tail and dynamic tail lift, keeps the kick-driven SIDECHAIN macro, and sets the default reverb level to 5%."
 }
