@@ -16,19 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install uploaded screenshots
+      - name: Decode uploaded Beta 3 screenshots
         shell: bash
         run: |
           set -e
-          cat assets/gallery-beta3.b64.* | base64 -d > /tmp/gallery.zip
-          unzip -o /tmp/gallery.zip -d .
-          test -f TTG-DEV-BETA3-Mixer.webp
-          test -f TTG-DEV-BETA3-Sound.webp
-          test -f TTG-DEV-BETA3-Turing.webp
-          test -f TTG-DEV-BETA3-Break-Slice.webp
-          test -f TTG-DEV-BETA3-Break-Texture.webp
-          rm -f assets/gallery-beta3.b64.* assets/gallery-beta3.ready
-          rm -f assets/TTG-DEV-BETA3-Mixer.webp.b64
+          base64 -d assets/TTG-DEV-BETA3-Mixer-280.webp.b64 > TTG-DEV-BETA3-Mixer.webp
+          base64 -d assets/TTG-DEV-BETA3-Sound-280.webp.b64 > TTG-DEV-BETA3-Sound.webp
+          base64 -d assets/TTG-DEV-BETA3-Turing-280.webp.b64 > TTG-DEV-BETA3-Turing.webp
+          base64 -d assets/TTG-DEV-BETA3-Break-Slice-280.webp.b64 > TTG-DEV-BETA3-Break-Slice.webp
+          base64 -d assets/TTG-DEV-BETA3-Break-Texture-280.webp.b64 > TTG-DEV-BETA3-Break-Texture.webp
+          file TTG-DEV-BETA3-*.webp
+          rm -f assets/TTG-DEV-BETA3-*.b64 assets/gallery-beta3.ready
 
       - name: Update gallery references
         shell: bash
