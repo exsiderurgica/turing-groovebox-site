@@ -1,0 +1,58 @@
+name: Publish Beta 3 gallery
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - assets/gallery-beta3.zip.b64
+
+permissions:
+  contents: write
+
+jobs:
+  gallery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uploaded screenshots
+        shell: bash
+        run: |
+          set -e
+          base64 -d assets/gallery-beta3.zip.b64 > /tmp/gallery.zip
+          unzip -o /tmp/gallery.zip -d .
+          test -f TTG-DEV-BETA3-Mixer.jpg
+          test -f TTG-DEV-BETA3-Sound.jpg
+          test -f TTG-DEV-BETA3-Turing.jpg
+          test -f TTG-DEV-BETA3-Break-Slice.jpg
+          test -f TTG-DEV-BETA3-Break-Texture.jpg
+          rm assets/gallery-beta3.zip.b64
+          rm -f assets/TTG-DEV-BETA3-Mixer.webp.b64
+
+      - name: Update gallery references
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='''<section><div class="w"><div class="k">INTERFACE</div><h2>TTG interface.</h2><div class="gallery">\n<a href="TTG-DEV-BETA2-Mixer.jpg"><img src="TTG-DEV-BETA2-Mixer.jpg" alt="TTG mixer"></a>\n<a href="TTG-DEV-BETA2-Sound.jpg"><img src="TTG-DEV-BETA2-Sound.jpg" alt="TTG sound controls"></a>\n<a href="TTG-DEV-BETA2-Turing.jpg"><img src="TTG-DEV-BETA2-Turing.jpg" alt="TTG Turing matrix and LFOs"></a>\n<a href="TTG-DEV-BETA2-Break.jpg"><img src="TTG-DEV-BETA2-Break.jpg" alt="TTG BREAK processor"></a>\n</div></div></section>'''
+          new='''<section><div class="w"><div class="k">INTERFACE</div><h2>DEV BETA 3 interface.</h2><div class="gallery">\n<a href="TTG-DEV-BETA3-Mixer.jpg"><img src="TTG-DEV-BETA3-Mixer.jpg" alt="TTG DEV BETA 3 mixer with sidechain"></a>\n<a href="TTG-DEV-BETA3-Sound.jpg"><img src="TTG-DEV-BETA3-Sound.jpg" alt="TTG DEV BETA 3 sound controls"></a>\n<a href="TTG-DEV-BETA3-Turing.jpg"><img src="TTG-DEV-BETA3-Turing.jpg" alt="TTG DEV BETA 3 Turing matrix and LFOs"></a>\n<a href="TTG-DEV-BETA3-Break-Slice.jpg"><img src="TTG-DEV-BETA3-Break-Slice.jpg" alt="TTG DEV BETA 3 BREAK slice mode"></a>\n<a href="TTG-DEV-BETA3-Break-Texture.jpg"><img src="TTG-DEV-BETA3-Break-Texture.jpg" alt="TTG DEV BETA 3 BREAK texture mode"></a>\n</div></div></section>'''
+          if old not in s:
+              raise SystemExit('Old gallery block not found')
+          s=s.replace(old,new,1)
+          s=s.replace('.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}', '.gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}', 1)
+          p.write_text(s)
+          PY
+
+      - name: Commit gallery
+        shell: bash
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html TTG-DEV-BETA3-*.jpg assets
+          git add -u assets/gallery-beta3.zip.b64 assets/TTG-DEV-BETA3-Mixer.webp.b64 2>/dev/null || true
+          git commit -m 'site: update gallery to DEV Beta 3 screenshots'
+          git push
