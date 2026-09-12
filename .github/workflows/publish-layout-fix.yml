@@ -1,4 +1,4 @@
-name: Publish TTG layout fix APK
+name: Publish TTG DEV BETA 3 APK
 
 on:
   push:
@@ -19,27 +19,31 @@ jobs:
       - name: Checkout site
         uses: actions/checkout@v6
 
-      - name: Download latest signed layout fix artifact
+      - name: Download signed DEV Beta 3 artifact
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
           gh api -H 'Accept: application/vnd.github+json' \
-            /repos/exsiderurgica/turing-groovebox/actions/artifacts/10153107361/zip \
-            > /tmp/layout-fix.zip
-          mkdir -p /tmp/layout-fix
-          unzip -o /tmp/layout-fix.zip -d /tmp/layout-fix
-          APK=$(find /tmp/layout-fix -type f -name 'TTG-R16-STABLE-LAYOUT-FIX-signed.apk' -print -quit)
+            /repos/exsiderurgica/turing-groovebox/actions/artifacts/10296550713/zip \
+            > /tmp/ttg-beta3.zip
+          mkdir -p /tmp/ttg-beta3
+          unzip -o /tmp/ttg-beta3.zip -d /tmp/ttg-beta3
+          APK=$(find /tmp/ttg-beta3 -type f -name 'TTG-DEV-BETA3.apk' -print -quit)
+          SIG=$(find /tmp/ttg-beta3 -type f -name 'SIGNATURE-INFO.txt' -print -quit)
           test -n "$APK"
-          cp "$APK" TTG-R16-BREAK-SYNC-DEFAULTS-TEST-signed.apk
-          sha256sum TTG-R16-BREAK-SYNC-DEFAULTS-TEST-signed.apk
+          test -n "$SIG"
+          cp "$APK" TTG-DEV-BETA3.apk
+          cp "$SIG" SIGNATURE-INFO.txt
+          sha256sum TTG-DEV-BETA3.apk > SHA256.txt
+          if [ -f TTG-Manual.pdf ]; then sha256sum TTG-Manual.pdf >> SHA256.txt; fi
 
-      - name: Replace site APK
+      - name: Publish signed DEV Beta 3
         run: |
           set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add TTG-R16-BREAK-SYNC-DEFAULTS-TEST-signed.apk
+          git add TTG-DEV-BETA3.apk SIGNATURE-INFO.txt SHA256.txt
           git diff --cached --quiet && exit 0
-          git commit -m 'Replace site APK with latest R16 stable layout fix'
+          git commit -m 'Publish signed TTG DEV Beta 3 build 1'
           git push
