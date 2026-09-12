@@ -1,11 +1,11 @@
-name: Publish Beta 3 gallery
+name: Publish Beta 3 gallery full resolution
 
 on:
   push:
     branches:
       - main
     paths:
-      - assets/gallery-beta3.ready
+      - assets/fullres-gallery.ready
 
 permissions:
   contents: write
@@ -16,41 +16,42 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Decode uploaded Beta 3 screenshots
+      - name: Restore original full-resolution screenshots
         shell: bash
         run: |
-          set -e
-          base64 -d assets/TTG-DEV-BETA3-Mixer-280.webp.b64 > TTG-DEV-BETA3-Mixer.webp
-          base64 -d assets/TTG-DEV-BETA3-Sound-280.webp.b64 > TTG-DEV-BETA3-Sound.webp
-          base64 -d assets/TTG-DEV-BETA3-Turing-280.webp.b64 > TTG-DEV-BETA3-Turing.webp
-          base64 -d assets/TTG-DEV-BETA3-Break-Slice-280.webp.b64 > TTG-DEV-BETA3-Break-Slice.webp
-          base64 -d assets/TTG-DEV-BETA3-Break-Texture-280.webp.b64 > TTG-DEV-BETA3-Break-Texture.webp
-          file TTG-DEV-BETA3-*.webp
-          rm -f assets/TTG-DEV-BETA3-*.b64 assets/gallery-beta3.ready
+          set -euo pipefail
+          for name in Mixer Sound Turing Break-Slice Break-Texture; do
+            cat assets/fullres/${name}.b64.* | tr -d '\n\r' | base64 -d > "TTG-DEV-BETA3-${name}.jpg"
+          done
+          file TTG-DEV-BETA3-*.jpg
+          rm -rf assets/fullres assets/fullres-gallery.ready
 
-      - name: Update gallery references
+      - name: Point site and manual to full-resolution originals
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text()
-          old='''<section><div class="w"><div class="k">INTERFACE</div><h2>TTG interface.</h2><div class="gallery">\n<a href="TTG-DEV-BETA2-Mixer.jpg"><img src="TTG-DEV-BETA2-Mixer.jpg" alt="TTG mixer"></a>\n<a href="TTG-DEV-BETA2-Sound.jpg"><img src="TTG-DEV-BETA2-Sound.jpg" alt="TTG sound controls"></a>\n<a href="TTG-DEV-BETA2-Turing.jpg"><img src="TTG-DEV-BETA2-Turing.jpg" alt="TTG Turing matrix and LFOs"></a>\n<a href="TTG-DEV-BETA2-Break.jpg"><img src="TTG-DEV-BETA2-Break.jpg" alt="TTG BREAK processor"></a>\n</div></div></section>'''
-          new='''<section><div class="w"><div class="k">INTERFACE</div><h2>DEV BETA 3 interface.</h2><div class="gallery">\n<a href="TTG-DEV-BETA3-Mixer.webp"><img src="TTG-DEV-BETA3-Mixer.webp" alt="TTG DEV BETA 3 mixer with sidechain"></a>\n<a href="TTG-DEV-BETA3-Sound.webp"><img src="TTG-DEV-BETA3-Sound.webp" alt="TTG DEV BETA 3 sound controls"></a>\n<a href="TTG-DEV-BETA3-Turing.webp"><img src="TTG-DEV-BETA3-Turing.webp" alt="TTG DEV BETA 3 Turing matrix and LFOs"></a>\n<a href="TTG-DEV-BETA3-Break-Slice.webp"><img src="TTG-DEV-BETA3-Break-Slice.webp" alt="TTG DEV BETA 3 BREAK slice mode"></a>\n<a href="TTG-DEV-BETA3-Break-Texture.webp"><img src="TTG-DEV-BETA3-Break-Texture.webp" alt="TTG DEV BETA 3 BREAK texture mode"></a>\n</div></div></section>'''
-          if old not in s:
-              raise SystemExit('Old gallery block not found')
-          s=s.replace(old,new,1)
-          s=s.replace('.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}', '.gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}', 1)
-          p.write_text(s)
+          replacements = {
+              'TTG-DEV-BETA3-Mixer.webp':'TTG-DEV-BETA3-Mixer.jpg',
+              'TTG-DEV-BETA3-Sound.webp':'TTG-DEV-BETA3-Sound.jpg',
+              'TTG-DEV-BETA3-Turing.webp':'TTG-DEV-BETA3-Turing.jpg',
+              'TTG-DEV-BETA3-Break-Slice.webp':'TTG-DEV-BETA3-Break-Slice.jpg',
+              'TTG-DEV-BETA3-Break-Texture.webp':'TTG-DEV-BETA3-Break-Texture.jpg',
+          }
+          for path in [Path('index.html'), Path('manual/index.html')]:
+              s=path.read_text()
+              for old,new in replacements.items():
+                  s=s.replace(old,new)
+              path.write_text(s)
           PY
 
-      - name: Commit gallery
+      - name: Commit full-resolution gallery
         shell: bash
         run: |
           set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html TTG-DEV-BETA3-*.webp assets
+          git add index.html manual/index.html TTG-DEV-BETA3-*.jpg assets
           git add -u assets 2>/dev/null || true
-          git commit -m 'site: update gallery to DEV Beta 3 screenshots'
+          git commit -m 'site: restore full-resolution Beta 3 screenshots'
           git push
