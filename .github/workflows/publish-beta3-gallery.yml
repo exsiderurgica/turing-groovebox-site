@@ -32,7 +32,7 @@ jobs:
           set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add TTG-DEV-BETA3-*.webp assets
+          git add TTG-DEV-BETA3-*.webp
           git add -u assets 2>/dev/null || true
           git commit -m 'site: restore full-resolution Beta 3 screenshots'
           git push
