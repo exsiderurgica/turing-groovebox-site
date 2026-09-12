@@ -18,11 +18,14 @@ jobs:
       - name: Checkout site
         uses: actions/checkout@v6
 
-      - name: Rebuild signed DEV Beta 3 APK from transfer chunks
+      - name: Rebuild signed DEV Beta 3 from frozen Beta 2
         shell: bash
         run: |
           set -e
-          cat transfer/beta3.part* | base64 -d > TTG-DEV-BETA3.apk
+          cat transfer/beta3.patch.b64.* | base64 -d > /tmp/TTG-BETA2-to-BETA3.zst
+          echo 'a4227faea872e6082348c0f95dcecb0b9a2286842af2c84c0815703b09f7039a  /tmp/TTG-BETA2-to-BETA3.zst' | sha256sum -c -
+          echo 'dd7781e162a740b7c763f6af2fbf3d2b7812d04650e5c371ce80a4bf392170f8  TTG-DEV-BETA2.apk' | sha256sum -c -
+          zstd -d --patch-from=TTG-DEV-BETA2.apk /tmp/TTG-BETA2-to-BETA3.zst -o TTG-DEV-BETA3.apk
           echo '98901c37add1e6d89606adf478929a839307a096df5098927cb57a0bbe03e1e9  TTG-DEV-BETA3.apk' | sha256sum -c -
           sha256sum TTG-DEV-BETA3.apk > SHA256.txt
           if [ -f TTG-Manual.pdf ]; then sha256sum TTG-Manual.pdf >> SHA256.txt; fi
