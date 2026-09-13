@@ -1,10 +1,10 @@
 {
   "status": "DEV BETA 3",
-  "version": "0.3.0-beta.3",
-  "build": "B03",
+  "version": "0.3.0-beta.3-b11",
+  "build": "B11",
   "apk": "TTG-DEV-BETA3.apk",
-  "sha256": "fae952c9104b9807e5f1b01b583f412cdb92bf0f50e4669b959f84e3de15d115",
-  "published": "2026-09-12",
-  "source_commit": "e1470b5bde2e153f709926d41a7765265b7c2203",
-  "notes": "DEV Beta 3 B03 adds the verified Android bottom-inset compatibility fix for Galaxy devices while retaining the Hall/Plate reverb, dynamic tail lift, SIDECHAIN macro and 5% default reverb level."
+  "sha256": "835ac0239cdef534e7ec64ae2d88366cbf4ae2d62b5c77f79853b4f424c278ce",
+  "published": "2026-09-13",
+  "source_commit": "0f72dbde228b7f3238fcae9a462e41d1f2574717",
+  "notes": "B11 Normal Line Lock is the current stable DEV Beta 3 baseline. It includes the stable precision overlay, extended hi-hat decay, hard STOP reset, saved MIDI clock offset, phase-locked MIDI clock and the current Beta 3 performance refinements."
 }
