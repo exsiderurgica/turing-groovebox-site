@@ -1,0 +1,10 @@
+{
+  "currentBuild": "B21",
+  "source": "original uploads; byte-for-byte, no recompression",
+  "screens": [
+    {"id":"sound","label":"SOUND","src":"screens/B21/sound.jpg","alt":"TTG B21 Sound controls","sha256":"11197f5800ba4c0d879ffcdf3b28276a53b2411815156da581ecb924a0ad51b4"},
+    {"id":"mixer","label":"MIXER","src":"screens/B21/mixer.jpg","alt":"TTG B21 Mixer","sha256":"f3b764923e04e9e6490be33550c7ac259860d0e0fbca908eadc511eeb26204ce"},
+    {"id":"turing","label":"TURING","src":"screens/B21/turing.jpg","alt":"TTG B21 Turing matrix and LFOs","sha256":"88abf58aaea19e2dd42d25d5c332fbb4d23964d3ebe635bb8a7180e59cbc3b4f"},
+    {"id":"break","label":"BREAK","src":"screens/B21/break.jpg","alt":"TTG B21 Break processor","sha256":"a0305a4f9ac5d71d74faad60c2d640b28423adee05ec3b2a08e3ef60bcf4a09e"}
+  ]
+}
