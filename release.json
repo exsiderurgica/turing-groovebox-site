@@ -1,10 +1,10 @@
 {
   "status": "DEV BETA 3",
-  "version": "0.3.0-beta.3-b11",
-  "build": "B11",
+  "version": "0.3.0-beta.3-b21",
+  "build": "B21",
   "apk": "TTG-DEV-BETA3.apk",
-  "sha256": "835ac0239cdef534e7ec64ae2d88366cbf4ae2d62b5c77f79853b4f424c278ce",
-  "published": "2026-09-13",
-  "source_commit": "0f72dbde228b7f3238fcae9a462e41d1f2574717",
-  "notes": "B11 Normal Line Lock is the current stable DEV Beta 3 baseline. It includes the stable precision overlay, extended hi-hat decay, hard STOP reset, saved MIDI clock offset, phase-locked MIDI clock and the current Beta 3 performance refinements."
+  "sha256": "8652e527e7cf4d64ca488442e98f11cfeb0a9f66d0f5804a37af4de9594a777d",
+  "published": "2026-09-14",
+  "source_commit": "6db2a7dc1ea11cf3654e4f0d723d799c3d4a3e6e",
+  "notes": "B21 is the current stable DEV Beta 3 baseline. It includes mixer VU meters, independent KICK/TOM decay, true FREE LFO operation with KICK/TOM targets, updated BREAK gain staging, master 0.95, the bipolar KICK click and TOM volume fixes, plus the adaptive TURING layout for shorter Galaxy/Samsung viewports."
 }
