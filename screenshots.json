@@ -1,9 +1,9 @@
 {
   "set": "current-site",
   "items": [
-    {"title":"MIXER","src":"TTG-DEV-BETA3-Mixer.webp","alt":"TTG DEV Beta 3 mixer"},
-    {"title":"SOUND","src":"TTG-DEV-BETA3-Sound.webp","alt":"TTG DEV Beta 3 sound controls"},
-    {"title":"TURING","src":"TTG-DEV-BETA3-Turing.webp","alt":"TTG DEV Beta 3 Turing matrix and LFOs"},
-    {"title":"BREAK","src":"TTG-DEV-BETA3-Break-Slice.webp","alt":"TTG DEV Beta 3 BREAK processor"}
+    {"title":"MIXER","src":"TTG-DEV-BETA3-Mixer.webp?v=20260914-2","alt":"TTG DEV Beta 3 mixer"},
+    {"title":"SOUND","src":"TTG-DEV-BETA3-Sound.webp?v=20260914-2","alt":"TTG DEV Beta 3 sound controls"},
+    {"title":"TURING","src":"TTG-DEV-BETA3-Turing.webp?v=20260914-2","alt":"TTG DEV Beta 3 Turing matrix and LFOs"},
+    {"title":"BREAK","src":"TTG-DEV-BETA3-Break-Slice.webp?v=20260914-2","alt":"TTG DEV Beta 3 BREAK processor"}
   ]
 }
