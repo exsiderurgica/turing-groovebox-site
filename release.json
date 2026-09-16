@@ -1,13 +1,13 @@
 {
   "status": "BETA 4",
   "version": "0.4.0-beta.4",
-  "build": "B30",
+  "build": "B35",
   "apk": "TTG-BETA4.apk",
-  "sha256": "63cc2e06aec09eee0ee223ef06eb8a08dd172669133c9b6aede45bd58797fe76",
-  "published": "2026-09-15",
-  "source_commit": "a4b24a1c0a40e1ef43085aa8066069f7ddee5261",
+  "sha256": "d6ca5d4c6efe0767c3f73aa2277a150782c3be9d663219ac7cd7170537b39efd",
+  "published": "2026-09-16",
+  "source_commit": "a9265685be3bbef49876cc3e60f0dac4cc1067a0",
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "Beta 4 is the frozen public release of the validated B30 baseline. It adds the expanded SYNTH and CHORDS engines, independent DRONE operation, extended decay ranges, HH OFF/8TH/4/4 modes, LFO volume destinations, refined mixer behavior and the restored BUS filter with RES GAIN."
+  "notes": "Updated stable Beta 4. Includes continuous GEN/DRONE behavior while transport is stopped, GEN rate refinements, static parameter guide lines, horizontal guide lines for mixer volume faders, and multitouch guide overlays."
 }
