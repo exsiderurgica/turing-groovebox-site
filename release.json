@@ -1,13 +1,13 @@
 {
   "status": "BETA 4",
-  "version": "0.4.0-beta.4",
-  "build": "B35",
+  "version": "0.4.0-beta.4-b47",
+  "build": "B47",
   "apk": "TTG-BETA4.apk",
-  "sha256": "d6ca5d4c6efe0767c3f73aa2277a150782c3be9d663219ac7cd7170537b39efd",
-  "published": "2026-09-16",
-  "source_commit": "a9265685be3bbef49876cc3e60f0dac4cc1067a0",
+  "sha256": "fb67e29a34b8fdadbd78d98d0062b7ac91a9426e95197d33b5efd42e10d69fa0",
+  "published": "2026-09-17",
+  "source_commit": "1c54ee355d35402b4d3cc5385c7e95021536ee34",
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "Updated stable Beta 4. Includes continuous GEN/DRONE behavior while transport is stopped, GEN rate refinements, static parameter guide lines, horizontal guide lines for mixer volume faders, and multitouch guide overlays."
+  "notes": "B47 is the current stable Beta 4. It adds selectable SAFE 512 / LOW 256 / ULTRA 128 audio latency profiles, the low-latency urgent audio thread path, smooth 14 ms Dattorro pre-delay with reduced early reflections, TMP capture/restore for the mixer DECAY macro, and synchronized pre-roll feedback for MINI909 HAT and RIDE controls."
 }
