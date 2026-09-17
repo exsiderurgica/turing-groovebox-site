@@ -1,13 +1,13 @@
 {
   "status": "BETA 4",
-  "version": "0.4.0-beta.4-b48",
-  "build": "B48",
+  "version": "0.4.0-beta.4-b51",
+  "build": "B51",
   "apk": "TTG-BETA4.apk",
-  "sha256": "04d39e5ddfc8f05b3bd0e552919cf7572eb0e77de0cdb1a1bab4ab7bea728c36",
+  "sha256": "959a88b3c3a31ca9a906c45f3293a3e61d1ab7c513c662818d0a692384a84930",
   "published": "2026-09-17",
-  "source_commit": "568db3e3874d40178e0b2566bb5f6e63a1ff0a49",
+  "source_commit": "f2852d214c1dd5d295cd9f21c6c2df7b716215c5",
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "B48 is the current stable Beta 4. It keeps the B47 low-latency audio profiles and DSP improvements, opens TTG on the MIXER page by default, and adds immediate visual feedback to the TURING sequencer NEW buttons."
+  "notes": "B51 is the current stable Beta 4. It adds independent CH1/CH2 master routing for KICK+TOM, HAT, BASS, SYNTH, CHORDS and BREAK, defaults all voices to normal stereo, keeps the corrected MIDI/OPTIONS layout, and routes the MINI909 hats, ride and crash through the BUS/global FX chain including DROP FX."
 }
