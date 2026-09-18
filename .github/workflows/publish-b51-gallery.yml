@@ -1,10 +1,10 @@
-name: Publish exact TTG screenshots
+name: Publish verified TTG gallery
 
 on:
   push:
     branches: [main]
     paths:
-      - assets/b51-gallery.ready
+      - assets/gallery-v1.ready
 
 permissions:
   contents: write
@@ -15,40 +15,41 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore and verify exact screenshots
+      - name: Restore and verify gallery
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p gallery
-          cat assets/b51-gallery/Mixer.b64.*  | tr -d '\n\r' | base64 -d > gallery/mixer.jpg
-          cat assets/b51-gallery/Sound.b64.*  | tr -d '\n\r' | base64 -d > gallery/sound.jpg
-          cat assets/b51-gallery/Turing.b64.* | tr -d '\n\r' | base64 -d > gallery/turing.jpg
-          cat assets/b51-gallery/Break.b64.*  | tr -d '\n\r' | base64 -d > gallery/break.jpg
+          cat assets/gallery-v1/Mixer.b64.*  | tr -d '\n\r' | base64 -d > gallery/mixer.webp
+          cat assets/gallery-v1/Sound.b64.*  | tr -d '\n\r' | base64 -d > gallery/sound.webp
+          cat assets/gallery-v1/Turing.b64.* | tr -d '\n\r' | base64 -d > gallery/turing.webp
+          cat assets/gallery-v1/Break.b64.*  | tr -d '\n\r' | base64 -d > gallery/break.webp
 
           printf '%s  %s\n' \
-            'fb4f61636967a0aded76f4e5bd39d5bb61e1b4ac8019f368b5e89e16261926b3' 'gallery/mixer.jpg' \
-            '5ad92300942b057b226e48e5ce6d43b591837e1ad99e362611c0d5a7e1a71cac' 'gallery/sound.jpg' \
-            'ec84fb1c33198987f7e5b39910585c4e9cfe9e5525739822560f286e80578308' 'gallery/turing.jpg' \
-            '62c42486abd0628be0791157310d0adccb680bc588e7100bd349e603a970d318' 'gallery/break.jpg' \
+            'f58cc913f64efa2e737f9cdf06f237cd8a078405ffe3fd7fc8d0bb3589adef55' 'gallery/mixer.webp' \
+            'fd3b132538de5880ace5f195eded9ebd1392533503ada460f2fb2354c78e6610' 'gallery/sound.webp' \
+            '082b612d294c06ba13655f76d81cf9305ada4f16872c863440a54eba383480c1' 'gallery/turing.webp' \
+            '73f3bb8f06512c9c0b7656718b97661868274c5d8c41afeb42011a774db7e51a' 'gallery/break.webp' \
             | sha256sum -c -
 
-          file gallery/*.jpg
+          file gallery/*.webp
           python3 - <<'PY'
           import json
           from pathlib import Path
           data={
             "set":"2026-09-18-gallery-v1",
             "items":[
-              {"title":"MIXER","src":"gallery/mixer.jpg?v=20260918-1","alt":"TTG mixer"},
-              {"title":"SOUND","src":"gallery/sound.jpg?v=20260918-1","alt":"TTG sound controls"},
-              {"title":"TURING","src":"gallery/turing.jpg?v=20260918-1","alt":"TTG Turing sequencers and LFOs"},
-              {"title":"BREAK","src":"gallery/break.jpg?v=20260918-1","alt":"TTG BREAK and BUS processor"}
+              {"title":"MIXER","src":"gallery/mixer.webp?v=20260918-1","alt":"TTG mixer"},
+              {"title":"SOUND","src":"gallery/sound.webp?v=20260918-1","alt":"TTG sound controls"},
+              {"title":"TURING","src":"gallery/turing.webp?v=20260918-1","alt":"TTG Turing sequencers and LFOs"},
+              {"title":"BREAK","src":"gallery/break.webp?v=20260918-1","alt":"TTG BREAK and BUS processor"}
             ]
           }
           Path('screenshots.json').write_text(json.dumps(data,indent=2)+'\n')
           PY
 
-          rm -rf assets/b51-gallery assets/b51-gallery.ready
+          rm -rf assets/gallery-v1 assets/gallery-v1.ready assets/b51-gallery
+          rm -f TTG-BETA4-B51-Mixer.webp TTG-BETA4-B51-Sound.webp TTG-BETA4-B51-Turing.webp TTG-BETA4-B51-Break.webp
 
       - name: Commit verified gallery
         shell: bash
@@ -57,6 +58,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add gallery screenshots.json
-          git add -u assets 2>/dev/null || true
+          git add -u
           git commit -m 'site: publish verified fixed gallery'
           git push
