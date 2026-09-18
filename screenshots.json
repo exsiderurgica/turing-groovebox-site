@@ -1,9 +1,9 @@
 {
-  "set": "2026-09-18-safe",
+  "set": "2026-09-18-fixed-gallery",
   "items": [
-    {"title":"MIXER","src":"TTG-DEV-BETA3-Mixer-20260914.jpg","alt":"TTG mixer"},
-    {"title":"SOUND","src":"TTG-DEV-BETA3-Sound-20260914.jpg","alt":"TTG sound controls"},
-    {"title":"TURING","src":"TTG-DEV-BETA3-Turing-20260914.jpg","alt":"TTG Turing sequencers and LFOs"},
-    {"title":"BREAK","src":"TTG-DEV-BETA3-Break-20260914.jpg","alt":"TTG BREAK processor"}
+    {"title":"MIXER","src":"gallery/mixer.webp?v=20260918-2","alt":"TTG mixer"},
+    {"title":"SOUND","src":"gallery/sound.webp?v=20260918-2","alt":"TTG sound controls"},
+    {"title":"TURING","src":"gallery/turing.webp?v=20260918-2","alt":"TTG Turing sequencers and LFOs"},
+    {"title":"BREAK","src":"gallery/break.webp?v=20260918-2","alt":"TTG BREAK and BUS processor"}
   ]
 }
