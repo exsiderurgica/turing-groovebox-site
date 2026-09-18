@@ -26,10 +26,10 @@ jobs:
           cat assets/b51-gallery/Break.b64.*  | tr -d '\n\r' | base64 -d > gallery/break.jpg
 
           printf '%s  %s\n' \
-            '0e385b28e8a1fac316e40a039d1373b197178c8d5e895510f8ffe895ec4f38ae' 'gallery/mixer.jpg' \
-            '6a4fd9d85c3f687d2a36c22bca1efadba77d933ca9d8a5d9822f9b5cd9b5bf67' 'gallery/sound.jpg' \
-            '730ceb291d6903badfe7787d05f91e9a6f1510da0cd625239127b0f5ff862ab4' 'gallery/turing.jpg' \
-            '2aeb88b3998a5a8191fc361351b8ed70329b741666e02435f8d675890db76e35' 'gallery/break.jpg' \
+            'fb4f61636967a0aded76f4e5bd39d5bb61e1b4ac8019f368b5e89e16261926b3' 'gallery/mixer.jpg' \
+            '5ad92300942b057b226e48e5ce6d43b591837e1ad99e362611c0d5a7e1a71cac' 'gallery/sound.jpg' \
+            'ec84fb1c33198987f7e5b39910585c4e9cfe9e5525739822560f286e80578308' 'gallery/turing.jpg' \
+            '62c42486abd0628be0791157310d0adccb680bc588e7100bd349e603a970d318' 'gallery/break.jpg' \
             | sha256sum -c -
 
           file gallery/*.jpg
