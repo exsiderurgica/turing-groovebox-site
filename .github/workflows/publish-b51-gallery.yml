@@ -1,63 +1,48 @@
-name: Publish verified TTG gallery
+name: Validate TTG gallery
 
 on:
   push:
     branches: [main]
     paths:
-      - assets/gallery-v1.ready
+      - 'gallery/**'
+      - 'screenshots.json'
+      - '.github/workflows/publish-b51-gallery.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  gallery:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore and verify gallery
+      - name: Validate permanent gallery
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p gallery
-          cat assets/gallery-v1/Mixer.b64.*  | tr -d '\n\r' | base64 -d > gallery/mixer.webp
-          cat assets/gallery-v1/Sound.b64.*  | tr -d '\n\r' | base64 -d > gallery/sound.webp
-          cat assets/gallery-v1/Turing.b64.* | tr -d '\n\r' | base64 -d > gallery/turing.webp
-          cat assets/gallery-v1/Break.b64.*  | tr -d '\n\r' | base64 -d > gallery/break.webp
+          for f in gallery/mixer.webp gallery/sound.webp gallery/turing.webp gallery/break.webp; do
+            test -s "$f"
+            file "$f" | grep -qi 'Web/P'
+          done
 
-          printf '%s  %s\n' \
-            'f58cc913f64efa2e737f9cdf06f237cd8a078405ffe3fd7fc8d0bb3589adef55' 'gallery/mixer.webp' \
-            'fd3b132538de5880ace5f195eded9ebd1392533503ada460f2fb2354c78e6610' 'gallery/sound.webp' \
-            '082b612d294c06ba13655f76d81cf9305ada4f16872c863440a54eba383480c1' 'gallery/turing.webp' \
-            '73f3bb8f06512c9c0b7656718b97661868274c5d8c41afeb42011a774db7e51a' 'gallery/break.webp' \
-            | sha256sum -c -
-
-          file gallery/*.webp
           python3 - <<'PY'
           import json
           from pathlib import Path
-          data={
-            "set":"2026-09-18-gallery-v1",
-            "items":[
-              {"title":"MIXER","src":"gallery/mixer.webp?v=20260918-1","alt":"TTG mixer"},
-              {"title":"SOUND","src":"gallery/sound.webp?v=20260918-1","alt":"TTG sound controls"},
-              {"title":"TURING","src":"gallery/turing.webp?v=20260918-1","alt":"TTG Turing sequencers and LFOs"},
-              {"title":"BREAK","src":"gallery/break.webp?v=20260918-1","alt":"TTG BREAK and BUS processor"}
-            ]
-          }
-          Path('screenshots.json').write_text(json.dumps(data,indent=2)+'\n')
+
+          data=json.loads(Path('screenshots.json').read_text())
+          expected=[
+            ('MIXER','gallery/mixer.webp'),
+            ('SOUND','gallery/sound.webp'),
+            ('TURING','gallery/turing.webp'),
+            ('BREAK','gallery/break.webp'),
+          ]
+          items=data.get('items',[])
+          assert len(items)==4, f'expected 4 screenshots, got {len(items)}'
+          for item,(title,path) in zip(items,expected):
+            assert item.get('title')==title
+            src=item.get('src','').split('?',1)[0]
+            assert src==path, f'{title}: {src} != {path}'
+            assert Path(path).stat().st_size > 1000
+          print('TTG gallery OK')
           PY
-
-          rm -rf assets/gallery-v1 assets/gallery-v1.ready assets/b51-gallery
-          rm -f TTG-BETA4-B51-Mixer.webp TTG-BETA4-B51-Sound.webp TTG-BETA4-B51-Turing.webp TTG-BETA4-B51-Break.webp
-
-      - name: Commit verified gallery
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add gallery screenshots.json
-          git add -u
-          git commit -m 'site: publish verified fixed gallery'
-          git push
