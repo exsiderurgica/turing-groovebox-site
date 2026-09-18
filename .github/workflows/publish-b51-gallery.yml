@@ -1,48 +1,139 @@
-name: Validate TTG gallery
+name: Update TTG gallery
 
 on:
   push:
     branches: [main]
     paths:
-      - 'gallery/**'
-      - 'screenshots.json'
+      - 'gallery_src/mixer.*'
+      - 'gallery_src/sound.*'
+      - 'gallery_src/turing.*'
+      - 'gallery_src/break.*'
       - '.github/workflows/publish-b51-gallery.yml'
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: ttg-gallery-update
+  cancel-in-progress: true
 
 jobs:
-  validate:
+  update-gallery:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
 
-      - name: Validate permanent gallery
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check pillow
+
+      - name: Build and validate gallery
         shell: bash
         run: |
           set -euo pipefail
-          for f in gallery/mixer.webp gallery/sound.webp gallery/turing.webp gallery/break.webp; do
-            test -s "$f"
-            file "$f" | grep -qi 'Web/P'
-          done
-
-          python3 - <<'PY'
-          import json
+          python - <<'PY'
           from pathlib import Path
+          from PIL import Image, ImageOps
+          import json, os, shutil
 
-          data=json.loads(Path('screenshots.json').read_text())
-          expected=[
-            ('MIXER','gallery/mixer.webp'),
-            ('SOUND','gallery/sound.webp'),
-            ('TURING','gallery/turing.webp'),
-            ('BREAK','gallery/break.webp'),
-          ]
-          items=data.get('items',[])
-          assert len(items)==4, f'expected 4 screenshots, got {len(items)}'
-          for item,(title,path) in zip(items,expected):
-            assert item.get('title')==title
-            src=item.get('src','').split('?',1)[0]
-            assert src==path, f'{title}: {src} != {path}'
-            assert Path(path).stat().st_size > 1000
-          print('TTG gallery OK')
+          src_dir = Path("gallery_src")
+          out_tmp = Path(".gallery-build")
+          out_dir = Path("gallery")
+          out_tmp.mkdir(exist_ok=True)
+          out_dir.mkdir(exist_ok=True)
+
+          names = ["mixer", "sound", "turing", "break"]
+          allowed = {".png", ".jpg", ".jpeg", ".webp"}
+
+          resolved = {}
+          for name in names:
+              matches = [
+                  p for p in src_dir.iterdir()
+                  if p.is_file()
+                  and p.stem.lower() == name
+                  and p.suffix.lower() in allowed
+              ]
+              if len(matches) != 1:
+                  raise SystemExit(
+                      f"{name}: expected exactly one source image, found {len(matches)}: "
+                      + ", ".join(p.name for p in matches)
+                  )
+              resolved[name] = matches[0]
+
+          built = {}
+          for name, src in resolved.items():
+              with Image.open(src) as im:
+                  im = ImageOps.exif_transpose(im)
+                  w, h = im.size
+                  if w < 600 or h < 1000:
+                      raise SystemExit(f"{name}: source too small ({w}x{h})")
+                  ratio = h / w
+                  if not 1.8 <= ratio <= 2.5:
+                      raise SystemExit(f"{name}: unexpected aspect ratio {w}x{h}")
+
+                  if im.mode not in ("RGB", "RGBA"):
+                      im = im.convert("RGBA" if "A" in im.getbands() else "RGB")
+
+                  dest = out_tmp / f"{name}.webp"
+                  im.save(dest, "WEBP", lossless=True, method=6, exact=True)
+
+              with Image.open(dest) as check:
+                  if check.format != "WEBP":
+                      raise SystemExit(f"{name}: output is not WebP")
+                  if check.size != (w, h):
+                      raise SystemExit(
+                          f"{name}: resolution changed {w}x{h} -> {check.size[0]}x{check.size[1]}"
+                      )
+
+              size = dest.stat().st_size
+              if size < 15000:
+                  raise SystemExit(f"{name}: output suspiciously small ({size} bytes)")
+
+              built[name] = {
+                  "width": w,
+                  "height": h,
+                  "bytes": size,
+              }
+
+          # Atomic publish: copy only after all four have passed.
+          for name in names:
+              shutil.copy2(out_tmp / f"{name}.webp", out_dir / f"{name}.webp")
+
+          version = os.environ.get("GITHUB_SHA", "local")[:8]
+          data = {
+              "set": f"gallery-{version}",
+              "items": [
+                  {"title": "MIXER",  "src": f"gallery/mixer.webp?v={version}",  "alt": "TTG mixer"},
+                  {"title": "SOUND",  "src": f"gallery/sound.webp?v={version}",  "alt": "TTG sound controls"},
+                  {"title": "TURING", "src": f"gallery/turing.webp?v={version}", "alt": "TTG Turing sequencers and LFOs"},
+                  {"title": "BREAK",  "src": f"gallery/break.webp?v={version}",  "alt": "TTG BREAK and BUS processor"},
+              ],
+          }
+          Path("screenshots.json").write_text(json.dumps(data, indent=2) + "\n")
+
+          print("Gallery build OK")
+          for name in names:
+              b = built[name]
+              print(f"{name}: {b['width']}x{b['height']} - {b['bytes']} bytes")
           PY
+
+      - name: Commit generated gallery
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gallery/mixer.webp gallery/sound.webp gallery/turing.webp gallery/break.webp screenshots.json
+          if git diff --cached --quiet; then
+            echo "Gallery already up to date."
+            exit 0
+          fi
+          git commit -m 'site: update gallery from source screenshots'
+          git push
