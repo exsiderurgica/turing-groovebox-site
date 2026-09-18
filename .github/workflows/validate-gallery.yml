@@ -1,0 +1,45 @@
+name: Validate canonical gallery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'gallery/**'
+      - 'screenshots.json'
+      - 'index.html'
+      - '.github/workflows/validate-gallery.yml'
+  pull_request:
+    paths:
+      - 'gallery/**'
+      - 'screenshots.json'
+      - 'index.html'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate gallery assets and manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in gallery/mixer.webp gallery/sound.webp gallery/turing.webp gallery/break.webp; do
+            test -s "$f"
+            file "$f" | grep -q 'Web/P image'
+          done
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('screenshots.json').read_text())
+          assert [x['title'] for x in data['items']] == ['MIXER','SOUND','TURING','BREAK']
+          expected=['gallery/mixer.webp','gallery/sound.webp','gallery/turing.webp','gallery/break.webp']
+          actual=[x['src'].split('?',1)[0] for x in data['items']]
+          assert actual == expected
+          for p in expected:
+              q=Path(p)
+              assert q.is_file() and q.stat().st_size > 1024
+          print('Canonical gallery OK')
+          PY
