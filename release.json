@@ -1,13 +1,13 @@
 {
   "status": "BETA 4",
-  "version": "0.4.0-beta.4-b51",
-  "build": "B51",
+  "version": "0.4.0-beta.4-b53-mackity-rewire",
+  "build": "B53",
   "apk": "TTG-BETA4.apk",
-  "sha256": "959a88b3c3a31ca9a906c45f3293a3e61d1ab7c513c662818d0a692384a84930",
-  "published": "2026-09-17",
-  "source_commit": "f2852d214c1dd5d295cd9f21c6c2df7b716215c5",
+  "sha256": "11a43b80fc6e7331b436effae981a61068369b4a2b0b83d6889395887b5e1c03",
+  "published": "2026-09-18",
+  "source_commit": "c7668be73023b507dd11521c4cf965b7b2d80ad4",
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "B51 is the current stable Beta 4. It adds independent CH1/CH2 master routing for KICK+TOM, HAT, BASS, SYNTH, CHORDS and BREAK, defaults all voices to normal stereo, keeps the corrected MIDI/OPTIONS layout, and routes the MINI909 hats, ride and crash through the BUS/global FX chain including DROP FX."
+  "notes": "B53 is the current stable Beta 4. It restores Mackity and Tape in the master signal path after the B49 routing rewrite, uses independent Airwindows processing for CH1 and CH2 in split mode, retains B52 MINI909/BREAK FX-send behavior, and keeps the B51 independent stereo routing."
 }
