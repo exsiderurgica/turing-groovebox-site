@@ -1,4 +1,4 @@
-name: Publish B51 exact screenshots
+name: Publish exact TTG screenshots
 
 on:
   push:
@@ -15,37 +15,48 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore exact B51 screenshots
+      - name: Restore and verify exact screenshots
         shell: bash
         run: |
           set -euo pipefail
-          for name in Mixer Sound Turing Break; do
-            cat assets/b51-gallery/${name}.b64.* | tr -d '\n\r' | base64 -d > "TTG-BETA4-B51-${name}.jpg"
-          done
-          file TTG-BETA4-B51-*.jpg
+          mkdir -p gallery
+          cat assets/b51-gallery/Mixer.b64.*  | tr -d '\n\r' | base64 -d > gallery/mixer.jpg
+          cat assets/b51-gallery/Sound.b64.*  | tr -d '\n\r' | base64 -d > gallery/sound.jpg
+          cat assets/b51-gallery/Turing.b64.* | tr -d '\n\r' | base64 -d > gallery/turing.jpg
+          cat assets/b51-gallery/Break.b64.*  | tr -d '\n\r' | base64 -d > gallery/break.jpg
+
+          printf '%s  %s\n' \
+            '0e385b28e8a1fac316e40a039d1373b197178c8d5e895510f8ffe895ec4f38ae' 'gallery/mixer.jpg' \
+            '6a4fd9d85c3f687d2a36c22bca1efadba77d933ca9d8a5d9822f9b5cd9b5bf67' 'gallery/sound.jpg' \
+            '730ceb291d6903badfe7787d05f91e9a6f1510da0cd625239127b0f5ff862ab4' 'gallery/turing.jpg' \
+            '2aeb88b3998a5a8191fc361351b8ed70329b741666e02435f8d675890db76e35' 'gallery/break.jpg' \
+            | sha256sum -c -
+
+          file gallery/*.jpg
           python3 - <<'PY'
           import json
           from pathlib import Path
           data={
-            "set":"2026-09-17-b51",
+            "set":"2026-09-18-gallery-v1",
             "items":[
-              {"title":"MIXER","src":"TTG-BETA4-B51-Mixer.jpg","alt":"TTG Beta 4 B51 mixer"},
-              {"title":"SOUND","src":"TTG-BETA4-B51-Sound.jpg","alt":"TTG Beta 4 B51 sound controls"},
-              {"title":"TURING","src":"TTG-BETA4-B51-Turing.jpg","alt":"TTG Beta 4 B51 Turing matrix and LFOs"},
-              {"title":"BREAK","src":"TTG-BETA4-B51-Break.jpg","alt":"TTG Beta 4 B51 BREAK and 909 BUS"}
+              {"title":"MIXER","src":"gallery/mixer.jpg?v=20260918-1","alt":"TTG mixer"},
+              {"title":"SOUND","src":"gallery/sound.jpg?v=20260918-1","alt":"TTG sound controls"},
+              {"title":"TURING","src":"gallery/turing.jpg?v=20260918-1","alt":"TTG Turing sequencers and LFOs"},
+              {"title":"BREAK","src":"gallery/break.jpg?v=20260918-1","alt":"TTG BREAK and BUS processor"}
             ]
           }
           Path('screenshots.json').write_text(json.dumps(data,indent=2)+'\n')
           PY
+
           rm -rf assets/b51-gallery assets/b51-gallery.ready
 
-      - name: Commit exact B51 gallery
+      - name: Commit verified gallery
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add TTG-BETA4-B51-*.jpg screenshots.json
+          git add gallery screenshots.json
           git add -u assets 2>/dev/null || true
-          git commit -m 'site: publish exact B51 screenshots'
+          git commit -m 'site: publish verified fixed gallery'
           git push
