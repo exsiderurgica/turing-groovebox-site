@@ -8,7 +8,6 @@ on:
       - 'gallery_src/sound.*'
       - 'gallery_src/turing.*'
       - 'gallery_src/break.*'
-      - '.github/workflows/publish-b51-gallery.yml'
   workflow_dispatch:
 
 permissions:
