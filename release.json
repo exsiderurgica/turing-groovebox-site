@@ -1,13 +1,13 @@
 {
-  "status": "BETA 4",
-  "version": "0.4.0-beta.4-b53-mackity-rewire",
-  "build": "B53",
-  "apk": "TTG-BETA4.apk",
-  "sha256": "11a43b80fc6e7331b436effae981a61068369b4a2b0b83d6889395887b5e1c03",
-  "published": "2026-09-18",
-  "source_commit": "c7668be73023b507dd11521c4cf965b7b2d80ad4",
+  "status": "BETA 5",
+  "version": "0.5.0-beta.5-b92-no-target-animation",
+  "build": "B92",
+  "apk": "TTG-BETA5.apk",
+  "sha256": "4bdfce5e97f34c0b0d9b4cca453111ed7cbbbfc619087c2c17fbbe95467dbc3c",
+  "published": "2026-09-22",
+  "source_commit": "3116cd55dfa0b49417aa6c9bd78c1c962cb5007c",
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "B53 is the current stable Beta 4. It restores Mackity and Tape in the master signal path after the B49 routing rewrite, uses independent Airwindows processing for CH1 and CH2 in split mode, retains B52 MINI909/BREAK FX-send behavior, and keeps the B51 independent stereo routing."
+  "notes": "B92 is the current stable Beta 5. It adds Plaits integration, the Rings voice, 909 sounds, expanded Turing CV routing, MIDI and Ableton Link fixes, Resonator and Shuffle refinements, and removes the target animations while keeping the approved Beta 5 behavior."
 }
