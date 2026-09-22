@@ -1,24 +1,24 @@
 {
-  "set": "gallery-fb874bf3",
+  "set": "gallery-d6534ef9",
   "items": [
     {
       "title": "MIXER",
-      "src": "gallery/mixer.webp?v=fb874bf3",
+      "src": "gallery/mixer.webp?v=d6534ef9",
       "alt": "TTG mixer"
     },
     {
       "title": "SOUND",
-      "src": "gallery/sound.webp?v=fb874bf3",
+      "src": "gallery/sound.webp?v=d6534ef9",
       "alt": "TTG sound controls"
     },
     {
       "title": "TURING",
-      "src": "gallery/turing.webp?v=fb874bf3",
+      "src": "gallery/turing.webp?v=d6534ef9",
       "alt": "TTG Turing sequencers and LFOs"
     },
     {
       "title": "BREAK",
-      "src": "gallery/break.webp?v=fb874bf3",
+      "src": "gallery/break.webp?v=d6534ef9",
       "alt": "TTG BREAK and BUS processor"
     }
   ]
