@@ -9,5 +9,5 @@
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "B93 is the current stable Beta 5. It keeps all B92 features and corrects the Sound parameter value-window nomenclature for Macro A so the popup labels now match the current Plaits-based controls."
+  "notes": "B93 is the current stable Beta 5. It includes dual Plaits-based Macro A/B engines, the Rings-style Resonator, expanded 909 percussion, Turing CV routing, improved MIDI and Ableton Link synchronization, project save/load, USB Direct and master split routing, remote-control support, plus the latest parameter-label corrections."
 }
