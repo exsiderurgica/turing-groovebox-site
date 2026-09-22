@@ -1,13 +1,13 @@
 {
   "status": "BETA 5",
-  "version": "0.5.0-beta.5-b92-no-target-animation",
-  "build": "B92",
+  "version": "0.5.0-beta.5-b93-parameter-labels",
+  "build": "B93",
   "apk": "TTG-BETA5.apk",
-  "sha256": "4bdfce5e97f34c0b0d9b4cca453111ed7cbbbfc619087c2c17fbbe95467dbc3c",
+  "sha256": "5312710e75d2cb167e6889aa79e48a90790553076c2f8980e2ff466c274135bb",
   "published": "2026-09-22",
-  "source_commit": "3116cd55dfa0b49417aa6c9bd78c1c962cb5007c",
+  "source_commit": "1cbbf309e4e302d57bdd294240412a488d637fea",
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "B92 is the current stable Beta 5. It adds Plaits integration, the Rings voice, 909 sounds, expanded Turing CV routing, MIDI and Ableton Link fixes, Resonator and Shuffle refinements, and removes the target animations while keeping the approved Beta 5 behavior."
+  "notes": "B93 is the current stable Beta 5. It keeps all B92 features and corrects the Sound parameter value-window nomenclature for Macro A so the popup labels now match the current Plaits-based controls."
 }
