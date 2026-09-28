@@ -30,6 +30,20 @@ jobs:
           test -s TTG-BETA6.apk
           sha256sum TTG-BETA6.apk > SHA256.txt
           sha256sum TTG-Manual.pdf >> SHA256.txt
+      - name: Render PDF verification preview
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          mkdir -p /tmp/manual-preview
+          pdfinfo TTG-Manual.pdf | grep -E 'Pages|Page size'
+          pdftoppm -png -r 120 TTG-Manual.pdf /tmp/manual-preview/page >/dev/null 2>&1
+          test "$(find /tmp/manual-preview -name 'page-*.png' | wc -l)" -ge 8
+      - name: Upload PDF verification preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: TTG-BETA6-MANUAL-PREVIEW
+          path: /tmp/manual-preview/page-*.png
+          if-no-files-found: error
       - name: Commit PDF and checksums
         run: |
           git config user.name "github-actions[bot]"
