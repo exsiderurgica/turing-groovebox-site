@@ -1,0 +1,68 @@
+name: Setup VideoBlock Brevo List
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/setup-videoblock-brevo.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    env:
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create or find VideoBlock Updates list
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${BREVO_API_KEY:-}" ]; then
+            echo "BREVO_API_KEY secret is not configured."
+            exit 2
+          fi
+
+          headers=(-H "accept: application/json" -H "api-key: ${BREVO_API_KEY}" -H "content-type: application/json")
+
+          lists=$(curl -fsS "https://api.brevo.com/v3/contacts/lists?limit=50&offset=0&sort=desc" "${headers[@]}")
+          list_id=$(echo "$lists" | jq -r '.lists[]? | select(.name=="VideoBlock Updates") | .id' | head -n1)
+
+          if [ -z "$list_id" ] || [ "$list_id" = "null" ]; then
+            ttg=$(curl -fsS "https://api.brevo.com/v3/contacts/lists/3" "${headers[@]}")
+            folder_id=$(echo "$ttg" | jq -r '.folderId')
+
+            if [ -z "$folder_id" ] || [ "$folder_id" = "null" ]; then
+              echo "Could not resolve Brevo folder from TTG list 3."
+              exit 3
+            fi
+
+            created=$(curl -fsS -X POST "https://api.brevo.com/v3/contacts/lists" "${headers[@]}" \
+              --data "$(jq -nc --arg name "VideoBlock Updates" --argjson folderId "$folder_id" '{name:$name,folderId:$folderId}')")
+            list_id=$(echo "$created" | jq -r '.id')
+          fi
+
+          mkdir -p videoblock
+          jq -n \
+            --arg name "VideoBlock Updates" \
+            --argjson list_id "$list_id" \
+            '{name:$name,list_id:$list_id,provider:"Brevo"}' \
+            > videoblock/brevo-list.json
+
+          echo "VideoBlock Brevo list ID: $list_id"
+
+      - name: Record VideoBlock Brevo list metadata
+        run: |
+          if git diff --quiet -- videoblock/brevo-list.json; then
+            echo "No metadata changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add videoblock/brevo-list.json
+          git commit -m "Configure VideoBlock Brevo list"
+          git push
