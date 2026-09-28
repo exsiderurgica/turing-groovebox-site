@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050807">
+<meta name="description" content="VideoBlock is a block-based Android video and audio editor built for direct touch editing, accurate sync, lossless workflows and fast mobile assembly.">
+<title>VideoBlock — block-based mobile video editor</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="noise"></div>
+
+<nav class="nav">
+  <a class="brand" href="#top" aria-label="VideoBlock home">
+    <span class="brand-mark"></span><span>VIDEOBLOCK</span>
+  </a>
+  <div class="nav-links">
+    <a href="#blocks">BLOCKS</a>
+    <a href="#audio">AUDIO</a>
+    <a href="#projects">PROJECTS</a>
+    <a href="#download">DOWNLOAD</a>
+  </div>
+</nav>
+
+<main id="top">
+<section class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow">EXSIDERURGICA / ANDROID / <span data-release="beta_status">BETA 3.6</span></div>
+    <h1>EDIT<br>WITHOUT<br>THE TIMELINE.</h1>
+    <p class="lead">VideoBlock is a touch-first mobile editor built around clips, cuts and blocks. Scrub directly on the image, cut where you feel it, arrange the result as blocks, sync external audio precisely and export the sequence.</p>
+    <div class="actions">
+      <a class="button primary" href="https://raw.githubusercontent.com/exsiderurgica/av-sync-clean/downloads/VideoBlock-stable.apk" download>DOWNLOAD STABLE <span data-release="stable_status">BETA 3.3</span></a>
+      <a class="button" href="https://raw.githubusercontent.com/exsiderurgica/av-sync-clean/downloads/VideoBlock-beta.apk" download>TRY <span data-release="beta_status">BETA 3.6</span></a>
+      <a class="button" href="https://github.com/exsiderurgica/av-sync-clean" target="_blank" rel="noopener">GITHUB</a>
+    </div>
+    <div class="release-strip">
+      <span><b>STABLE</b> <span data-release="stable_status">BETA 3.3</span></span>
+      <span><b>CURRENT</b> <span data-release="beta_status">BETA 3.6</span></span>
+      <span><b>PLATFORM</b> ANDROID</span>
+      <span><b>WORKFLOW</b> BLOCK-BASED</span>
+    </div>
+  </div>
+
+  <div class="hero-device" aria-label="Stylized VideoBlock interface preview">
+    <div class="phone">
+      <div class="phone-top"><span>VIDEO / BLOCK</span><span>VIDEO</span></div>
+      <div class="screen">
+        <div class="frame">
+          <div class="frame-glow"></div>
+          <div class="frame-grid"></div>
+          <div class="frame-label">DRAG IMAGE ← SCRUB →</div>
+        </div>
+      </div>
+      <div class="timecode">00:00:17.042</div>
+      <div class="transport">
+        <span>◀ FRAME</span><span>▶ PLAY</span><span>FRAME ▶</span><span class="hot">BLADE</span><span>LOOP V</span>
+      </div>
+      <div class="module-row"><span>AUDIO</span><span>BLOCKS</span><span>NEW CLIP</span><span>EXPORT</span></div>
+      <div class="blocks-mini">
+        <div><i></i><b>01 / C01</b></div>
+        <div><i></i><b>02 / C02</b></div>
+        <div><i></i><b>03 / C01</b></div>
+        <div><i></i><b>04 / C03</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="statement">
+  <div class="section-index">01</div>
+  <div>
+    <div class="eyebrow">THE IDEA</div>
+    <h2>Cut first.<br>Arrange after.</h2>
+  </div>
+  <p>VideoBlock avoids the dense desktop timeline metaphor. One clip stays large on screen. You scrub on the picture, use the Blade at the exact point you want, then assemble the resulting pieces in the Blocks view.</p>
+</section>
+
+<section id="blocks" class="feature-section">
+  <div class="section-head">
+    <div class="section-index">02</div>
+    <div><div class="eyebrow">BLOCK EDITING</div><h2>Your edit is a sequence of blocks.</h2></div>
+  </div>
+
+  <div class="block-demo">
+    <div class="rail">
+      <article class="block-card"><div class="thumb t1"></div><div class="block-meta"><span>01</span><b>C01 · 4.28s</b></div></article>
+      <article class="block-card"><div class="thumb t2"></div><div class="block-meta"><span>02</span><b>C02 · 2.71s</b></div></article>
+      <article class="block-card selected"><div class="thumb t3"></div><div class="block-meta"><span>03</span><b>C01 · 6.14s</b></div></article>
+      <article class="block-card"><div class="thumb t4"></div><div class="block-meta"><span>04</span><b>C03 · 3.02s</b></div></article>
+    </div>
+    <div class="rail-caption"><span>LONG PRESS + DRAG</span><span>TAP = CUE</span><span>DELETE = NON-DESTRUCTIVE</span></div>
+  </div>
+
+  <div class="feature-grid">
+    <article><span class="num">01</span><h3>MULTI-CLIP</h3><p>Select multiple videos from Android storage and keep them inside one project.</p></article>
+    <article><span class="num">02</span><h3>BLADE</h3><p>Cut at the current playhead without turning the preview into a miniature timeline.</p></article>
+    <article><span class="num">03</span><h3>DRAG ORDER</h3><p>Reorder blocks by long-press and drag. Deleted blocks stay out of the sequence.</p></article>
+    <article><span class="num">04</span><h3>SEQUENCE EXPORT</h3><p>Render the current block order as one continuous video, using the first imported clip as the project canvas.</p></article>
+  </div>
+</section>
+
+<section id="audio" class="audio-section">
+  <div class="section-head">
+    <div class="section-index">03</div>
+    <div><div class="eyebrow">AUDIO / SYNC / EDIT</div><h2>External audio is a project track.</h2></div>
+  </div>
+
+  <div class="wave-console">
+    <div class="wave-label"><span>SEQUENCE · ORIGINAL BLOCKS</span><span>PROJECT AUDIO · GLOBAL</span></div>
+    <div class="wave-lane top-wave" aria-hidden="true"></div>
+    <div class="playhead"></div>
+    <div class="wave-lane bottom-wave" aria-hidden="true"></div>
+    <div class="markers"><span class="marker in">IN</span><span class="marker transient">TR</span><span class="marker out">OUT</span></div>
+    <div class="wave-controls"><span>AUTO SYNC</span><span>SNAP TR</span><span>SET IN</span><span>SET OUT</span><span>LOOP A</span><span>EXPORT WAV</span></div>
+  </div>
+
+  <div class="feature-grid two">
+    <article><h3>MANUAL SYNC</h3><p>Drag external audio against the block sequence, then fine-adjust it in milliseconds. Auto Sync is only a starting point.</p></article>
+    <article><h3>TRANSIENT SNAP</h3><p>Snap is optional. Leave it off for completely manual cuts, or jump to previous / next detected transients when useful.</p></article>
+    <article><h3>IN / OUT + LOOP</h3><p>Choose the exact beginning and end of an audio edit, loop that range and refine it while listening.</p></article>
+    <article><h3>AUDIO-ONLY EDITOR</h3><p>Import audio without any video, cut it into independent blocks and export the retained result as PCM WAV.</p></article>
+  </div>
+</section>
+
+<section id="projects" class="project-section">
+  <div class="section-head">
+    <div class="section-index">04</div>
+    <div><div class="eyebrow">PROJECT MEMORY</div><h2>Leave. Return. Keep the edit.</h2></div>
+  </div>
+  <div class="project-panel">
+    <div class="project-lines">
+      <span>CLIPS</span><b>03</b>
+      <span>VIDEO BLOCKS</span><b>09</b>
+      <span>AUDIO BLOCKS</span><b>05</b>
+      <span>PROJECT AUDIO</span><b>CONNECTED</b>
+      <span>AUTOSAVE</span><b>ACTIVE</b>
+    </div>
+    <div class="project-copy">
+      <p>Block order, deleted blocks, cuts, external audio, sync offset, normalization, audio IN/OUT, loop state and editor position are kept in project memory.</p>
+      <div class="project-buttons"><span>SAVE PROJECT</span><span>LOAD PROJECT</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="download" class="download-section">
+  <div class="section-head">
+    <div class="section-index">05</div>
+    <div><div class="eyebrow">ANDROID BUILDS</div><h2>Stable or current beta.</h2></div>
+  </div>
+  <div class="download-grid">
+    <article class="release-card stable">
+      <div class="release-type">STABLE</div>
+      <h3 data-release="stable_status">BETA 3.3</h3>
+      <p data-release="stable_notes">Persistent block projects, Save/Load, continuous sequence export and inverted direct scrub workflow.</p>
+      <a class="button primary" href="https://raw.githubusercontent.com/exsiderurgica/av-sync-clean/downloads/VideoBlock-stable.apk" download>DOWNLOAD STABLE APK</a>
+    </article>
+    <article class="release-card">
+      <div class="release-type">CURRENT BETA</div>
+      <h3 data-release="beta_status">BETA 3.6</h3>
+      <p data-release="beta_notes">Adds the standalone audio editor, transient snap, manual IN/OUT, PCM WAV export and independent video/audio loop modes.</p>
+      <a class="button" href="https://raw.githubusercontent.com/exsiderurgica/av-sync-clean/downloads/VideoBlock-beta.apk" download>DOWNLOAD BETA APK</a>
+    </article>
+  </div>
+  <p class="fineprint">Android may ask you to allow installation from your browser or file manager. VideoBlock is currently distributed directly as an APK.</p>
+</section>
+
+<section class="principles">
+  <div class="eyebrow">DESIGN PRINCIPLES</div>
+  <div class="principle-list">
+    <span>BIG PREVIEW</span><span>LOW-LATENCY TOUCH</span><span>BLOCKS OVER TIMELINES</span><span>PRECISE AUDIO</span><span>NON-DESTRUCTIVE PROJECTS</span>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div><b>VIDEOBLOCK</b> / EXSIDERURGICA</div>
+  <div class="footer-links"><a href="https://github.com/exsiderurgica/av-sync-clean/issues/new" target="_blank" rel="noopener">REPORT A BUG</a><a href="https://github.com/exsiderurgica/av-sync-clean" target="_blank" rel="noopener">SOURCE / PROJECT</a></div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
