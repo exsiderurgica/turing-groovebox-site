@@ -20,6 +20,11 @@
       "title": "SAMPLES",
       "src": "gallery/break.webp?v=beta6-b126",
       "alt": "TTG Beta 6 Samples page with Slice, VCF and Grain FX"
+    },
+    {
+      "title": "SAMPLE IMPORT",
+      "src": "gallery/sample-import.webp?v=beta6-b126",
+      "alt": "TTG Beta 6 sample import waveform editor with IN and OUT points"
     }
   ]
 }
