@@ -98,7 +98,7 @@ h3{letter-spacing:-.02em}
 .blocks-mini div{border:1px solid #1c3f2a;padding:6px;background:#061008}
 .blocks-mini i{display:block;height:48px;background:linear-gradient(145deg,#102319,#030706);border:1px solid #173b26}
 .blocks-mini b{display:block;margin-top:5px;color:#759080;font:600 7px ui-monospace,monospace}
-.statement,.feature-section,.audio-section,.project-section,.download-section,.principles{
+.statement,.feature-section,.audio-section,.project-section,.resource-section,.updates-section,.download-section,.support-section,.principles{
   padding:92px 0;border-bottom:1px solid var(--line)
 }
 .statement{display:grid;grid-template-columns:90px 1fr 1fr;gap:30px;align-items:start}
@@ -174,4 +174,22 @@ footer{padding:34px 0 50px;display:flex;justify-content:space-between;color:#667
   .rail{display:flex;overflow-x:auto}.block-card{min-width:190px}.rail-caption{gap:14px;overflow:auto}
   .release-card p{min-height:0}.wave-label{gap:20px}.wave-label span:last-child{text-align:right}
   footer{display:block}.footer-links{margin-top:16px;flex-wrap:wrap}
+}
+
+.resource-panel{display:grid;grid-template-columns:1.3fr .7fr;gap:1px;border:1px solid #244e34;background:#244e34}
+.resource-panel>div{background:#050b08;padding:30px}
+.resource-panel p,.updates-copy,.support-grid p{color:var(--muted);line-height:1.75;margin-top:0}
+.manual-index{display:flex;flex-direction:column;gap:1px}
+.manual-index span{padding:13px 14px;border:1px solid #1c412b;color:#91a89a;font:600 9px ui-monospace,monospace;letter-spacing:.09em}
+.signup{width:520px;max-width:100%;border:1px solid #244e34;background:#07100b;overflow:hidden}
+.signup-frame{height:255px;overflow:hidden;position:relative}
+.signup iframe{position:absolute;left:-59px;top:-36px;width:680px;height:520px;border:0;display:block;transform:scale(.82);transform-origin:0 0}
+.support-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.support-grid article{border:1px solid #244e34;background:#050b08;padding:30px}
+.support-grid h3{margin-top:0}
+@media(max-width:900px){.resource-panel{grid-template-columns:1fr}}
+@media(max-width:620px){
+  .statement,.feature-section,.audio-section,.project-section,.resource-section,.updates-section,.download-section,.support-section,.principles{padding:64px 0}
+  .support-grid{grid-template-columns:1fr}
+  .signup{width:100%}.signup-frame{height:236px}.signup iframe{left:-16px;top:-32px;width:calc((100% + 32px)/.78);height:560px;transform:scale(.78)}
 }
