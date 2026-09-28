@@ -1,25 +1,30 @@
 {
-  "set": "gallery-3142c6a3",
+  "set": "beta6-b126",
   "items": [
     {
       "title": "MIXER",
-      "src": "gallery/mixer.webp?v=3142c6a3",
-      "alt": "TTG mixer"
+      "src": "gallery/mixer.webp?v=beta6-b126",
+      "alt": "TTG Beta 6 mixer and performance controls"
     },
     {
       "title": "SOUND",
-      "src": "gallery/sound.webp?v=3142c6a3",
-      "alt": "TTG sound controls"
+      "src": "gallery/sound.webp?v=beta6-b126",
+      "alt": "TTG Beta 6 Sound page with K09 and T09"
     },
     {
       "title": "TURING",
-      "src": "gallery/turing.webp?v=3142c6a3",
-      "alt": "TTG Turing sequencers and LFOs"
+      "src": "gallery/turing.webp?v=beta6-b126",
+      "alt": "TTG Beta 6 Turing matrix with pattern shift"
     },
     {
-      "title": "BREAK",
-      "src": "gallery/break.webp?v=3142c6a3",
-      "alt": "TTG BREAK and BUS processor"
+      "title": "SAMPLES / SLICE",
+      "src": "gallery/samples-slice.webp?v=beta6-b126",
+      "alt": "TTG Beta 6 Slice mode with rhythm-safe Macro, VCF and Grain FX"
+    },
+    {
+      "title": "SAMPLE IMPORT",
+      "src": "gallery/sample-import.webp?v=beta6-b126",
+      "alt": "TTG Beta 6 sample import waveform editor with IN and OUT points"
     }
   ]
 }

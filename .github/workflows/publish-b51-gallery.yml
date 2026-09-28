@@ -1,4 +1,4 @@
-name: Update TTG gallery
+name: Update TTG Beta 6 gallery
 
 on:
   push:
@@ -8,6 +8,12 @@ on:
       - 'gallery_src/sound.*'
       - 'gallery_src/turing.*'
       - 'gallery_src/break.*'
+      - 'gallery_src/sample-import.*'
+      - 'gallery_src/sample_import.*'
+      - 'gallery_src/samples-slice.*'
+      - 'gallery_src/samples_slice.*'
+      - 'gallery_src/slice.*'
+      - 'gallery/samples-slice.webp'
   workflow_dispatch:
 
 permissions:
@@ -20,7 +26,6 @@ concurrency:
 jobs:
   update-gallery:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -48,26 +53,44 @@ jobs:
           out_tmp.mkdir(exist_ok=True)
           out_dir.mkdir(exist_ok=True)
 
-          names = ["mixer", "sound", "turing", "break"]
           allowed = {".png", ".jpg", ".jpeg", ".webp"}
+          specs = {
+              "mixer": ["mixer"],
+              "sound": ["sound"],
+              "turing": ["turing"],
+              # Legacy break.* is accepted as the Beta 6 Sample Import screen.
+              "sample-import": ["sample-import", "sample_import", "break"],
+          }
+          slice_aliases = ["samples-slice", "samples_slice", "slice"]
 
-          resolved = {}
-          for name in names:
-              matches = [
+          def matches_for(aliases):
+              return [
                   p for p in src_dir.iterdir()
                   if p.is_file()
-                  and p.stem.lower() == name
+                  and p.stem.lower() in aliases
                   and p.suffix.lower() in allowed
               ]
+
+          resolved = {}
+          for out_name, aliases in specs.items():
+              matches = matches_for(aliases)
               if len(matches) != 1:
                   raise SystemExit(
-                      f"{name}: expected exactly one source image, found {len(matches)}: "
+                      f"{out_name}: expected exactly one source image, found {len(matches)}: "
                       + ", ".join(p.name for p in matches)
                   )
-              resolved[name] = matches[0]
+              resolved[out_name] = matches[0]
 
-          built = {}
-          for name, src in resolved.items():
+          slice_matches = matches_for(slice_aliases)
+          if len(slice_matches) > 1:
+              raise SystemExit(
+                  "samples-slice: expected at most one source image, found "
+                  + str(len(slice_matches)) + ": " + ", ".join(p.name for p in slice_matches)
+              )
+          if slice_matches:
+              resolved["samples-slice"] = slice_matches[0]
+
+          def build_webp(name, src):
               with Image.open(src) as im:
                   im = ImageOps.exif_transpose(im)
                   w, h = im.size
@@ -76,51 +99,53 @@ jobs:
                   ratio = h / w
                   if not 1.8 <= ratio <= 2.5:
                       raise SystemExit(f"{name}: unexpected aspect ratio {w}x{h}")
-
                   if im.mode not in ("RGB", "RGBA"):
                       im = im.convert("RGBA" if "A" in im.getbands() else "RGB")
-
                   dest = out_tmp / f"{name}.webp"
                   im.save(dest, "WEBP", lossless=True, method=6, exact=True)
-
               with Image.open(dest) as check:
-                  if check.format != "WEBP":
-                      raise SystemExit(f"{name}: output is not WebP")
-                  if check.size != (w, h):
-                      raise SystemExit(
-                          f"{name}: resolution changed {w}x{h} -> {check.size[0]}x{check.size[1]}"
-                      )
+                  if check.format != "WEBP" or check.size != (w, h):
+                      raise SystemExit(f"{name}: invalid generated WebP")
+              if dest.stat().st_size < 15000:
+                  raise SystemExit(f"{name}: output suspiciously small ({dest.stat().st_size} bytes)")
+              return w, h, dest.stat().st_size
 
-              size = dest.stat().st_size
-              if size < 15000:
-                  raise SystemExit(f"{name}: output suspiciously small ({size} bytes)")
+          built = {}
+          for name, src in resolved.items():
+              built[name] = build_webp(name, src)
 
-              built[name] = {
-                  "width": w,
-                  "height": h,
-                  "bytes": size,
-              }
+          # If no dedicated Slice source was uploaded, preserve and validate
+          # the current approved Beta 6 Slice screenshot.
+          if "samples-slice" not in resolved:
+              existing = out_dir / "samples-slice.webp"
+              if not existing.exists():
+                  raise SystemExit("samples-slice: no source and no approved gallery/samples-slice.webp fallback")
+              with Image.open(existing) as im:
+                  w, h = im.size
+                  if im.format != "WEBP" or w < 600 or h < 1000:
+                      raise SystemExit("samples-slice: invalid approved fallback")
+              built["samples-slice"] = (w, h, existing.stat().st_size)
 
-          # Atomic publish: copy only after all four have passed.
-          for name in names:
+          # Publish generated files only after every source has passed.
+          for name in resolved:
               shutil.copy2(out_tmp / f"{name}.webp", out_dir / f"{name}.webp")
 
           version = os.environ.get("GITHUB_SHA", "local")[:8]
           data = {
-              "set": f"gallery-{version}",
+              "set": f"beta6-{version}",
               "items": [
-                  {"title": "MIXER",  "src": f"gallery/mixer.webp?v={version}",  "alt": "TTG mixer"},
-                  {"title": "SOUND",  "src": f"gallery/sound.webp?v={version}",  "alt": "TTG sound controls"},
-                  {"title": "TURING", "src": f"gallery/turing.webp?v={version}", "alt": "TTG Turing sequencers and LFOs"},
-                  {"title": "BREAK",  "src": f"gallery/break.webp?v={version}",  "alt": "TTG BREAK and BUS processor"},
+                  {"title": "MIXER", "src": f"gallery/mixer.webp?v={version}", "alt": "TTG Beta 6 mixer and performance controls"},
+                  {"title": "SOUND", "src": f"gallery/sound.webp?v={version}", "alt": "TTG Beta 6 Sound page with K09 and T09"},
+                  {"title": "TURING", "src": f"gallery/turing.webp?v={version}", "alt": "TTG Beta 6 Turing matrix with pattern shift"},
+                  {"title": "SAMPLES / SLICE", "src": f"gallery/samples-slice.webp?v={version}", "alt": "TTG Beta 6 Slice mode with VCF and Grain FX"},
+                  {"title": "SAMPLE IMPORT", "src": f"gallery/sample-import.webp?v={version}", "alt": "TTG Beta 6 sample import waveform editor"},
               ],
           }
           Path("screenshots.json").write_text(json.dumps(data, indent=2) + "\n")
 
-          print("Gallery build OK")
-          for name in names:
-              b = built[name]
-              print(f"{name}: {b['width']}x{b['height']} - {b['bytes']} bytes")
+          print("Beta 6 gallery build OK")
+          for name, (w, h, size) in built.items():
+              print(f"{name}: {w}x{h} - {size} bytes")
           PY
 
       - name: Commit generated gallery
@@ -129,10 +154,11 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add gallery/mixer.webp gallery/sound.webp gallery/turing.webp gallery/break.webp screenshots.json
+          git add gallery/mixer.webp gallery/sound.webp gallery/turing.webp \
+                  gallery/sample-import.webp gallery/samples-slice.webp screenshots.json
           if git diff --cached --quiet; then
             echo "Gallery already up to date."
             exit 0
           fi
-          git commit -m 'site: update gallery from source screenshots'
+          git commit -m 'site: update Beta 6 gallery from source screenshots'
           git push

@@ -1,13 +1,13 @@
 {
-  "status": "BETA 5",
-  "version": "0.5.0-beta.5-b93-parameter-labels",
-  "build": "B93",
-  "apk": "TTG-BETA5.apk",
-  "sha256": "5312710e75d2cb167e6889aa79e48a90790553076c2f8980e2ff466c274135bb",
-  "published": "2026-09-22",
-  "source_commit": "1cbbf309e4e302d57bdd294240412a488d637fea",
+  "status": "BETA 6",
+  "version": "0.6.0-beta.6-b126-stable",
+  "build": "B126",
+  "apk": "TTG-BETA6.apk",
+  "sha256": "0ea39db3f2fb3622edf01d71fb6271370420118f9c172412e3e988ac6d9b0360",
+  "published": "2026-09-28",
+  "source_commit": "3167f38325edd318522a12bdf408b526e11c3851",
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "B93 is the current stable Beta 5. It includes dual Plaits-based Macro A/B engines, the Rings-style Resonator, expanded 909 percussion, Turing CV routing, improved MIDI and Ableton Link synchronization, project save/load, USB Direct and master split routing, remote-control support, plus the latest parameter-label corrections."
+  "notes": "B126 is the current stable Beta 6. Major additions since Beta 5 include sample and loop import with waveform IN/OUT editing, rhythm-safe Slice Macro, Clouds-based Grain FX with routing and bypass, K09/T09 kick and tom models, independent Oneshot pitch/volume, per-lane Turing pattern shift, improved decay response and extensive audio/filter stability fixes."
 }
