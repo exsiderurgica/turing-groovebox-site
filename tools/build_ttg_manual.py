@@ -175,7 +175,7 @@ feature_page(c,5,"05 / SAMPLES","Samples, slicing and Grain FX",
 ("Oneshot / Direct","Closed Hat, Open Hat, Crash and Ride each have independent volume and pitch controls."),
 ("VCF","The left module is the VCF: BYPASS, LEVEL IN, CUT, RES, PUNCH and HP/LP."),
 ("Grain FX","The right module is the Clouds-based Grain FX: BYPASS, LEVEL IN, POS, DENS, SIZE, TEXT, PITCH, WET, STEREO, FDBK, REVERB and FREEZE.")
-],"gallery_src/break.png")
+],"gallery/samples-slice.webp")
 
 feature_page(c,6,"06 / SYNC","Clock, MIDI and Ableton Link",
 "TTG can run from its internal clock, external MIDI clock or Ableton Link while keeping performance switching on musical boundaries.",
