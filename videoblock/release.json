@@ -1,0 +1,9 @@
+{
+  "stable_status": "BETA 3.3",
+  "stable_version": "0.3.3",
+  "stable_notes": "Persistent block projects, Save/Load, continuous sequence export and inverted direct scrub workflow.",
+  "beta_status": "BETA 3.6",
+  "beta_version": "0.3.6",
+  "beta_notes": "Adds the standalone audio editor, transient snap, manual IN/OUT, PCM WAV export and independent video/audio loop modes.",
+  "platform": "Android"
+}
