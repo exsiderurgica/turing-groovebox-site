@@ -1,24 +1,24 @@
 {
-  "set": "beta6-b126",
+  "set": "beta6-df7db443",
   "items": [
     {
       "title": "MIXER",
-      "src": "gallery/mixer.webp?v=beta6-b126",
+      "src": "gallery/mixer.webp?v=df7db443",
       "alt": "TTG Beta 6 mixer and performance controls"
     },
     {
       "title": "SOUND",
-      "src": "gallery/sound.webp?v=beta6-b126",
+      "src": "gallery/sound.webp?v=df7db443",
       "alt": "TTG Beta 6 Sound page with K09 and T09"
     },
     {
       "title": "TURING",
-      "src": "gallery/turing.webp?v=beta6-b126",
+      "src": "gallery/turing.webp?v=df7db443",
       "alt": "TTG Beta 6 Turing matrix with pattern shift"
     },
     {
       "title": "SAMPLES",
-      "src": "gallery/break.webp?v=beta6-b126",
+      "src": "gallery/break.webp?v=df7db443",
       "alt": "TTG Beta 6 Samples page with sample import, VCF and Grain FX"
     }
   ]
