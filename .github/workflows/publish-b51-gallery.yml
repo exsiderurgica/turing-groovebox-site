@@ -8,12 +8,7 @@ on:
       - 'gallery_src/sound.*'
       - 'gallery_src/turing.*'
       - 'gallery_src/break.*'
-      - 'gallery_src/sample-import.*'
-      - 'gallery_src/sample_import.*'
-      - 'gallery_src/samples-slice.*'
-      - 'gallery_src/samples_slice.*'
-      - 'gallery_src/slice.*'
-      - 'gallery/samples-slice.webp'
+      - '.github/workflows/publish-b51-gallery.yml'
   workflow_dispatch:
 
 permissions:
@@ -58,10 +53,9 @@ jobs:
               "mixer": ["mixer"],
               "sound": ["sound"],
               "turing": ["turing"],
-              # Legacy break.* is accepted as the Beta 6 Sample Import screen.
-              "sample-import": ["sample-import", "sample_import", "break"],
+              # Legacy break.* is the current Beta 6 SAMPLES page screenshot.
+              "break": ["break"],
           }
-          slice_aliases = ["samples-slice", "samples_slice", "slice"]
 
           def matches_for(aliases):
               return [
@@ -80,15 +74,6 @@ jobs:
                       + ", ".join(p.name for p in matches)
                   )
               resolved[out_name] = matches[0]
-
-          slice_matches = matches_for(slice_aliases)
-          if len(slice_matches) > 1:
-              raise SystemExit(
-                  "samples-slice: expected at most one source image, found "
-                  + str(len(slice_matches)) + ": " + ", ".join(p.name for p in slice_matches)
-              )
-          if slice_matches:
-              resolved["samples-slice"] = slice_matches[0]
 
           def build_webp(name, src):
               with Image.open(src) as im:
@@ -110,23 +95,8 @@ jobs:
                   raise SystemExit(f"{name}: output suspiciously small ({dest.stat().st_size} bytes)")
               return w, h, dest.stat().st_size
 
-          built = {}
-          for name, src in resolved.items():
-              built[name] = build_webp(name, src)
+          built = {name: build_webp(name, src) for name, src in resolved.items()}
 
-          # If no dedicated Slice source was uploaded, preserve and validate
-          # the current approved Beta 6 Slice screenshot.
-          if "samples-slice" not in resolved:
-              existing = out_dir / "samples-slice.webp"
-              if not existing.exists():
-                  raise SystemExit("samples-slice: no source and no approved gallery/samples-slice.webp fallback")
-              with Image.open(existing) as im:
-                  w, h = im.size
-                  if im.format != "WEBP" or w < 600 or h < 1000:
-                      raise SystemExit("samples-slice: invalid approved fallback")
-              built["samples-slice"] = (w, h, existing.stat().st_size)
-
-          # Publish generated files only after every source has passed.
           for name in resolved:
               shutil.copy2(out_tmp / f"{name}.webp", out_dir / f"{name}.webp")
 
@@ -137,8 +107,7 @@ jobs:
                   {"title": "MIXER", "src": f"gallery/mixer.webp?v={version}", "alt": "TTG Beta 6 mixer and performance controls"},
                   {"title": "SOUND", "src": f"gallery/sound.webp?v={version}", "alt": "TTG Beta 6 Sound page with K09 and T09"},
                   {"title": "TURING", "src": f"gallery/turing.webp?v={version}", "alt": "TTG Beta 6 Turing matrix with pattern shift"},
-                  {"title": "SAMPLES / SLICE", "src": f"gallery/samples-slice.webp?v={version}", "alt": "TTG Beta 6 Slice mode with VCF and Grain FX"},
-                  {"title": "SAMPLE IMPORT", "src": f"gallery/sample-import.webp?v={version}", "alt": "TTG Beta 6 sample import waveform editor"},
+                  {"title": "SAMPLES", "src": f"gallery/break.webp?v={version}", "alt": "TTG Beta 6 Samples page with sample import, VCF and Grain FX"},
               ],
           }
           Path("screenshots.json").write_text(json.dumps(data, indent=2) + "\n")
@@ -154,8 +123,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add gallery/mixer.webp gallery/sound.webp gallery/turing.webp \
-                  gallery/sample-import.webp gallery/samples-slice.webp screenshots.json
+          git add gallery/mixer.webp gallery/sound.webp gallery/turing.webp gallery/break.webp screenshots.json
           if git diff --cached --quiet; then
             echo "Gallery already up to date."
             exit 0
