@@ -4,15 +4,9 @@ on:
   push:
     paths:
       - 'tools/build_ttg_manual.py'
-      - 'TTG-DEV-BETA2-Mixer.jpg'
-      - 'TTG-DEV-BETA2-Sound.jpg'
-      - 'TTG-DEV-BETA2-Turing.jpg'
-      - 'TTG-DEV-BETA2-Break.jpg'
-      - 'Screenshot_20260910-015633.png'
-      - 'Screenshot_20260910-014315.png'
-      - 'Screenshot_20260910-015644.png'
-      - 'Screenshot_20260910-015638.png'
-      - 'Screenshot_20260910-015635.png'
+      - 'manual/index.html'
+      - 'release.json'
+      - 'gallery_src/**'
       - '.github/workflows/build-ttg-manual.yml'
   workflow_dispatch:
 
@@ -27,19 +21,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install reportlab
-      - run: |
+      - run: pip install reportlab pillow
+      - name: Build Beta 6 manual
+        run: |
+          set -euo pipefail
           python tools/build_ttg_manual.py
-          if [ -f TTG-DEV-BETA3.apk ]; then
-            sha256sum TTG-DEV-BETA3.apk > SHA256.txt
-          else
-            : > SHA256.txt
-          fi
+          test -s TTG-Manual.pdf
+          test -s TTG-BETA6.apk
+          sha256sum TTG-BETA6.apk > SHA256.txt
           sha256sum TTG-Manual.pdf >> SHA256.txt
-      - name: Commit PDF
+      - name: Commit PDF and checksums
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add TTG-Manual.pdf SHA256.txt
-          git diff --cached --quiet || git commit -m "Build DEV Beta 3 manual PDF"
-          git push
+          git diff --cached --quiet || git commit -m "Build TTG Beta 6 manual PDF"
+          git push origin HEAD:${GITHUB_REF_NAME}
