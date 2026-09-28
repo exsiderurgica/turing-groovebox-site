@@ -17,14 +17,9 @@
       "alt": "TTG Beta 6 Turing matrix with pattern shift"
     },
     {
-      "title": "SAMPLES / SLICE",
-      "src": "gallery/samples-slice.webp?v=beta6-b126",
-      "alt": "TTG Beta 6 Slice mode with rhythm-safe Macro, VCF and Grain FX"
-    },
-    {
-      "title": "SAMPLE IMPORT",
-      "src": "gallery/sample-import.webp?v=beta6-b126",
-      "alt": "TTG Beta 6 sample import waveform editor with IN and OUT points"
+      "title": "SAMPLES",
+      "src": "gallery/break.webp?v=beta6-b126",
+      "alt": "TTG Beta 6 Samples page with sample import, VCF and Grain FX"
     }
   ]
 }
