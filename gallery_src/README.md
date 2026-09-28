@@ -1,15 +1,15 @@
-# TTG gallery source
+# TTG gallery source screenshots
 
-Upload exactly four screenshots here from GitHub on your phone.
+Upload clean, full-height TTG screenshots here. The gallery workflow validates them and publishes WebP copies to `gallery/`.
 
-Accepted names:
-- mixer.png / mixer.jpg / mixer.jpeg / mixer.webp
-- sound.png / sound.jpg / sound.jpeg / sound.webp
-- turing.png / turing.jpg / turing.jpeg / turing.webp
-- break.png / break.jpg / break.jpeg / break.webp
+## Beta 6 source names
 
-Rules:
-- Keep the screenshot at its original resolution.
-- Do not pre-compress aggressively.
-- Replace the four files and commit once.
-- The GitHub Action will generate the public WebP gallery automatically.
+- `mixer.png` (or jpg/webp)
+- `sound.png`
+- `turing.png`
+- `sample-import.png` — the old `break.png` filename is still accepted for compatibility
+- `samples-slice.png` — optional; if absent, the approved Slice screenshot already in `gallery/samples-slice.webp` is preserved
+
+The public gallery contains **MIXER, SOUND, TURING, SAMPLES / SLICE, SAMPLE IMPORT**.
+
+On the Samples page, the **left processor is VCF** and the **right processor is GRAIN FX**.
