@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050807">
+<meta name="description" content="VideoBlock online manual — block-based Android video and audio editing.">
+<title>VideoBlock — Online Manual</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../app.css">
+<style>
+.manual-wrap{width:min(980px,calc(100% - 44px));margin:auto;padding:70px 0 100px}
+.manual-hero{padding-bottom:50px;border-bottom:1px solid var(--line)}
+.manual-hero h1{font-size:clamp(48px,8vw,86px)}
+.manual-nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.manual-nav a{padding:9px 11px;border:1px solid #214d32;text-decoration:none;color:#9eb5a5;font:600 8px ui-monospace,monospace;letter-spacing:.08em}
+.manual-section{padding:54px 0;border-bottom:1px solid var(--line)}
+.manual-section h2{font-size:clamp(28px,4vw,48px);margin-bottom:22px}
+.manual-section h3{margin:30px 0 8px;font-size:16px}
+.manual-section p,.manual-section li{color:#95aa9d;line-height:1.75;font-size:14px}
+.manual-section ul{padding-left:20px}
+.manual-callout{border:1px solid #244e34;background:#050b08;padding:22px;margin:22px 0;color:#a9bdaf;line-height:1.7}
+.manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.manual-card{border:1px solid #1e452e;background:#050b08;padding:22px}
+.manual-card b{display:block;color:var(--green2);font:700 10px ui-monospace,monospace;letter-spacing:.08em;margin-bottom:8px}
+.key{display:inline-block;border:1px solid #28593c;padding:3px 7px;color:#c9ded0;font:700 9px ui-monospace,monospace}
+.manual-footer{display:flex;flex-wrap:wrap;gap:9px;padding-top:34px}
+@media(max-width:680px){.manual-grid{grid-template-columns:1fr}.manual-wrap{width:calc(100% - 28px);padding-top:48px}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="../"><span class="brand-mark"></span><span>VIDEOBLOCK</span></a>
+  <div class="nav-links"><a href="../">SITE</a><a href="../#updates">UPDATES</a><a href="../#download">DOWNLOAD</a></div>
+</nav>
+
+<main class="manual-wrap">
+<section class="manual-hero">
+  <div class="eyebrow">VIDEOBLOCK / ONLINE MANUAL / BETA 3.6</div>
+  <h1>DIRECT EDITING.<br>BLOCK LOGIC.</h1>
+  <p class="lead">This manual covers the current VideoBlock workflow: video clips, Blade cuts, Blocks, multi-clip sequences, external audio sync, standalone audio editing, transient snap, IN/OUT, loop modes, project persistence and export.</p>
+  <div class="manual-nav">
+    <a href="#quick">QUICK START</a><a href="#video">VIDEO</a><a href="#blocks">BLOCKS</a><a href="#audio-sync">AUDIO SYNC</a><a href="#audio-edit">AUDIO EDIT</a><a href="#projects">PROJECTS</a><a href="#export">EXPORT</a>
+  </div>
+</section>
+
+<section id="quick" class="manual-section">
+  <div class="eyebrow">01 / QUICK START</div>
+  <h2>From media to sequence.</h2>
+  <div class="manual-grid">
+    <div class="manual-card"><b>IMPORT VIDEO</b><p>Use NEW CLIP to select one or more videos. The first imported video becomes the project canvas reference for sequence export.</p></div>
+    <div class="manual-card"><b>SCRUB</b><p>Drag directly on the preview image. VideoBlock treats the picture itself as the navigation surface.</p></div>
+    <div class="manual-card"><b>BLADE</b><p>Place the playhead, then press BLADE. The current clip is divided into logical Blocks without destroying the original source file.</p></div>
+    <div class="manual-card"><b>ARRANGE</b><p>Open BLOCKS, tap a Block to cue it, long-press and drag to reorder, or DELETE to remove it from the active sequence.</p></div>
+  </div>
+</section>
+
+<section id="video" class="manual-section">
+  <div class="eyebrow">02 / VIDEO</div>
+  <h2>Navigate on the image.</h2>
+  <h3>Direct scrub</h3>
+  <p>Drag horizontally on the preview to move the playhead. The scrub direction follows the current inverted VideoBlock navigation model: dragging the content right moves back in time; dragging left moves forward.</p>
+  <h3>Frame controls</h3>
+  <p><span class="key">◀ FRAME</span> and <span class="key">FRAME ▶</span> move in frame-sized steps based on the detected frame rate of the active clip.</p>
+  <h3>Blade</h3>
+  <p><span class="key">BLADE</span> cuts the active video clip at the current playhead. When an existing kept Block is split, VideoBlock preserves the current sequence order and keeps previously deleted Blocks deleted.</p>
+  <h3>Video loop</h3>
+  <p><span class="key">LOOP V</span> loops the active Block when a Block has been cued. If no Block is active, it loops the current clip. During multi-clip SYNC PLAY, LOOP V repeats the complete Blocks sequence.</p>
+</section>
+
+<section id="blocks" class="manual-section">
+  <div class="eyebrow">03 / BLOCKS</div>
+  <h2>The edit lives here.</h2>
+  <p>The Blocks page is the sequence editor. It remains in project memory instead of being rebuilt every time you return from a clip.</p>
+  <ul>
+    <li><b>Tap a Block</b> — cues its first frame in the preview.</li>
+    <li><b>Long press + drag</b> — changes sequence order.</li>
+    <li><b>DELETE</b> — removes the Block from the sequence without deleting the source media.</li>
+    <li><b>EXPORT</b> — exports an individual Block.</li>
+    <li><b>EXPORT SEQUENCE</b> — exports the current order as one continuous movie.</li>
+    <li><b>RESET ORDER</b> — restores the source Blocks to the full sequence.</li>
+  </ul>
+  <div class="manual-callout">Adding a new clip no longer destroys the edit already prepared. New source material is appended while the current kept/deleted Block state is preserved.</div>
+</section>
+
+<section id="audio-sync" class="manual-section">
+  <div class="eyebrow">04 / AUDIO SYNC</div>
+  <h2>One external track under the project.</h2>
+  <p>External audio is a project-level track. With one video clip, the Audio page behaves as a clip sync view. With multiple video clips, the upper waveform represents the entire current Blocks sequence while the external audio continues underneath it.</p>
+  <h3>Import and sync</h3>
+  <p>Use <span class="key">IMPORT AUDIO</span> for the external track. <span class="key">AUTO SYNC</span> can estimate an offset, while manual waveform drag and the ±1 / ±10 ms controls provide fine alignment.</p>
+  <h3>SYNC PLAY</h3>
+  <p>In a multi-clip project, SYNC PLAY follows the current Block order while keeping the external audio continuous instead of restarting it at every Block boundary.</p>
+  <h3>Normalization</h3>
+  <p>Original and external audio normalization are independent and disabled by default. Enable only the track that needs it.</p>
+</section>
+
+<section id="audio-edit" class="manual-section">
+  <div class="eyebrow">05 / AUDIO EDITOR</div>
+  <h2>VideoBlock can work as an audio editor.</h2>
+  <p>You can import external audio even without loading a video. In audio edit mode, the waveform becomes the main editing surface.</p>
+  <h3>Manual cut vs transient snap</h3>
+  <p><span class="key">SNAP TR OFF</span> leaves the playhead completely free. Place it manually — including between transients — and press <span class="key">BLADE AUDIO</span> to cut exactly there. With <span class="key">SNAP TR ON</span>, release after scrub and VideoBlock can move the playhead to the nearest detected transient.</p>
+  <p><span class="key">◀ TR</span> and <span class="key">TR ▶</span> jump directly to the previous or next detected transient.</p>
+  <h3>IN / OUT</h3>
+  <p><span class="key">SET IN</span> defines the retained audio start. <span class="key">SET OUT</span> defines the retained audio end. Both markers are independent of transient detection and can be placed manually. <span class="key">CLEAR I/O</span> restores the full source range.</p>
+  <h3>Audio loop</h3>
+  <p><span class="key">LOOP A</span> continuously repeats the current IN → OUT range. This is useful for refining an attack or ending by ear before committing a cut or export.</p>
+  <h3>Audio Blocks</h3>
+  <p>AUDIO BLOCKS are independent from video Blocks. They can be cued, deleted from the audio edit and individually exported.</p>
+</section>
+
+<section id="projects" class="manual-section">
+  <div class="eyebrow">06 / PROJECTS</div>
+  <h2>Save the edit, not only the files.</h2>
+  <p><span class="key">SAVE PROJECT</span> writes a VideoBlock project file. <span class="key">LOAD PROJECT</span> restores it. VideoBlock also keeps an internal autosave.</p>
+  <p>Project state includes source clip references, Blade positions, current Block order, deleted Blocks, external audio reference, sync offset, volumes, normalization, audio cuts, audio IN/OUT, audio/video loop state, editor position and related UI state.</p>
+  <div class="manual-callout">Project files reference the original media. They do not embed the source videos or audio, so keep the original files available on the device.</div>
+</section>
+
+<section id="export" class="manual-section">
+  <div class="eyebrow">07 / EXPORT</div>
+  <h2>Video and audio exports.</h2>
+  <h3>Video sequence</h3>
+  <p>Sequence export creates one continuous output stream. The first imported video defines the project display canvas; other source Blocks are adapted to that canvas with aspect ratio preserved when necessary.</p>
+  <h3>External/project audio</h3>
+  <p>Video sequence export follows the current project audio configuration, including external audio placement and the active original/external mix settings.</p>
+  <h3>PCM WAV</h3>
+  <p>The standalone audio editor exports PCM WAV without adding another lossy codec stage. When the source is MP3 or M4A, the result is the decoded PCM audio rather than a bit-for-bit copy of the compressed source.</p>
+</section>
+
+<section class="manual-section">
+  <div class="eyebrow">08 / HELP</div>
+  <h2>Support and bug reports.</h2>
+  <p>For a useful bug report, include the phone model, Android version, whether the project is single-clip or multi-clip, the source media type and the shortest repeatable sequence of actions that produces the issue.</p>
+  <div class="manual-footer">
+    <a class="button primary" href="https://github.com/exsiderurgica/av-sync-clean/issues/new" target="_blank" rel="noopener">REPORT A BUG</a>
+    <a class="button" href="https://paypal.me/Exsiderurgica" target="_blank" rel="noopener">SUPPORT / DONATE</a>
+    <a class="button" href="../#updates">VIDEOBLOCK NEWSLETTER</a>
+    <a class="button" href="../#download">DOWNLOAD BUILDS</a>
+  </div>
+</section>
+</main>
+</body>
+</html>
