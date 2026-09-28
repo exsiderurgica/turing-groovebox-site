@@ -129,4 +129,5 @@ jobs:
             exit 0
           fi
           git commit -m 'site: update Beta 6 gallery from source screenshots'
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main
