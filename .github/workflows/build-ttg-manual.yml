@@ -7,6 +7,7 @@ on:
       - 'manual/index.html'
       - 'release.json'
       - 'gallery_src/**'
+      - 'gallery/samples-slice.webp'
       - '.github/workflows/build-ttg-manual.yml'
   workflow_dispatch:
 
