@@ -32,5 +32,56 @@ function closeGallery(){lightbox.classList.remove('open','zoomed');lightbox.setA
 function nextGallery(d){showGallery(galleryIndex+d)}
 document.getElementById('lightboxClose').addEventListener('click',closeGallery);document.getElementById('lightboxPrev').addEventListener('click',()=>nextGallery(-1));document.getElementById('lightboxNext').addEventListener('click',()=>nextGallery(1));lbImg.addEventListener('click',e=>{e.stopPropagation();lightbox.classList.toggle('zoomed')});document.getElementById('lightboxStage').addEventListener('click',e=>{if(e.target.id==='lightboxStage')closeGallery()});lightbox.addEventListener('touchstart',e=>{touchStartX=e.changedTouches[0].screenX},{passive:true});lightbox.addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-touchStartX;if(Math.abs(dx)>50)nextGallery(dx<0?1:-1)},{passive:true});document.addEventListener('keydown',e=>{if(!lightbox.classList.contains('open'))return;if(e.key==='Escape')closeGallery();if(e.key==='ArrowRight')nextGallery(1);if(e.key==='ArrowLeft')nextGallery(-1)});
 (async()=>{try{const s=await fetch('screenshots.json?ts='+Date.now(),{cache:'no-store'});if(s.ok){const j=await s.json();if(Array.isArray(j.items)&&j.items.length)renderGallery(j.items)}}catch(e){}if(!galleryItems.length)renderGallery([{title:'MIXER',src:'gallery/mixer.webp?v=beta6-b126'},{title:'SOUND',src:'gallery/sound.webp?v=beta6-b126'},{title:'TURING',src:'gallery/turing.webp?v=beta6-b126'},{title:'SAMPLES',src:'gallery/break.webp?v=beta6-b126'}]);try{const r=await fetch('release.json?ts='+Date.now(),{cache:'no-store'});if(!r.ok)return;const d=await r.json();document.querySelectorAll('[data-release]').forEach(el=>{const k=el.dataset.release;if(d[k])el.textContent=d[k]});if(d.apk){document.getElementById('apkDownload').href=d.apk;document.getElementById('apkDownload2').href=d.apk}if(d.notes)document.getElementById('releaseNotes').textContent=d.notes}catch(e){}})();
+
+(()=>{
+  const PAYPAL_URL='https://paypal.me/Exsiderurgica';
+  let pendingDownload='';
+  const style=document.createElement('style');
+  style.textContent=`
+    .donation-gate{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;padding:20px}
+    .donation-gate.open{display:flex}
+    .donation-card{width:min(520px,100%);background:#101114;color:#f1f1f1;border:1px solid #34363c;padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+    .donation-card h2{margin:0 0 10px;font-size:28px;line-height:1.05}
+    .donation-card p{margin:0 0 20px;color:#a5a8af;line-height:1.5}
+    .donation-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .donation-actions button{appearance:none;border:1px solid #34363c;background:transparent;color:#fff;padding:14px 16px;font:inherit;font-weight:800;cursor:pointer}
+    .donation-actions .donate{background:#f04d43;color:#fff;border-color:#f04d43}
+    .donation-note{margin-top:12px!important;font-size:12px;color:#777b84!important}
+    @media(max-width:560px){.donation-actions{grid-template-columns:1fr}}
+  `;
+  document.head.appendChild(style);
+  const gate=document.createElement('div');
+  gate.className='donation-gate';
+  gate.innerHTML=`<div class="donation-card" role="dialog" aria-modal="true" aria-labelledby="donationTitle"><h2 id="donationTitle">TTG is free.</h2><p>If it is useful to you, would you like to support development before downloading?</p><div class="donation-actions"><button class="donate" type="button">DONATE WITH PAYPAL</button><button class="free" type="button">NO THANKS — DOWNLOAD FREE</button></div><p class="donation-note">Donation is completely optional. Both choices give access to the same APK.</p></div>`;
+  document.body.appendChild(gate);
+  const startDownload=()=>{
+    if(!pendingDownload)return;
+    const url=pendingDownload;
+    pendingDownload='';
+    gate.classList.remove('open');
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  ['apkDownload','apkDownload2'].forEach(id=>{
+    const a=document.getElementById(id);
+    if(!a)return;
+    a.addEventListener('click',e=>{
+      e.preventDefault();
+      pendingDownload=a.href;
+      gate.classList.add('open');
+    });
+  });
+  gate.querySelector('.free').addEventListener('click',startDownload);
+  gate.querySelector('.donate').addEventListener('click',()=>{
+    window.open(PAYPAL_URL,'_blank','noopener,noreferrer');
+    setTimeout(startDownload,250);
+  });
+  gate.addEventListener('click',e=>{if(e.target===gate){gate.classList.remove('open');pendingDownload='';}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){gate.classList.remove('open');pendingDownload='';}});
+})();
 </script>
 </body></html>
