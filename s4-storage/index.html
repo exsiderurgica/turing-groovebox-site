@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f4e7d6">
+  <meta name="description" content="S4 Storage — a free Android file manager companion for Torso Electronics S-4.">
+  <title>S4 Storage</title>
+  <style>
+    :root{--bg:#f4e7d6;--ink:#262626;--muted:#70675d;--panel:#f8eddf;--line:#262626;--shadow:rgba(38,38,38,.12)}
+    *{box-sizing:border-box}html{background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{margin:0;min-height:100vh;background:var(--bg)}
+    .wrap{width:min(920px,calc(100% - 32px));margin:0 auto;padding:48px 0 36px}header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:28px;border-bottom:2px solid var(--line)}
+    .brand{font-weight:900;letter-spacing:.04em;font-size:clamp(20px,3vw,28px)}.version{border:2px solid var(--line);padding:7px 10px;border-radius:8px;font-size:12px;font-weight:800;letter-spacing:.06em;background:var(--panel)}
+    main{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;padding:48px 0 30px}h1{font-size:clamp(42px,8vw,86px);line-height:.9;letter-spacing:-.06em;margin:0 0 24px;max-width:700px}.lead{font-size:clamp(17px,2.4vw,22px);line-height:1.45;max-width:640px;margin:0 0 28px;color:#3d3935}
+    .actions{display:flex;flex-wrap:wrap;gap:12px}button{appearance:none;border:2px solid var(--line);border-radius:10px;padding:14px 18px;background:transparent;color:var(--ink);font:inherit;font-weight:900;letter-spacing:.035em;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}button:hover{transform:translateY(-2px);box-shadow:0 7px 0 var(--shadow)}.primary{background:var(--ink);color:var(--bg)}
+    .device{border:2px solid var(--line);border-radius:16px;background:var(--panel);padding:16px;box-shadow:10px 10px 0 var(--shadow);align-self:start}.device-top{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--line);padding-bottom:12px;margin-bottom:12px;font-size:12px;font-weight:900;letter-spacing:.06em}.row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 0;border-bottom:1px solid rgba(38,38,38,.22);font-size:13px}.row:last-child{border-bottom:0}.row b{font-size:12px}.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;height:max-content}
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px 0 42px}.feature{border-top:2px solid var(--line);padding-top:12px;font-size:14px;line-height:1.45}.feature strong{display:block;margin-bottom:5px}footer{border-top:2px solid var(--line);padding-top:18px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;font-size:12px;line-height:1.5;color:var(--muted)}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(38,38,38,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal-backdrop.open{display:flex}.modal{width:min(520px,100%);background:var(--bg);border:2px solid var(--line);border-radius:16px;padding:24px;box-shadow:12px 12px 0 rgba(38,38,38,.28)}.modal h2{margin:0 0 10px;font-size:28px;letter-spacing:-.035em}.modal p{margin:0 0 20px;line-height:1.5;color:#46413c}.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.small{font-size:11px;color:var(--muted);margin-top:13px!important}
+    @media(max-width:720px){.wrap{padding-top:26px}main{grid-template-columns:1fr;padding-top:34px}.features{grid-template-columns:1fr}.modal-actions{grid-template-columns:1fr}header{align-items:flex-start}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="brand">S4 STORAGE</div><div class="version">ANDROID · v0.6.2</div></header>
+<main>
+<section><h1>YOUR S-4 FILES.<br>ON ANDROID.</h1><p class="lead">A small, free companion for browsing and managing the storage of your Torso Electronics S-4 directly from Android.</p><div class="actions"><button id="downloadBtn" class="primary" type="button">DOWNLOAD APK</button></div></section>
+<aside class="device"><div class="device-top"><span>S-4 / STORAGE</span><span>CONNECTED</span></div><div class="row"><div><b>SAMPLES</b><br>folder</div><span class="tag">OPEN</span></div><div class="row"><div><b>PhaseDebt_139BPM.wav</b><br>audio file</div><span class="tag">MOVE</span></div><div class="row"><div><b>TEST ANDROID</b><br>folder</div><span class="tag">PASTE HERE</span></div><div class="row"><div><b>LAST ACTION</b><br>move file</div><span class="tag">UNDO</span></div></aside>
+</main>
+<section class="features"><div class="feature"><strong>FILE MANAGEMENT</strong>Browse, create folders, rename, copy and move files.</div><div class="feature"><strong>DRAG + UNDO</strong>Move files by drag and drop and undo the latest operation.</div><div class="feature"><strong>IMPORT / EXPORT</strong>Transfer files and safely eject the connected S-4 storage.</div></section>
+<footer><span>Free download. Optional donations support continued development.</span><span>Independent companion project. Not affiliated with or endorsed by Torso Electronics.</span></footer>
+</div>
+<div class="modal-backdrop" id="donationModal" role="dialog" aria-modal="true" aria-labelledby="donationTitle"><div class="modal"><h2 id="donationTitle">S4 Storage is free.</h2><p>If it is useful to you, would you like to support development before downloading?</p><div class="modal-actions"><button id="donateDownload" class="primary" type="button">DONATE + DOWNLOAD</button><button id="freeDownload" type="button">NO THANKS — DOWNLOAD FREE</button></div><p class="small">Donation is completely optional. Both choices download the same APK.</p></div></div>
+<script>
+const APK_URL='./S4-Storage-latest.apk',PAYPAL_URL='https://paypal.me/Exsiderurgica',modal=document.getElementById('donationModal');
+function startDownload(){const a=document.createElement('a');a.href=APK_URL;a.download='S4-Storage-v0.6.2.apk';document.body.appendChild(a);a.click();a.remove();modal.classList.remove('open')}
+document.getElementById('downloadBtn').addEventListener('click',()=>modal.classList.add('open'));document.getElementById('freeDownload').addEventListener('click',startDownload);document.getElementById('donateDownload').addEventListener('click',()=>{window.open(PAYPAL_URL,'_blank','noopener,noreferrer');setTimeout(startDownload,250)});modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open')});
+</script>
+</body></html>
