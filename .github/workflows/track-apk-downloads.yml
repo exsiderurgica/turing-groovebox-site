@@ -1,0 +1,41 @@
+name: Track APK downloads
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ttg-track-apk-downloads
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish tracked release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(jq -r '.version' release.json)"
+          STATUS="$(jq -r '.status' release.json)"
+          BUILD="$(jq -r '.build' release.json)"
+          SOURCE="$(jq -r '.apk' release.json)"
+          TAG="ttg-${VERSION}"
+
+          test -n "$VERSION"
+          test -f "$SOURCE"
+          cp "$SOURCE" TTG.apk
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            if ! gh release view "$TAG" --json assets --jq '.assets[].name' | grep -Fxq 'TTG.apk'; then
+              gh release upload "$TAG" TTG.apk
+            fi
+          else
+            gh release create "$TAG" TTG.apk               --title "TTG ${STATUS} ${BUILD}"               --notes "Tracked APK download release for ${VERSION}."
+          fi
