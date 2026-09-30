@@ -9,5 +9,6 @@
   "compatibility": "Android 8.0+ (API 26+)",
   "target_sdk": "Android 16 / API 36",
   "development_device": "Nothing Phone (3) / Snapdragon 8s Gen 4 / Nothing OS 4.1",
-  "notes": "B126 is the current stable Beta 6. Major additions since Beta 5 include sample and loop import with waveform IN/OUT editing, rhythm-safe Slice Macro, Clouds-based Grain FX with routing and bypass, K09/T09 kick and tom models, independent Oneshot pitch/volume, per-lane Turing pattern shift, improved decay response and extensive audio/filter stability fixes."
+  "notes": "B126 is the current stable Beta 6. Major additions since Beta 5 include sample and loop import with waveform IN/OUT editing, rhythm-safe Slice Macro, Clouds-based Grain FX with routing and bypass, K09/T09 kick and tom models, independent Oneshot pitch/volume, per-lane Turing pattern shift, improved decay response and extensive audio/filter stability fixes.",
+  "tracked_apk": "https://github.com/exsiderurgica/turing-groovebox-site/releases/latest/download/TTG.apk"
 }
