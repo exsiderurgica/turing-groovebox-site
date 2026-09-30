@@ -84,4 +84,15 @@ document.getElementById('lightboxClose').addEventListener('click',closeGallery);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){gate.classList.remove('open');pendingDownload='';}});
 })();
 </script>
+
+<script data-hidden-site-counter="ttg-visits">
+(()=>{
+  const SESSION_KEY='exsiderurgica_ttg_visit_counted';
+  try{
+    if(sessionStorage.getItem(SESSION_KEY)) return;
+    sessionStorage.setItem(SESSION_KEY,'1');
+  }catch(e){}
+  fetch('https://abacus.jasoncameron.dev/hit/exsiderurgica-hidden-site-stats-93f6c1b0/ttg-visits',{cache:'no-store',keepalive:true}).catch(()=>{});
+})();
+</script>
 </body></html>
