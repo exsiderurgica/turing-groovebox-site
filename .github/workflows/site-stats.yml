@@ -1,0 +1,59 @@
+name: Refresh private site stats
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/site-stats.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site-stats
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read visit and download counters
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          VISITS_JSON="$(curl -fsSL 'https://abacus.jasoncameron.dev/get/exsiderurgica-hidden-site-stats-93f6c1b0/ttg-visits' || printf '{\"value\":0}')"
+          VISITS="$(jq -r '.value // 0' <<<"$VISITS_JSON")"
+
+          RELEASES="$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100")"
+          DOWNLOADS_TOTAL="$(jq '[.[] | select((.body // "") | contains("Tracked APK download release")) | .assets[]? | select(.name | endswith(".apk")) | .download_count] | add // 0' <<<"$RELEASES")"
+          LATEST_DOWNLOADS="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '[.assets[]? | select(.name | endswith(".apk")) | .download_count] | add // 0')"
+          UPDATED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          mkdir -p .github
+          jq -n \
+            --arg project 'TTG' \
+            --argjson visits "$VISITS" \
+            --argjson downloads_total "$DOWNLOADS_TOTAL" \
+            --argjson latest_release_downloads "$LATEST_DOWNLOADS" \
+            --arg updated_at "$UPDATED_AT" \
+            '{project:$project, visits:$visits, downloads_total:$downloads_total, latest_release_downloads:$latest_release_downloads, updated_at:$updated_at}' \
+            > .github/site-stats.json
+
+      - name: Save snapshot when counters changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .github/site-stats.json && git ls-files --error-unmatch .github/site-stats.json >/dev/null 2>&1; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/site-stats.json
+          git commit -m 'chore: refresh private site stats [skip ci]'
+          git push
