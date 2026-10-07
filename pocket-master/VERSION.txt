@@ -1,4 +1,5 @@
-Pocket Master Web Flasher v0.8-ttg-fx
+Pocket Master Web Flasher v0.9-safe-baseline
 Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
 Approved SHA-256 Pocket FX v0.7: 4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b
-Approved SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
+Blocked SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
+Reason: hardware test showed silent DST/AMP slots; bypass did not restore the audio path until another FX slot was selected.
