@@ -1,0 +1,6 @@
+Pocket FX v0.8 diagnostic candidate
+Purpose: prove execution of the custom PRE COMP 1 callback on real Pocket Master hardware.
+Approved SHA-256: f7db0664c75850f354f655f13ba3024dded0688e542aea7751461711ee08a3a2
+Behavior of COMP 1 first parameter: 0-32 = dry passthrough; 33-65 = hard mute; 66-100 = generated ~440 Hz square diagnostic tone at low level.
+HTFW header remains byte-identical to the accepted v0.7/stock header. Regional CRC16 values and top-level Fletcher16 remain stock-identical.
+This is a temporary diagnostic build, not a release firmware.
