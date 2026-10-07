@@ -11,22 +11,22 @@
 </style>
 </head>
 <body><main class="shell">
-<div class="brand"><b>EXS</b> / EXSIDERURGICA INSTRUMENTS</div>
+<div class="brand"><b>EXS</b> / TTG FX</div>
 <h1>Pocket Master<br>Web Flasher</h1>
 <p class="sub">Browser-based Pocket Master firmware flasher using WebMIDI + SysEx. Firmware files stay on your device and are never uploaded.</p>
 
-<section class="card warn"><strong>v0.2 custom-safe lock</strong><p>The stock V1.3.3 path has completed a real Android browser flash with 108,262/108,262 frames and zero retries. This version also allows exactly one experimental custom image: Pocket FX v0.7 HEADER-IDENTICAL. Every other unknown/custom image remains blocked. Keep the official V1.3.3 file available for restore.</p></section>
+<section class="card warn"><strong>v0.8 TTG FX safe lock</strong><p>The stock V1.3.3 and Pocket FX v0.7 paths have been validated on real hardware. This build additionally allows exactly one new experimental image: TTG FX v0.8 Dual Filter. Unknown/custom images remain blocked. Keep the official V1.3.3 file available for restore.</p></section>
 
-<section class="card"><div id="browserStatus" class="status">Checking browser…</div><p class="tiny">Requires HTTPS and a browser implementing WebMIDI with SysEx. On Android use Chrome/Chromium. Disconnect other USB-MIDI gear for the first custom test.</p><button id="connectBtn">1 · CONNECT MIDI / ALLOW SYSEX</button></section>
+<section class="card"><div id="browserStatus" class="status">Checking browser…</div><p class="tiny">Requires HTTPS and a browser implementing WebMIDI with SysEx. On Android use Chrome/Chromium.</p><button id="connectBtn">1 · CONNECT MIDI / ALLOW SYSEX</button></section>
 
 <section class="card"><label class="fileBtn" for="firmwareFile">2 · CHOOSE .BIN FIRMWARE</label><input id="firmwareFile" type="file" accept=".bin,application/octet-stream" /><pre id="inspectBox">No firmware selected.</pre></section>
 
 <section class="card"><label for="deviceSelect" class="tiny">MIDI device</label><select id="deviceSelect"><option>Connect MIDI first</option></select></section>
 
-<section class="card"><div class="row"><button id="bootBtn">3A · TEST BOOTLOADER RECONNECT · NO FLASH</button><button id="flashBtn" class="primary">3B · FLASH BLOCKED</button></div><label class="check"><input id="agree" type="checkbox"><span>I understand that firmware flashing must not be interrupted. For the experimental custom test I will keep the official V1.3.3 image available for restore.</span></label><button id="cancelBtn" class="danger" hidden>CANCEL / STOP SENDING</button></section>
+<section class="card"><div class="row"><button id="bootBtn">3A · TEST BOOTLOADER RECONNECT · NO FLASH</button><button id="flashBtn" class="primary">3B · FLASH BLOCKED</button></div><label class="check"><input id="agree" type="checkbox"><span>I understand that firmware flashing must not be interrupted and I will keep the official V1.3.3 image available for restore.</span></label><button id="cancelBtn" class="danger" hidden>CANCEL / STOP SENDING</button></section>
 
 <section class="card"><div id="state" class="status">IDLE</div><div style="height:10px"></div><progress id="progress" max="100" value="0"></progress><div id="progressText" class="tiny">0%</div><pre id="log">Ready.\n</pre></section>
 
-<p class="tiny">Protocol: HTFW region CRC16/MODBUS validation → 10× Vxxx announce → bootloader MIDI re-enumeration → START → per-region SETUP → 19-byte data packets with CRC-8 + nibble SysEx → ACK/retry → region FINISH → global FINALIZE.</p>
-<script type="module" src="./app.mjs?v=0.2"></script>
+<p class="tiny">Protocol: HTFW region CRC16/MODBUS validation → bootloader MIDI re-enumeration → START → per-region SETUP → 19-byte data packets with CRC-8 + nibble SysEx → ACK/retry → region FINISH → global FINALIZE.</p>
+<script type="module" src="./app.mjs?v=0.8"></script>
 </main></body></html>
