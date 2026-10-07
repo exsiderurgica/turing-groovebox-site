@@ -1,6 +1,7 @@
-import { parseFullSysex, wrapDecoded, VERSION_REPEAT } from './pocket-master-core.mjs';
+import { parseFullSysex, wrapDecoded, VERSION_REPEAT, buildDecoded } from './pocket-master-core.mjs';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const FALLBACK_V133_VERSION_DECODED = buildDecoded(0x01, 0x00, new Uint8Array([0x11, 0x69, 0x56, 0x31, 0x33, 0x33, 0x00]));
 
 export class MidiLink {
   constructor(input, output) {
@@ -80,8 +81,9 @@ export async function enterBootloader(access, plan, selectedPair, onLog = () => 
   const oldIds = new Set([pair.input.id, pair.output.id]);
   const link = await openPair(pair);
   onLog(`Normal MIDI: ${describePair(pair)}`);
+  const versionDecoded = plan?.versionDecoded || FALLBACK_V133_VERSION_DECODED;
   for (let i = 0; i < VERSION_REPEAT; i++) {
-    link.send(wrapDecoded(plan.versionDecoded));
+    link.send(wrapDecoded(versionDecoded));
     if (i !== VERSION_REPEAT - 1) await sleep(20);
   }
   link.close();

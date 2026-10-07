@@ -6,6 +6,8 @@ import {
   waitForBootloaderPair, waitForNormalPair
 } from './pocket-master-webmidi.mjs';
 
+const CUSTOM_V07_SHA256 = '4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b';
+
 const $ = s => document.querySelector(s);
 const ui = {
   connect: $('#connectBtn'), file: $('#firmwareFile'), device: $('#deviceSelect'),
@@ -18,12 +20,28 @@ let access = null, firmware = null, info = null, plan = null, aborter = null, bu
 
 function log(s) { const ts = new Date().toLocaleTimeString(); ui.log.textContent += `[${ts}] ${s}\n`; ui.log.scrollTop = ui.log.scrollHeight; }
 function state(s) { ui.state.textContent = s; log(`STATE: ${s}`); }
-function canBoot() { return !!(access && firmware && plan && ui.device.value); }
-function canFlash() { return canBoot() && info?.sha256 === OFFICIAL_V133_SHA256 && ui.agree.checked; }
+function firmwareKind() {
+  if (!info) return null;
+  if (info.sha256 === OFFICIAL_V133_SHA256) return 'stock';
+  if (info.sha256 === CUSTOM_V07_SHA256) return 'custom-v07';
+  return null;
+}
+function selectedPair() { return [...ui.device.options].find(o => o.value === ui.device.value)?._pair || null; }
+function canBoot() { return !!(access && selectedPair()); }
+function canFlash() { return !!(canBoot() && firmware && plan && firmwareKind() && ui.agree.checked); }
+function updateFlashLabel() {
+  const kind = firmwareKind();
+  ui.flash.textContent = kind === 'stock'
+    ? '3B · FLASH OFFICIAL V1.3.3'
+    : kind === 'custom-v07'
+      ? '3B · FLASH POCKET FX v0.7 CUSTOM'
+      : '3B · FLASH BLOCKED';
+}
 function setBusy(v) {
   busy = v;
   ui.connect.disabled = v; ui.file.disabled = v; ui.device.disabled = v;
   ui.boot.disabled = v || !canBoot(); ui.flash.disabled = v || !canFlash(); ui.cancel.hidden = !v;
+  updateFlashLabel();
 }
 
 function checkBrowser() {
@@ -35,7 +53,7 @@ function checkBrowser() {
 function refreshDevices() {
   const prior = ui.device.value;
   ui.device.innerHTML = '';
-  if (!access) { ui.device.innerHTML = '<option value="">Connect MIDI first</option>'; return; }
+  if (!access) { ui.device.innerHTML = '<option value="">Connect MIDI first</option>'; setBusy(busy); return; }
   const pairs = listPairs(access);
   for (const p of pairs) {
     const o = document.createElement('option');
@@ -46,8 +64,6 @@ function refreshDevices() {
   setBusy(busy);
 }
 
-function selectedPair() { return [...ui.device.options].find(o => o.value === ui.device.value)?._pair || null; }
-
 async function loadFile(file) {
   firmware = new Uint8Array(await file.arrayBuffer());
   info = await inspectHtfw(firmware);
@@ -57,7 +73,10 @@ async function loadFile(file) {
   if (info.isHtfw && info.allRegionCrcsValid) {
     plan = await makePlan(firmware);
     report += `Data packets: ${plan.totalDataPackets.toLocaleString()}\n`;
-    report += `Safety lock: ${info.sha256 === OFFICIAL_V133_SHA256 ? 'OFFICIAL V1.3.3 ✓ — flash enabled after confirmation' : 'CUSTOM/UNKNOWN — WRITE BLOCKED in v0.1'}\n`;
+    const kind = firmwareKind();
+    if (kind === 'stock') report += 'Safety lock: OFFICIAL V1.3.3 ✓ — approved for restore/flash.\n';
+    else if (kind === 'custom-v07') report += 'Safety lock: POCKET FX v0.7 CUSTOM ✓ — approved experimental candidate.\n';
+    else report += 'Safety lock: UNKNOWN/CUSTOM — WRITE BLOCKED in v0.2.\n';
   } else report += 'WRITE BLOCKED: invalid HTFW/CRC.\n';
   ui.inspect.textContent = report;
   setBusy(busy);
@@ -93,10 +112,12 @@ ui.boot.onclick = async () => {
 
 ui.flash.onclick = async () => {
   if (!canFlash()) return;
+  const kind = firmwareKind();
   setBusy(true); aborter = new AbortController(); ui.progress.value = 0; ui.progressText.textContent = '0%';
   let link = null;
   try {
-    if (info.sha256 !== OFFICIAL_V133_SHA256) throw new Error('v0.1 write lock accepts only the exact official V1.3.3 firmware.');
+    if (!kind) throw new Error('v0.2 write lock accepts only official V1.3.3 or the approved Pocket FX v0.7 candidate.');
+    log(kind === 'stock' ? 'Selected image: OFFICIAL V1.3.3.' : 'Selected image: POCKET FX v0.7 CUSTOM EXPERIMENTAL.');
     state('ENTER BOOTLOADER');
     const oldIds = await enterBootloader(access, plan, selectedPair(), log);
     state('WAIT BOOTLOADER MIDI');
@@ -116,7 +137,7 @@ ui.flash.onclick = async () => {
     log(`Transfer finalized. sends=${result.packetsSent.toLocaleString()} retries=${result.retries}`);
     state('WAIT NORMAL REBOOT');
     const back = await waitForNormalPair(access, 15000);
-    if (back) { state('FLASH COMPLETE'); log(`Pocket Master returned: ${describePair(back)}`); }
+    if (back) { state(kind === 'stock' ? 'FLASH COMPLETE · STOCK' : 'FLASH COMPLETE · CUSTOM'); log(`Pocket Master returned: ${describePair(back)}`); }
     else { state('TRANSFER COMPLETE · POWER CYCLE MAY BE NEEDED'); log('Normal MIDI port was not observed before timeout. Power-cycle once.'); }
   } catch (e) {
     state(e.name === 'AbortError' ? 'CANCELLED' : 'FLASH ERROR'); log(`ERROR: ${e.message}`);
