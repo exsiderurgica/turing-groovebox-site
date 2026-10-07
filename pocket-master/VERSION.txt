@@ -1,11 +1,13 @@
-Pocket Master Web Flasher v0.12-v11-cloud-macro
+Pocket Master Web Flasher v0.13-v12-integrated-ui
 Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
 Approved SHA-256 Pocket FX v0.7: 4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b
 Hardware-verified SHA-256 TTG FX v0.9 SAFE SLOTS: f492b526269beb7bdfad0a8f3858cbeb073f904708bc78f8e87cb39ba700a1f9
 Hardware-verified SHA-256 TTG FX v1.0 PERFORMANCE: 6b4e9da4643f2d09ea18f5fc82319a347fbbe3c5d155988237c92e64d6ddd640
 Hardware-verified SHA-256 TTG FX v1.1 CLOUD MACRO: 6aba4aa6d1c863e11eea9523641222ac2141b410c9473efe2c053bb24b00e906
+Experimental SHA-256 TTG FX v1.2 INTEGRATED UI: 1e8f39b1fbaf8da21e0d45ec36a3fe5fe55f2bca774da0d7ba366dec864105bc
 Blocked SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
+v1.2 notes: DSP region g is byte-identical to hardware-verified v1.1. Region-e metadata only: COMP 1 -> DRV+F1 with GAIN/CUTOFF/RES; COMP 2 -> FILT 2 with FREQ/DRIVE/LEVEL/RES/POLE; Sweep -> DELAY; Dream -> CLOUD. Exact-length in-place replacements preserve table layout, all regional CRC16 values and Fletcher16 0x24AC.
+Final TTG FX architecture remains: ANALOG/USB IN -> DRIVE -> FILTER 1 -> FILTER 2 -> DELAY -> CLOUD -> ANALOG/USB OUT, with independent block bypass as the target. In v1.2 DRIVE + FILTER 1 still share the first physical Pocket slot; the DSP order inside that slot is drive then filter. Physical separation requires a routing/core change.
+DST/AMP architecture note: stock DST/AMP modules use shared-engine/control wrappers rather than the PRE/MOD direct stereo-buffer callback ABI. This explains the v0.8 mute failure and means arbitrary PRE/MOD DSP cannot be transplanted into DST/AMP unchanged.
 v1.1 hardware result: COMP 1, COMP 2, Sweep and Dream all confirmed working on Pocket Master, including the integrated chain and Dream bypass behavior.
-v1.1 notes: v1.0 PRE/MOD/DLY chain preserved byte-for-byte; only RVB Dream wrapper replaced. Dream shared RVB engine remains stock/proven. Mix path preserved; Decay expanded to 30..95; Damp remains 0..100; Mod expanded to 5..95. Clouds-inspired macro, not a literal Mutable Clouds DSP port.
-v1.0 notes: PRE = drive + bipolar LP/open/HP filter; MOD = second bipolar filter + drive/level/resonance + 12/24 dB slope; DLY v0.7 unchanged; DST/AMP unchanged.
 v0.8 block reason: hardware test showed silent DST/AMP slots; bypass did not restore the audio path until another FX slot was selected.
