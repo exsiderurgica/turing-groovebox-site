@@ -1,0 +1,3 @@
+Pocket Master Web Flasher v0.2-custom-safe
+Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
+Approved SHA-256 Pocket FX v0.7: 4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b
