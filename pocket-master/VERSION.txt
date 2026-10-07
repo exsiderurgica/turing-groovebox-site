@@ -1,4 +1,4 @@
-Pocket Master Web Flasher v0.16-v15-master-bypass
+Pocket Master Web Flasher v0.17-v15-blocked
 Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
 Approved SHA-256 Pocket FX v0.7: 4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b
 Hardware-verified SHA-256 TTG FX v0.9 SAFE SLOTS: f492b526269beb7bdfad0a8f3858cbeb073f904708bc78f8e87cb39ba700a1f9
@@ -7,10 +7,10 @@ Hardware-verified SHA-256 TTG FX v1.1 CLOUD MACRO: 6aba4aa6d1c863e11eea952364122
 Hardware-verified SHA-256 TTG FX v1.2 INTEGRATED UI: 1e8f39b1fbaf8da21e0d45ec36a3fe5fe55f2bca774da0d7ba366dec864105bc
 Hardware-verified SHA-256 TTG FX v1.3 TRUE CHAIN: c1f208574ebb8e2c7e9caf99166582eed80cd33332b31d562046a52237d7cd4d
 Intermediate SHA-256 TTG FX v1.4 CLEAN SHELL: 7769460217b20d60a034cad99d2533d664e05e2b9afecc78a0aa89010c14b5e6
-Experimental SHA-256 TTG FX v1.5 MASTER BYPASS: 608b4d9c7623de53b158d26ebfd252687f37769bab654e6e601377e77cb67492
+Blocked SHA-256 TTG FX v1.5 MASTER BYPASS: 608b4d9c7623de53b158d26ebfd252687f37769bab654e6e601377e77cb67492
 Blocked SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
-v1.5 architecture: DRIVE -> FILTER 1 -> FILTER 2 -> DELAY -> CLOUD with an independent global MASTER switch. The former AMP/A BassVT page is repurposed as a control-only MASTER bridge; the stock AMP audio engine is forced inactive. MASTER OFF makes DRIVE, both filters, DELAY and CLOUD return dry; MASTER ON restores the full chain. Unknown/uninitialized master state defaults ON.
-v1.5 local validation: 2,056,820 bytes; all five regional CRC16/MODBUS values restored; Fletcher16 0x24AC restored; header/transport identity preserved. ASan/UBSan host stress passed 642,500 stereo frames for DRIVE + dual filters with MASTER OFF bit-identical to dry input. DELAY wrapper is 54 bytes in existing verified zero padding and tail-calls the hardware-verified original process when enabled; CLOUD keeps the validated shared RVB engine/mapping with only a master guard.
-v1.4 intermediate: visible shell cleanup only; audio region g and effect metadata region e were byte-identical to hardware-verified v1.3. v1.5 incorporates those shell changes, so a separate v1.4 hardware gate was skipped.
+v1.5 hardware result: FAIL. User confirmed that with the v1.5 MST/AMP bridge active the Pocket Master passes no audio. The v1.5 hash is removed from the write allowlist. Do not flash. Restore v1.3 TRUE CHAIN.
+Diagnosis: forcing the stock AMP engine inactive is not a transparent bypass on hardware. The hardware result strongly indicates that AMP participates in a mandatory downstream/output path even when visually bypassed; therefore AMP must remain stock/untouched in future builds. A global master bypass must be implemented without disabling or repurposing the AMP audio engine.
+v1.4 intermediate: visible shell cleanup only; audio region g and effect metadata region e are byte-identical to hardware-verified v1.3. v1.4 does not contain the failed master/AMP bridge.
 v1.3 hardware result: user confirmed everything regular on Pocket Master; DRIVE, FILTER 1, FILTER 2, DELAY and CLOUD work as the integrated chain. v1.3 is the stable audio-core rollback.
 v0.8 block reason: hardware test showed silent DST/AMP slots; bypass did not restore the audio path until another FX slot was selected.
