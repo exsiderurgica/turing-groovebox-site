@@ -15,7 +15,7 @@
 <h1>Pocket Master<br>Web Flasher</h1>
 <p class="sub">Browser-based Pocket Master firmware flasher using WebMIDI + SysEx. Firmware files stay on your device and are never uploaded.</p>
 
-<section class="card warn"><strong>v0.8 TTG FX safe lock</strong><p>The stock V1.3.3 and Pocket FX v0.7 paths have been validated on real hardware. This build additionally allows exactly one new experimental image: TTG FX v0.8 Dual Filter. Unknown/custom images remain blocked. Keep the official V1.3.3 file available for restore.</p></section>
+<section class="card warn"><strong>SAFE BASELINE · Pocket FX v0.7</strong><p>Write access is limited to official V1.3.3 and the hardware-verified Pocket FX v0.7. TTG FX v0.8 Dual Filter is disabled after the hardware test showed silent DST/AMP slots and bypass did not restore the audio path. Unknown/custom images remain blocked. Keep the official V1.3.3 file available for restore.</p></section>
 
 <section class="card"><div id="browserStatus" class="status">Checking browser…</div><p class="tiny">Requires HTTPS and a browser implementing WebMIDI with SysEx. On Android use Chrome/Chromium.</p><button id="connectBtn">1 · CONNECT MIDI / ALLOW SYSEX</button></section>
 
@@ -28,5 +28,5 @@
 <section class="card"><div id="state" class="status">IDLE</div><div style="height:10px"></div><progress id="progress" max="100" value="0"></progress><div id="progressText" class="tiny">0%</div><pre id="log">Ready.\n</pre></section>
 
 <p class="tiny">Protocol: HTFW region CRC16/MODBUS validation → bootloader MIDI re-enumeration → START → per-region SETUP → 19-byte data packets with CRC-8 + nibble SysEx → ACK/retry → region FINISH → global FINALIZE.</p>
-<script type="module" src="./app.mjs?v=0.8"></script>
+<script type="module" src="./app.mjs?v=0.9-safe"></script>
 </main></body></html>
