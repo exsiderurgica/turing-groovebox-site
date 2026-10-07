@@ -1,20 +1,18 @@
-Pocket Master Web Flasher v0.19-v17-graphic-shell
+Pocket Master Web Flasher v0.20-v18-structure-filters
 Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
-Approved SHA-256 Pocket FX v0.7: 4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b
-Hardware-verified SHA-256 TTG FX v0.9 SAFE SLOTS: f492b526269beb7bdfad0a8f3858cbeb073f904708bc78f8e87cb39ba700a1f9
-Hardware-verified SHA-256 TTG FX v1.0 PERFORMANCE: 6b4e9da4643f2d09ea18f5fc82319a347fbbe3c5d155988237c92e64d6ddd640
-Hardware-verified SHA-256 TTG FX v1.1 CLOUD MACRO: 6aba4aa6d1c863e11eea9523641222ac2141b410c9473efe2c053bb24b00e906
-Hardware-verified SHA-256 TTG FX v1.2 INTEGRATED UI: 1e8f39b1fbaf8da21e0d45ec36a3fe5fe55f2bca774da0d7ba366dec864105bc
 Hardware-verified SHA-256 TTG FX v1.3 TRUE CHAIN: c1f208574ebb8e2c7e9caf99166582eed80cd33332b31d562046a52237d7cd4d
-Intermediate SHA-256 TTG FX v1.4 CLEAN SHELL: 7769460217b20d60a034cad99d2533d664e05e2b9afecc78a0aa89010c14b5e6
-Blocked SHA-256 TTG FX v1.5 MASTER BYPASS: 608b4d9c7623de53b158d26ebfd252687f37769bab654e6e601377e77cb67492
+Experimental SHA-256 TTG FX v1.8 STRUCTURE + FILTERS: b3c7b55b2deb35ddf8691e3bc6fcd886c322bbf18987e452432ca4b8a10f0ac6
+Superseded SHA-256 TTG FX v1.7 GRAPHIC SHELL: 918442e2f33f2e0964eee855511041991887a43940a0f64c01e86a4dbb4379f5
 Superseded SHA-256 TTG FX v1.6 UI FREEZE: 636c83eac7d90615e3c40aa71d6bd9985b7ca54767a61d1683010af6a1198bff
-Experimental SHA-256 TTG FX v1.7 GRAPHIC SHELL: 918442e2f33f2e0964eee855511041991887a43940a0f64c01e86a4dbb4379f5
+Blocked SHA-256 TTG FX v1.5 MASTER BYPASS: 608b4d9c7623de53b158d26ebfd252687f37769bab654e6e601377e77cb67492
 Blocked SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
 
-v1.7: fixes the v1.6 visual mistake. The Pocket home chain does not use the patched ASCII category table for its visible labels; it uses bitmap resources in region b. Actual home-label bitmap records 76..84 are replaced with IN / DRV / F1 / SYS / blank / blank / F2 / DLY / CLD. Larger category-card bitmap records are relabeled consistently. Boot resource record 87 is the real 148x48 GIF and is replaced with a TTG FX / EXSIDERURGICA animation. Audio DSP region g and effect metadata/preset region e are byte-identical to hardware-verified v1.3. AMP/SYS remains stock and untouched in the audio path.
-v1.7 local validation: 2,056,820 bytes; header 0x0000..0x0087 identical; all five regional CRC16/MODBUS values restored exactly; Fletcher16 0x24AC; changes confined to region b; custom boot GIF decodes correctly inside the fixed-size resource record.
-v1.6 hardware result: audio/core remained usable, but the intended visible home UI did not change. Cause: v1.6 patched a dormant/localization/protocol string table instead of the display bitmap resources. Superseded by v1.7.
-v1.5 hardware result: FAIL, no audio with MST/AMP bridge. Do not flash. AMP participates in a mandatory downstream/output path and must remain stock/untouched. Master bypass must be implemented inside the TTG core without disabling AMP.
-v1.3 hardware result: DRIVE, FILTER 1, FILTER 2, DELAY and CLOUD work as the integrated chain and remain the stable audio-core rollback.
-v0.8 block reason: hardware test showed silent DST/AMP slots; bypass did not restore the audio path until another FX slot was selected.
+v1.8 target chain: ANALOG IN -> DRIVE 1 -> FILTER 1 -> FILTER 2 -> DRIVE 2 -> DELAY -> REVERB -> ANALOG OUT.
+v1.8 DRIVE page controls D1 / D2 / LEVEL. D2 is processed after FILTER 2 inside the custom MOD audio core. Both FILTER 1 and FILTER 2 use the same revised nonlinear two-pole core and deliberately cross into true self-oscillation at the top of RES; local host tests start from digital zero and verify sustained oscillation for both filters.
+v1.8 local validation: ASan/UBSan host stress passed 716,800 frames; F1 self-oscillation RMS 0.2859, F2 RMS 0.3082; below-threshold zero-input test remained silent; LP/HP response sanity passed; DRIVE 2 post-filter stage active and finite.
+v1.8 graphics: black/white TTG shell, selected category card yellow, boot black with white TTG FX / EXSIDERURGICA, functional category labels DRV / F1 / F2 / DLY / REV, stock category bitmaps blanked where not used.
+v1.8 resource-region experiment: region b now has its genuine changed CRC16 0x491A and the header descriptor is updated accordingly. v1.6/v1.7 forced changed resource payloads back to the stock b CRC16 0x62EC and produced no visible UI change on hardware. v1.8 tests the plausible hypothesis that the Pocket skips/caches the large resource region when the incoming resource CRC appears unchanged. Global Fletcher16 remains 0x24AC; regions c/g/f/e retain their accepted CRCs.
+v1.8 deliberately does NOT modify USB audio routing. Granular Cloud work is postponed; the current hardware-verified RVB/CLOUD macro remains the underlying reverb engine and is presented as REV for this milestone.
+v1.7 hardware result: visual changes did not appear; device still showed stock boot/categories. Superseded by v1.8 CRC-strategy test.
+v1.5 hardware result: FAIL, no audio with MST/AMP bridge. Do not flash. AMP must remain stock/untouched.
+v1.3 remains the stable hardware-verified rollback.
