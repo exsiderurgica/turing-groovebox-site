@@ -1,7 +1,8 @@
-Pocket Master Web Flasher v0.10-v09-hardware-gate
+Pocket Master Web Flasher v0.11-v10-performance
 Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
 Approved SHA-256 Pocket FX v0.7: 4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b
-Experimental SHA-256 TTG FX v0.9 SAFE SLOTS: f492b526269beb7bdfad0a8f3858cbeb073f904708bc78f8e87cb39ba700a1f9
+Hardware-verified SHA-256 TTG FX v0.9 SAFE SLOTS: f492b526269beb7bdfad0a8f3858cbeb073f904708bc78f8e87cb39ba700a1f9
+Experimental SHA-256 TTG FX v1.0 PERFORMANCE: 6b4e9da4643f2d09ea18f5fc82319a347fbbe3c5d155988237c92e64d6ddd640
 Blocked SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
-v0.9 notes: DST/AMP left untouched; hardware gate limited to PRE + MOD + DLY path.
+v1.0 notes: PRE = drive + bipolar LP/open/HP filter; MOD = second bipolar filter + drive/level/resonance + 12/24 dB slope; DLY v0.7 unchanged; Dream stock; DST/AMP unchanged.
 v0.8 block reason: hardware test showed silent DST/AMP slots; bypass did not restore the audio path until another FX slot was selected.
