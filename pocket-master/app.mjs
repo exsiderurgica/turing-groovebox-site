@@ -7,6 +7,7 @@ import {
 } from './pocket-master-webmidi.mjs';
 
 const CUSTOM_V07_SHA256 = '4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b';
+const POCKET_TTG_ALPHA_V01_SHA256 = '51d7a0ba2e1258e1fdfb9b3a7df8a7255f0b5cf2f4f2a55e187497d6b0e5839f';
 
 const $ = s => document.querySelector(s);
 const ui = {
@@ -24,6 +25,7 @@ function firmwareKind() {
   if (!info) return null;
   if (info.sha256 === OFFICIAL_V133_SHA256) return 'stock';
   if (info.sha256 === CUSTOM_V07_SHA256) return 'custom-v07';
+  if (info.sha256 === POCKET_TTG_ALPHA_V01_SHA256) return 'ttg-alpha-v01';
   return null;
 }
 function selectedPair() { return [...ui.device.options].find(o => o.value === ui.device.value)?._pair || null; }
@@ -35,7 +37,9 @@ function updateFlashLabel() {
     ? '3B · FLASH OFFICIAL V1.3.3'
     : kind === 'custom-v07'
       ? '3B · FLASH POCKET FX v0.7 CUSTOM'
-      : '3B · FLASH BLOCKED';
+      : kind === 'ttg-alpha-v01'
+        ? '3B · FLASH POCKET TTG ALPHA v0.1'
+        : '3B · FLASH BLOCKED';
 }
 function setBusy(v) {
   busy = v;
@@ -76,7 +80,8 @@ async function loadFile(file) {
     const kind = firmwareKind();
     if (kind === 'stock') report += 'Safety lock: OFFICIAL V1.3.3 ✓ — approved for restore/flash.\n';
     else if (kind === 'custom-v07') report += 'Safety lock: POCKET FX v0.7 CUSTOM ✓ — approved experimental candidate.\n';
-    else report += 'Safety lock: UNKNOWN/CUSTOM — WRITE BLOCKED in v0.2.\n';
+    else if (kind === 'ttg-alpha-v01') report += 'Safety lock: POCKET TTG ALPHA v0.1 ✓ — approved experimental instrument candidate.\n';
+    else report += 'Safety lock: UNKNOWN/CUSTOM — WRITE BLOCKED.\n';
   } else report += 'WRITE BLOCKED: invalid HTFW/CRC.\n';
   ui.inspect.textContent = report;
   setBusy(busy);
@@ -116,8 +121,10 @@ ui.flash.onclick = async () => {
   setBusy(true); aborter = new AbortController(); ui.progress.value = 0; ui.progressText.textContent = '0%';
   let link = null;
   try {
-    if (!kind) throw new Error('v0.2 write lock accepts only official V1.3.3 or the approved Pocket FX v0.7 candidate.');
-    log(kind === 'stock' ? 'Selected image: OFFICIAL V1.3.3.' : 'Selected image: POCKET FX v0.7 CUSTOM EXPERIMENTAL.');
+    if (!kind) throw new Error('Write lock accepts only official V1.3.3, Pocket FX v0.7, or Pocket TTG Alpha v0.1.');
+    if (kind === 'stock') log('Selected image: OFFICIAL V1.3.3.');
+    else if (kind === 'custom-v07') log('Selected image: POCKET FX v0.7 CUSTOM EXPERIMENTAL.');
+    else log('Selected image: POCKET TTG ALPHA v0.1 EXPERIMENTAL.');
     state('ENTER BOOTLOADER');
     const oldIds = await enterBootloader(access, plan, selectedPair(), log);
     state('WAIT BOOTLOADER MIDI');
@@ -137,8 +144,12 @@ ui.flash.onclick = async () => {
     log(`Transfer finalized. sends=${result.packetsSent.toLocaleString()} retries=${result.retries}`);
     state('WAIT NORMAL REBOOT');
     const back = await waitForNormalPair(access, 15000);
-    if (back) { state(kind === 'stock' ? 'FLASH COMPLETE · STOCK' : 'FLASH COMPLETE · CUSTOM'); log(`Pocket Master returned: ${describePair(back)}`); }
-    else { state('TRANSFER COMPLETE · POWER CYCLE MAY BE NEEDED'); log('Normal MIDI port was not observed before timeout. Power-cycle once.'); }
+    if (back) {
+      if (kind === 'stock') state('FLASH COMPLETE · STOCK');
+      else if (kind === 'ttg-alpha-v01') state('FLASH COMPLETE · POCKET TTG ALPHA');
+      else state('FLASH COMPLETE · CUSTOM');
+      log(`Pocket Master returned: ${describePair(back)}`);
+    } else { state('TRANSFER COMPLETE · POWER CYCLE MAY BE NEEDED'); log('Normal MIDI port was not observed before timeout. Power-cycle once.'); }
   } catch (e) {
     state(e.name === 'AbortError' ? 'CANCELLED' : 'FLASH ERROR'); log(`ERROR: ${e.message}`);
   } finally {
