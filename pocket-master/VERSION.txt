@@ -1,4 +1,4 @@
-Pocket Master Web Flasher v0.15-v14-clean-shell
+Pocket Master Web Flasher v0.16-v15-master-bypass
 Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
 Approved SHA-256 Pocket FX v0.7: 4d2d50fcb0273692db0d17babf18b785c9c10b11305406ce1790ccb2fe26230b
 Hardware-verified SHA-256 TTG FX v0.9 SAFE SLOTS: f492b526269beb7bdfad0a8f3858cbeb073f904708bc78f8e87cb39ba700a1f9
@@ -6,10 +6,11 @@ Hardware-verified SHA-256 TTG FX v1.0 PERFORMANCE: 6b4e9da4643f2d09ea18f5fc82319
 Hardware-verified SHA-256 TTG FX v1.1 CLOUD MACRO: 6aba4aa6d1c863e11eea9523641222ac2141b410c9473efe2c053bb24b00e906
 Hardware-verified SHA-256 TTG FX v1.2 INTEGRATED UI: 1e8f39b1fbaf8da21e0d45ec36a3fe5fe55f2bca774da0d7ba366dec864105bc
 Hardware-verified SHA-256 TTG FX v1.3 TRUE CHAIN: c1f208574ebb8e2c7e9caf99166582eed80cd33332b31d562046a52237d7cd4d
-Experimental SHA-256 TTG FX v1.4 CLEAN SHELL: 7769460217b20d60a034cad99d2533d664e05e2b9afecc78a0aa89010c14b5e6
+Intermediate SHA-256 TTG FX v1.4 CLEAN SHELL: 7769460217b20d60a034cad99d2533d664e05e2b9afecc78a0aa89010c14b5e6
+Experimental SHA-256 TTG FX v1.5 MASTER BYPASS: 608b4d9c7623de53b158d26ebfd252687f37769bab654e6e601377e77cb67492
 Blocked SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
-v1.4 architecture: audio core and effect metadata are byte-identical to hardware-verified v1.3 TRUE CHAIN. Visible shell cleanup only: main category strip becomes -- / DRV / F1 / --- / -- / -- / F2 / DLY / CLD; About label becomes TTG FX Version; copyright branding becomes EXSIDERURGICA / TTG FX. USB MIDI, BLE and HTFW product identities remain stock for recovery compatibility.
-v1.4 validation: 2,056,820 bytes; header 0x0000..0x0087 identical to v1.3; all regional CRC16 values valid; Fletcher16 0x24AC preserved. Region g and region e are byte-identical to hardware-verified v1.3. UI-only edits are in region b with checksum compensation placed inside an existing zero-padding run.
-v1.3 hardware result: DRIVE, FILTER 1, FILTER 2, DELAY and CLOUD all confirmed working on Pocket Master; independent F1/F2 operation and integrated chain regular. AMP remains stock/bypassed.
-v1.3 architecture: DRIVE -> FILTER 1 -> FILTER 2 -> DELAY -> CLOUD. PRE is dedicated DRIVE. DST/Bass Drive keeps its stock init but its update callback is a control-only FILTER 1 bridge; stock DST engine-active flag forced to 0. MOD is serial FILTER 1 + FILTER 2 audio core. FILTER 1 bypass follows DST ON/OFF; FILTER 2 bypass follows MOD ON/OFF. DLY and CLOUD unchanged.
+v1.5 architecture: DRIVE -> FILTER 1 -> FILTER 2 -> DELAY -> CLOUD with an independent global MASTER switch. The former AMP/A BassVT page is repurposed as a control-only MASTER bridge; the stock AMP audio engine is forced inactive. MASTER OFF makes DRIVE, both filters, DELAY and CLOUD return dry; MASTER ON restores the full chain. Unknown/uninitialized master state defaults ON.
+v1.5 local validation: 2,056,820 bytes; all five regional CRC16/MODBUS values restored; Fletcher16 0x24AC restored; header/transport identity preserved. ASan/UBSan host stress passed 642,500 stereo frames for DRIVE + dual filters with MASTER OFF bit-identical to dry input. DELAY wrapper is 54 bytes in existing verified zero padding and tail-calls the hardware-verified original process when enabled; CLOUD keeps the validated shared RVB engine/mapping with only a master guard.
+v1.4 intermediate: visible shell cleanup only; audio region g and effect metadata region e were byte-identical to hardware-verified v1.3. v1.5 incorporates those shell changes, so a separate v1.4 hardware gate was skipped.
+v1.3 hardware result: user confirmed everything regular on Pocket Master; DRIVE, FILTER 1, FILTER 2, DELAY and CLOUD work as the integrated chain. v1.3 is the stable audio-core rollback.
 v0.8 block reason: hardware test showed silent DST/AMP slots; bypass did not restore the audio path until another FX slot was selected.
