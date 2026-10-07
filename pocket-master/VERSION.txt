@@ -1,18 +1,16 @@
-Pocket Master Web Flasher v0.20-v18-structure-filters
-Approved SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
-Hardware-verified SHA-256 TTG FX v1.3 TRUE CHAIN: c1f208574ebb8e2c7e9caf99166582eed80cd33332b31d562046a52237d7cd4d
-Experimental SHA-256 TTG FX v1.8 STRUCTURE + FILTERS: b3c7b55b2deb35ddf8691e3bc6fcd886c322bbf18987e452432ca4b8a10f0ac6
-Superseded SHA-256 TTG FX v1.7 GRAPHIC SHELL: 918442e2f33f2e0964eee855511041991887a43940a0f64c01e86a4dbb4379f5
-Superseded SHA-256 TTG FX v1.6 UI FREEZE: 636c83eac7d90615e3c40aa71d6bd9985b7ca54767a61d1683010af6a1198bff
-Blocked SHA-256 TTG FX v1.5 MASTER BYPASS: 608b4d9c7623de53b158d26ebfd252687f37769bab654e6e601377e77cb67492
-Blocked SHA-256 TTG FX v0.8 Dual Filter: 2678e13c98145a2b33747801c462981263ff6c215d61a6fc0f9243f870b63b94
+Pocket Master Web Flasher v0.21 · TTG FX v1.9 FILTER RECOVERY + D2 NAV HARDWARE GATE
+Candidate SHA-256 TTG FX v1.9: d474734fd45351c6fb4cfa811e92ef9b37fecb75bcb0bf9d6a70c2771b018f77
+Hardware-verified rollback SHA-256 TTG FX v1.3 TRUE CHAIN: c1f208574ebb8e2c7e9caf99166582eed80cd33332b31d562046a52237d7cd4d
+Approved recovery SHA-256 stock V1.3.3: d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3
 
-v1.8 target chain: ANALOG IN -> DRIVE 1 -> FILTER 1 -> FILTER 2 -> DRIVE 2 -> DELAY -> REVERB -> ANALOG OUT.
-v1.8 DRIVE page controls D1 / D2 / LEVEL. D2 is processed after FILTER 2 inside the custom MOD audio core. Both FILTER 1 and FILTER 2 use the same revised nonlinear two-pole core and deliberately cross into true self-oscillation at the top of RES; local host tests start from digital zero and verify sustained oscillation for both filters.
-v1.8 local validation: ASan/UBSan host stress passed 716,800 frames; F1 self-oscillation RMS 0.2859, F2 RMS 0.3082; below-threshold zero-input test remained silent; LP/HP response sanity passed; DRIVE 2 post-filter stage active and finite.
-v1.8 graphics: black/white TTG shell, selected category card yellow, boot black with white TTG FX / EXSIDERURGICA, functional category labels DRV / F1 / F2 / DLY / REV, stock category bitmaps blanked where not used.
-v1.8 resource-region experiment: region b now has its genuine changed CRC16 0x491A and the header descriptor is updated accordingly. v1.6/v1.7 forced changed resource payloads back to the stock b CRC16 0x62EC and produced no visible UI change on hardware. v1.8 tests the plausible hypothesis that the Pocket skips/caches the large resource region when the incoming resource CRC appears unchanged. Global Fletcher16 remains 0x24AC; regions c/g/f/e retain their accepted CRCs.
-v1.8 deliberately does NOT modify USB audio routing. Granular Cloud work is postponed; the current hardware-verified RVB/CLOUD macro remains the underlying reverb engine and is presented as REV for this milestone.
-v1.7 hardware result: visual changes did not appear; device still showed stock boot/categories. Superseded by v1.8 CRC-strategy test.
-v1.5 hardware result: FAIL, no audio with MST/AMP bridge. Do not flash. AMP must remain stock/untouched.
-v1.3 remains the stable hardware-verified rollback.
+v1.9 purpose: recover the hardware-verified v1.3 F1/F2 behavior first, add a real D2 after F2, and test the actual per-preset category ordering before making any new self-oscillation change.
+v1.9 target chain: ANALOG IN -> D1 -> F1 -> F2 -> D2 -> DLY -> REV -> ANALOG OUT.
+v1.9 F1/F2: filter DSP is based on v1.3 TRUE CHAIN; the v1.8 self-oscillation rewrite is not carried forward.
+v1.9 D2: GT EQ1 group slot 0 is repurposed as an audio-transparent D2 control bridge. D2 audio processing itself runs after F2 inside the MOD core. Controls are DRIVE / TONE / LEVEL.
+v1.9 navigation experiment: all 50 factory preset category-order tables now begin [PRE,DST,MOD,EQ,DLY,RVB], corresponding to D1/F1/F2/D2/DLY/REV after the TTG relabeling. This is a real preset-order-table intervention, not only a bitmap rename.
+v1.9 graphics: carries the v1.8 black/white shell and yellow selection strategy; category text is D1 / F1 / F2 / D2 / DLY / REV, unused category labels blanked where possible. Default Rockstage preset label becomes TTG FX. CLOUD label becomes REV.
+v1.9 local validation: PRE/DST payloads byte-identical to v1.3; DLY/RVB ranges unchanged; v1.3-vs-v1.9 MOD host comparison with D2 bypassed is sample-equivalent within 1e-6; D2 stress is finite/bounded. HTFW Fletcher16=0x24AC; c=0xBF94, g=0xA5F6, f=0xFCD8, b=0xBF8E, e=0xE079, all valid.
+v1.9 WebMIDI: Android reconnect bridge is included. A missing bootloader re-enumeration pauses at RESCAN / CONTINUE rather than being treated as an immediate flash error; FORCE SAME-PORT CONTINUE is guarded for recycled MIDI IDs.
+
+NOT YET HARDWARE-PROVEN: direct boot into Effects, exact six-page REV->D1 wrap, visual application of the modified resource region, D2 control-page mapping on real hardware. Test these before calling v1.9 final.
+Do not reintroduce the v1.8 self-oscillation filter rewrite until this gate is verified on hardware.
