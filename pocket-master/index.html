@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#070707" />
+<title>EXS Pocket Master Web Flasher</title>
+<style>
+:root{color-scheme:dark;--bg:#070707;--panel:#111;--line:#2b2b2b;--text:#f5f5f5;--muted:#989898;--accent:#ffd400;--bad:#ff5151;--ok:#58d68d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px}.shell{max-width:820px;margin:auto}.brand{font-weight:950;letter-spacing:.08em}.brand b{color:var(--accent)}h1{font-size:clamp(28px,7vw,52px);line-height:1;margin:14px 0 8px}.sub{color:var(--muted);max-width:700px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:650px){.row{grid-template-columns:1fr}}button,.fileBtn,select{width:100%;border:1px solid #393939;background:#191919;color:#fff;border-radius:12px;padding:14px;font-weight:800;font-size:14px}button.primary{background:var(--accent);color:#080808;border-color:var(--accent)}button:disabled{opacity:.35}.fileBtn{display:block;text-align:center;cursor:pointer}input[type=file]{display:none}.status{font-weight:900;padding:12px;background:#0b0b0b;border:1px solid var(--line);border-radius:12px}.ok{color:var(--ok)}.bad{color:var(--bad)}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#090909;border:1px solid #262626;border-radius:12px;padding:12px;color:#cfcfcf;max-height:270px;overflow:auto}.warn{border-color:#665600;background:#171400}.warn strong{color:var(--accent)}progress{width:100%;height:18px;accent-color:var(--accent)}label.check{display:flex;gap:10px;align-items:flex-start;color:#ddd;margin:10px 0}.tiny{font-size:12px;color:var(--muted)}code{color:#ffe66b}.danger{color:var(--bad)}
+</style>
+</head>
+<body><main class="shell">
+<div class="brand"><b>EXS</b> / EXSIDERURGICA INSTRUMENTS</div>
+<h1>Pocket Master<br>Web Flasher</h1>
+<p class="sub">Experimental browser flasher built from the Pocket Master firmware-update SysEx protocol captured from Sonicake Manager. The firmware file stays on your device and is never uploaded.</p>
+
+<section class="card warn"><strong>v0.1 safety lock</strong><p>This first hardware version can write only the exact official Pocket Master V1.3.3 firmware. Custom firmware is validated and displayed, but writing is blocked until the stock-path test succeeds on real hardware.</p></section>
+
+<section class="card"><div id="browserStatus" class="status">Checking browser…</div><p class="tiny">Requires HTTPS and a browser implementing WebMIDI with SysEx. On Android use Chrome/Chromium. Disconnect other USB-MIDI gear for the first test.</p><button id="connectBtn">1 · CONNECT MIDI / ALLOW SYSEX</button></section>
+
+<section class="card"><label class="fileBtn" for="firmwareFile">2 · CHOOSE .BIN FIRMWARE</label><input id="firmwareFile" type="file" accept=".bin,application/octet-stream" /><pre id="inspectBox">No firmware selected.</pre></section>
+
+<section class="card"><label for="deviceSelect" class="tiny">MIDI device</label><select id="deviceSelect"><option>Connect MIDI first</option></select></section>
+
+<section class="card"><div class="row"><button id="bootBtn">3A · TEST BOOTLOADER RECONNECT · NO FLASH</button><button id="flashBtn" class="primary">3B · FLASH OFFICIAL V1.3.3</button></div><label class="check"><input id="agree" type="checkbox"><span>I understand that firmware flashing must not be interrupted and that the first write test is restricted to the official stock V1.3.3 image.</span></label><button id="cancelBtn" class="danger" hidden>CANCEL / STOP SENDING</button></section>
+
+<section class="card"><div id="state" class="status">IDLE</div><div style="height:10px"></div><progress id="progress" max="100" value="0"></progress><div id="progressText" class="tiny">0%</div><pre id="log">Ready.\n</pre></section>
+
+<p class="tiny">Protocol: HTFW region CRC16/MODBUS validation → 10× Vxxx announce → bootloader MIDI re-enumeration → START → per-region SETUP → 19-byte data packets with CRC-8 + nibble SysEx → ACK/retry → region FINISH → global FINALIZE.</p>
+<script type="module" src="./app.mjs"></script>
+</main></body></html>
