@@ -1,0 +1,29 @@
+name: Build NDS32 analysis tool
+
+on:
+  push:
+    paths:
+      - '.github/workflows/nds32-toolchain-artifact.yml'
+  workflow_dispatch:
+
+jobs:
+  tool:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Arch NDS32 binutils
+        run: |
+          set -euxo pipefail
+          URL='https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst'
+          curl -fL --retry 4 "$URL" -o /tmp/nds32.pkg.tar.zst
+          mkdir -p /tmp/nds32
+          tar --zstd -xf /tmp/nds32.pkg.tar.zst -C /tmp/nds32
+          /tmp/nds32/usr/bin/nds32le-elf-objdump --version
+          mkdir -p artifact
+          cp /tmp/nds32/usr/bin/nds32le-elf-objdump artifact/
+          cp /tmp/nds32/usr/bin/nds32le-elf-readelf artifact/
+          cp /tmp/nds32/usr/bin/nds32le-elf-nm artifact/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nds32-analysis-tools
+          path: artifact/
+          retention-days: 1
