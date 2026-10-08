@@ -86,3 +86,5 @@ jobs:
             pocket_ui_report.txt
             ghidra_headless.log
           if-no-files-found: error
+
+# trigger-2
