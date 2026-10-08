@@ -1,197 +1,105 @@
-// Headless evidence report for Pocket Master section b.
+// Focused headless report: trace the final initialized-data block copied from
+// section b into GP-relative RAM, and find exactly which fields live code uses.
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.*;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.mem.*;
-import ghidra.program.model.scalar.Scalar;
 import ghidra.program.model.symbol.*;
-
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.*;
 
 public class Dump extends GhidraScript {
     private PrintWriter out;
-    private final Set<Long> decompiledEntries = new LinkedHashSet<>();
+    private final Set<Long> dumped = new LinkedHashSet<>();
+    private static final long SRC0=0x16aec0L, SRC1=0x16bb60L;
+    private static final long GP0=-0xc140L, GP1=-0xb4a0L;
+    private static final Pattern NEGHEX=Pattern.compile("-0x([0-9a-fA-F]+)");
+    private void p(String s){ out.println(s); println(s); }
+    private long sourceFor(long off){ return SRC0 + (off-GP0); }
+    private String raw(long a,int n) throws Exception {
+        byte[] b=new byte[n]; currentProgram.getMemory().getBytes(toAddr(a),b);
+        StringBuilder sb=new StringBuilder(); for(byte x:b) sb.append(String.format("%02x",x&255)); return sb.toString();
+    }
+    private void dumpFn(Function f,String why) throws Exception {
+        if(f==null || !dumped.add(f.getEntryPoint().getOffset())) return;
+        p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" ---");
+        InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true); int c=0;
+        while(ii.hasNext()&&c++<260){ Instruction i=ii.next(); p("ASM "+i.getAddress()+"  "+i); }
+        try{
+            DecompInterface d=new DecompInterface(); d.openProgram(currentProgram);
+            DecompileResults r=d.decompileFunction(f,60,monitor);
+            if(r!=null&&r.decompileCompleted()&&r.getDecompiledFunction()!=null){ p("C-BEGIN");p(r.getDecompiledFunction().getC());p("C-END"); }
+            else p("C-FAIL "+(r==null?"null":r.getErrorMessage())); d.dispose();
+        }catch(Exception e){p("C-EXCEPTION "+e);}
+    }
+    private void target(String name,long src){
+        long off=GP0+(src-SRC0); p(String.format("MAP %-24s src=0x%06x gp=%s0x%x",name,src,off<0?"-":"+",Math.abs(off)));
+    }
+    @Override public void run() throws Exception {
+        String[] a=getScriptArgs(); out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(a.length>0?a[0]:"pocket_ui_report.txt"),StandardCharsets.UTF_8));
+        try{
+            p("Pocket Master relocated UI/data trace v3");
+            p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
+            p(String.format("INIT COPY: flash [0x%x,0x%x) -> GP [%s0x%x,%s0x%x), len=0x%x",SRC0,SRC1,GP0<0?"-":"+",Math.abs(GP0),GP1<0?"-":"+",Math.abs(GP1),SRC1-SRC0));
+            target("English language block",0x16b1e0L);
+            target("inactive card table",0x16b328L);
+            target("selected card table",0x16b34cL);
+            target("label image table",0x16b370L);
+            target("candidate RGB table",0x16b398L);
 
-    private void p(String s) { out.println(s); println(s); }
+            // Prove the copy initializer and retain its decompilation.
+            dumpFn(getFunctionAt(toAddr(0x626acL)),"initialized-data-copy");
 
-    private List<Address> findBytes(byte[] needle) throws Exception {
-        List<Address> result = new ArrayList<>();
-        Memory mem = currentProgram.getMemory();
-        for (MemoryBlock block : mem.getBlocks()) {
-            if (!block.isInitialized() || block.getSize() > Integer.MAX_VALUE) continue;
-            byte[] hay = new byte[(int)block.getSize()];
-            int got = mem.getBytes(block.getStart(), hay);
-            if (got <= 0) continue;
-            int lim = got - needle.length;
-            for (int i = 0; i <= lim; i++) {
-                boolean yes = true;
-                for (int j = 0; j < needle.length; j++) {
-                    if (hay[i+j] != needle[j]) { yes = false; break; }
+            Map<Long,List<Instruction>> uses=new TreeMap<>();
+            InstructionIterator it=currentProgram.getListing().getInstructions(true);
+            int allgp=0;
+            while(it.hasNext()){
+                Instruction ins=it.next(); long pc=ins.getAddress().getOffset(); if(pc>=0xe185cL) continue;
+                String s=ins.toString(); String lo=s.toLowerCase();
+                if(!lo.contains(".gp") && !lo.contains(" gp") && !lo.contains("$gp")) continue;
+                allgp++;
+                Matcher m=NEGHEX.matcher(lo); boolean matched=false;
+                while(m.find()){
+                    long off=-Long.parseLong(m.group(1),16);
+                    if(off>=GP0 && off<GP1){ uses.computeIfAbsent(off,k->new ArrayList<>()).add(ins); matched=true; }
                 }
-                if (yes) result.add(block.getStart().add(i));
+                // addi.gp may hide its immediate in the textual renderer: preserve refs/operands.
+                if(lo.startsWith("addi.gp") || lo.startsWith("lwi.gp") || lo.startsWith("lhi.gp") || lo.startsWith("lbi.gp") || lo.startsWith("swi.gp") || lo.startsWith("shi.gp") || lo.startsWith("sbi.gp")){
+                    StringBuilder extra=new StringBuilder();
+                    for(Reference r:ins.getReferencesFrom()) extra.append(" ref=").append(r.getToAddress()).append('/').append(r.getReferenceType());
+                    if(!matched) p("GP-OTHER "+ins.getAddress()+" "+s+extra);
+                }
             }
-        }
-        return result;
-    }
-
-    private byte[] le32(long v) {
-        return new byte[] {(byte)v,(byte)(v>>8),(byte)(v>>16),(byte)(v>>24)};
-    }
-
-    private void refsTo(String label, Address target) throws Exception {
-        p("\n=== TARGET " + label + " @ " + target + " ===");
-        ReferenceIterator it = currentProgram.getReferenceManager().getReferencesTo(target);
-        int n = 0;
-        while (it.hasNext()) {
-            Reference r = it.next(); n++;
-            Address from = r.getFromAddress();
-            Function f = getFunctionContaining(from);
-            p("REF " + from + " type=" + r.getReferenceType() + " func=" + (f==null?"-":f.getName()+"@"+f.getEntryPoint()));
-            if (f != null && from.getOffset() < 0xe185cL) dumpFunction(f, "xref-" + label);
-        }
-        p("xref_count=" + n);
-
-        List<Address> rawPtrs = findBytes(le32(target.getOffset()));
-        p("raw_le32_pointer_count=" + rawPtrs.size());
-        for (int i=0; i<Math.min(rawPtrs.size(), 80); i++) {
-            Address a = rawPtrs.get(i);
-            Function f = getFunctionContaining(a);
-            p("PTR " + a + " func=" + (f==null?"-":f.getName()+"@"+f.getEntryPoint()));
-            ReferenceIterator pit = currentProgram.getReferenceManager().getReferencesTo(a);
-            int k=0;
-            while (pit.hasNext() && k<20) {
-                Reference rr=pit.next(); k++;
-                Function pf=getFunctionContaining(rr.getFromAddress());
-                p("  PTR-XREF " + rr.getFromAddress() + " type=" + rr.getReferenceType() + " func=" + (pf==null?"-":pf.getName()+"@"+pf.getEntryPoint()));
-                if (pf != null && rr.getFromAddress().getOffset() < 0xe185cL) dumpFunction(pf, "ptr-xref-"+label);
-            }
-        }
-    }
-
-    private void dumpFunction(Function f, String why) throws Exception {
-        long ep = f.getEntryPoint().getOffset();
-        if (!decompiledEntries.add(ep)) return;
-        p("\n--- FUNCTION " + f.getName() + " @ " + f.getEntryPoint() + " reason=" + why + " ---");
-        Listing listing=currentProgram.getListing();
-        InstructionIterator ii=listing.getInstructions(f.getBody(), true);
-        int c=0;
-        while(ii.hasNext() && c<220) {
-            Instruction ins=ii.next();
-            p("ASM " + ins.getAddress() + "  " + ins.toString());
-            c++;
-        }
-        try {
-            DecompInterface di=new DecompInterface();
-            di.toggleCCode(true); di.toggleSyntaxTree(true); di.openProgram(currentProgram);
-            DecompileResults dr=di.decompileFunction(f, 60, monitor);
-            if (dr != null && dr.decompileCompleted() && dr.getDecompiledFunction()!=null) {
-                p("C-BEGIN"); p(dr.getDecompiledFunction().getC()); p("C-END");
-            } else {
-                p("C-DECOMPILE-FAILED " + (dr==null?"null":dr.getErrorMessage()));
-            }
-            di.dispose();
-        } catch(Exception e) { p("C-EXCEPTION " + e); }
-    }
-
-    private Address addr(long x){ return toAddr(x); }
-
-    private void huntCodeRefs() throws Exception {
-        p("\n=== CODE REFERENCES INTO HIGH UI/DATA AREA ===");
-        InstructionIterator ii=currentProgram.getListing().getInstructions(true);
-        int n=0;
-        while(ii.hasNext()) {
-            Instruction ins=ii.next();
-            long from=ins.getAddress().getOffset();
-            if(from >= 0xe185cL) continue; // resource/data archive, not executable application code
-            for(Reference r: ins.getReferencesFrom()) {
-                long to=r.getToAddress().getOffset();
-                if(to>=0xd0000L && to<=0x16bb5fL) {
+            p("\n=== RELOCATED INITIALIZED-DATA GP USES ===");
+            p("all GP-ish instructions="+allgp+" unique relocated offsets="+uses.size());
+            for(Map.Entry<Long,List<Instruction>> e:uses.entrySet()){
+                long off=e.getKey(),src=sourceFor(off);
+                String bytes=""; try{bytes=raw(src,Math.min(24,(int)(SRC1-src)));}catch(Exception x){bytes="ERR";}
+                p(String.format("FIELD gp=-0x%x src=0x%x raw=%s uses=%d",Math.abs(off),src,bytes,e.getValue().size()));
+                for(Instruction ins:e.getValue()){
                     Function f=getFunctionContaining(ins.getAddress());
-                    p("UIREF from="+ins.getAddress()+" to="+r.getToAddress()+" type="+r.getReferenceType()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+" ins="+ins);
-                    if(to>=0x16a000L && f!=null) dumpFunction(f,"high-ui-data-ref");
-                    if(++n>=1500) { p("UIREF truncated at 1500"); return; }
+                    p(" USE "+ins.getAddress()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+"  "+ins);
+                    if(src>=0x16b000L || (off>=-0xbd20L && off<=-0xbbc0L)) dumpFn(f,"relocated-ui-field@"+Long.toHexString(src));
                 }
             }
-        }
-        p("UIREF total="+n);
-    }
 
-    private void huntGpAndImmediates() throws Exception {
-        p("\n=== GP / HIGH IMMEDIATE HUNT ===");
-        InstructionIterator ii=currentProgram.getListing().getInstructions(true);
-        int gp=0, hi=0;
-        while(ii.hasNext()) {
-            Instruction ins=ii.next();
-            long from=ins.getAddress().getOffset();
-            if(from >= 0xe185cL) continue;
-            String txt=ins.toString();
-            String low=txt.toLowerCase();
-            if((low.contains("$gp") || low.contains(" gp") || low.contains("gp,")) && gp<1200) {
-                Function f=getFunctionContaining(ins.getAddress());
-                p("GP "+ins.getAddress()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+"  "+txt);
-                gp++;
-            }
-            for(int op=0; op<ins.getNumOperands(); op++) {
-                Scalar s=ins.getScalar(op);
-                if(s==null) continue;
-                long v=s.getUnsignedValue();
-                // Useful constants for direct/hi-part loads of UI addresses and RGB values.
-                if((v>=0x16a0L && v<=0x16c0L) || (v>=0x16a000L && v<=0x16bb5fL) ||
-                   v==0xfc9000L || v==0x3c70ffL || v==0xff3636L || v==0xff6c37L ||
-                   v==0xffc53fL || v==0x2cff56L || v==0x43fddeL || v==0x1abdffL || v==0xac2fffL) {
-                    Function f=getFunctionContaining(ins.getAddress());
-                    p("IMM "+ins.getAddress()+" v=0x"+Long.toHexString(v)+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+"  "+txt);
-                    if(f!=null && hi<120) { dumpFunction(f,"ui-immediate"); hi++; }
+            // Exact ranges we care about for the one definitive graphical test.
+            long[][] ranges={{0x16b1e0L,0x16b328L},{0x16b328L,0x16b34cL},{0x16b34cL,0x16b370L},{0x16b370L,0x16b394L},{0x16b398L,0x16b3e0L}};
+            String[] names={"LANGUAGE","INACTIVE","SELECTED","LABELS","RGB"};
+            p("\n=== RANGE ACCESS SUMMARY ===");
+            for(int r=0;r<ranges.length;r++){
+                int n=0; Set<Long> fs=new LinkedHashSet<>();
+                for(Map.Entry<Long,List<Instruction>> e:uses.entrySet()){
+                    long src=sourceFor(e.getKey()); if(src>=ranges[r][0]&&src<ranges[r][1]){
+                        n+=e.getValue().size(); for(Instruction ins:e.getValue()){Function f=getFunctionContaining(ins.getAddress());if(f!=null)fs.add(f.getEntryPoint().getOffset());}
+                    }
                 }
+                p(String.format("RANGE %s [0x%x,0x%x) accesses=%d funcs=%s",names[r],ranges[r][0],ranges[r][1],n,fs));
             }
-        }
-        p("GP printed="+gp+" immediate_functions="+hi);
-    }
-
-    @Override
-    public void run() throws Exception {
-        String[] args=getScriptArgs();
-        File f=new File(args.length>0?args[0]:"pocket_ui_report.txt");
-        out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8));
-        try {
-            p("Pocket Master UI reverse-engineering evidence report v2");
-            p("language="+currentProgram.getLanguageID()+" compiler="+currentProgram.getCompilerSpec().getCompilerSpecID());
-            p("imageBase="+currentProgram.getImageBase());
-            for(MemoryBlock mb: currentProgram.getMemory().getBlocks()) p("BLOCK "+mb.getName()+" "+mb.getStart()+".."+mb.getEnd()+" size="+mb.getSize()+" x="+mb.isExecute()+" r="+mb.isRead()+" w="+mb.isWrite());
-            long funcs=currentProgram.getFunctionManager().getFunctionCount();
-            long ins=0; InstructionIterator all=currentProgram.getListing().getInstructions(true); while(all.hasNext()){all.next();ins++;}
-            p("function_count="+funcs+" instruction_count="+ins);
-
-            String[] strings={"GUI_MAIN_TASK","../UserSources/Components/WinManager/WinManager.c","English","MOVE","VOL","Effects","Settings","Position","Preset VOL"};
-            for(String s:strings){
-                List<Address> a=findBytes(s.getBytes(StandardCharsets.US_ASCII));
-                p("STRING "+s+" hits="+a);
-                for(Address x:a) refsTo("str:"+s,x);
-            }
-
-            refsTo("English-language-block", addr(0x16b1e0L));
-            refsTo("category-inactive-table", addr(0x16b328L));
-            refsTo("category-selected-table", addr(0x16b34cL));
-            refsTo("category-label-table", addr(0x16b370L));
-            refsTo("candidate-rgb888-table", addr(0x16b398L));
-
-            long[] inactive={0x102a74L,0xff3c0L,0xfcf48L,0xfaad0L,0x101838L,0xfe184L,0x1005fcL,0xfbd0cL,0x103cb0L};
-            long[] selected={0x10ce90L,0x1097dcL,0x107364L,0x104eecL,0x10bc54L,0x1085a0L,0x10aa18L,0x106128L,0x10e0ccL};
-            long[] labels={0x114e28L,0x114b30L,0x1148e8L,0x114658L,0x114d78L,0x114a28L,0x114c38L,0x1147a8L,0x114f30L};
-            for(int i=0;i<inactive.length;i++) refsTo("inactive-desc-"+i,addr(inactive[i]));
-            for(int i=0;i<selected.length;i++) refsTo("selected-desc-"+i,addr(selected[i]));
-            for(int i=0;i<labels.length;i++) refsTo("label-desc-"+i,addr(labels[i]));
-
-            huntCodeRefs();
-            huntGpAndImmediates();
-
-            p("\n=== FIRST FUNCTIONS ===");
-            FunctionIterator fi=currentProgram.getFunctionManager().getFunctions(true); int q=0;
-            while(fi.hasNext() && q<80){ Function fn=fi.next(); p("FUNC "+fn.getEntryPoint()+" "+fn.getName()+" body="+fn.getBody()); q++; }
         } finally { out.close(); }
     }
 }
