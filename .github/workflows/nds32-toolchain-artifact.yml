@@ -13,15 +13,21 @@ jobs:
       - name: Download Arch NDS32 binutils
         run: |
           set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libdebuginfod1
           URL='https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst'
           curl -fL --retry 4 "$URL" -o /tmp/nds32.pkg.tar.zst
           mkdir -p /tmp/nds32
           tar --zstd -xf /tmp/nds32.pkg.tar.zst -C /tmp/nds32
           /tmp/nds32/usr/bin/nds32le-elf-objdump --version
-          mkdir -p artifact
-          cp /tmp/nds32/usr/bin/nds32le-elf-objdump artifact/
-          cp /tmp/nds32/usr/bin/nds32le-elf-readelf artifact/
-          cp /tmp/nds32/usr/bin/nds32le-elf-nm artifact/
+          mkdir -p artifact/bin artifact/lib
+          cp /tmp/nds32/usr/bin/nds32le-elf-objdump artifact/bin/
+          cp /tmp/nds32/usr/bin/nds32le-elf-readelf artifact/bin/
+          cp /tmp/nds32/usr/bin/nds32le-elf-nm artifact/bin/
+          ldd /tmp/nds32/usr/bin/nds32le-elf-objdump | awk '/=> \/|^\// {for(i=1;i<=NF;i++) if($i ~ /^\//) print $i}' | sort -u > /tmp/libs.txt
+          while read -r lib; do cp -L "$lib" artifact/lib/; done < /tmp/libs.txt
+          printf '#!/bin/sh\nHERE="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"\nexport LD_LIBRARY_PATH="$HERE/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\nexec "$HERE/bin/nds32le-elf-objdump" "$@"\n' > artifact/objdump
+          chmod +x artifact/objdump artifact/bin/*
       - uses: actions/upload-artifact@v4
         with:
           name: nds32-analysis-tools
