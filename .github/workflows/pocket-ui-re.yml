@@ -1,0 +1,88 @@
+name: Pocket Master UI RE
+
+on:
+  push:
+    branches: [pocket-ui-re]
+    paths:
+      - 'pocket-re/**'
+      - '.github/workflows/pocket-ui-re.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ghidra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ui-re
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Download official Pocket Master V1.3.3
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 3 -o pocket-fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile, pathlib, struct
+          z=zipfile.ZipFile('pocket-fw.zip')
+          bins=[n for n in z.namelist() if n.lower().endswith('.bin')]
+          print('zip bins:', bins)
+          if not bins: raise SystemExit('no .bin in firmware zip')
+          raw=z.read(bins[0])
+          if raw[:4] != b'HTFW': raise SystemExit('not HTFW')
+          for i in range(5):
+              e=0x38+16*i
+              ck,addr,off,sz=struct.unpack_from('<IIII',raw,e)
+              typ=chr(ck>>24)
+              print(i,typ,hex(addr),hex(0x88+off),hex(sz))
+              if typ=='b':
+                  b=raw[0x88+off:0x88+off+sz]
+                  pathlib.Path('pocket-b.bin').write_bytes(b)
+                  print('b size',len(b))
+                  break
+          else: raise SystemExit('no b section')
+          PY
+          sha256sum pocket-fw.zip pocket-b.bin
+
+      - name: Download Ghidra 12.1.4
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 3 -o ghidra.zip 'https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.4_build/ghidra_12.1.4_PUBLIC_20260921.zip'
+          echo 'ddac49f903da9d5bac833e5cc79395098b9c33cfd3279be5f31bd00387d2d4db  ghidra.zip' | sha256sum -c -
+          unzip -q ghidra.zip
+          test -x ghidra_12.1.4_PUBLIC/support/analyzeHeadless
+
+      - name: Analyze section b as NDS32 LE
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p ghproj
+          ./ghidra_12.1.4_PUBLIC/support/analyzeHeadless "$PWD/ghproj" PocketUI \
+            -import "$PWD/pocket-b.bin" \
+            -loader BinaryLoader \
+            -loader-baseAddr 0x10000 \
+            -processor 'NDS32:LE:32:default' \
+            -scriptPath "$PWD/pocket-re" \
+            -preScript Seed.java \
+            -analysisTimeoutPerFile 900 \
+            -postScript Dump.java "$PWD/pocket_ui_report.txt" \
+            2>&1 | tee "$PWD/ghidra_headless.log"
+          test -s pocket_ui_report.txt
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocket-ui-re-report
+          path: |
+            pocket_ui_report.txt
+            ghidra_headless.log
+          if-no-files-found: error
