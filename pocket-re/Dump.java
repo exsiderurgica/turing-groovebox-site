@@ -5,6 +5,7 @@ import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.*;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.mem.*;
+import ghidra.program.model.scalar.Scalar;
 import ghidra.program.model.symbol.*;
 
 import java.io.*;
@@ -50,7 +51,7 @@ public class Dump extends GhidraScript {
             Address from = r.getFromAddress();
             Function f = getFunctionContaining(from);
             p("REF " + from + " type=" + r.getReferenceType() + " func=" + (f==null?"-":f.getName()+"@"+f.getEntryPoint()));
-            if (f != null) dumpFunction(f, "xref-" + label);
+            if (f != null && from.getOffset() < 0xe185cL) dumpFunction(f, "xref-" + label);
         }
         p("xref_count=" + n);
 
@@ -66,7 +67,7 @@ public class Dump extends GhidraScript {
                 Reference rr=pit.next(); k++;
                 Function pf=getFunctionContaining(rr.getFromAddress());
                 p("  PTR-XREF " + rr.getFromAddress() + " type=" + rr.getReferenceType() + " func=" + (pf==null?"-":pf.getName()+"@"+pf.getEntryPoint()));
-                if (pf != null) dumpFunction(pf, "ptr-xref-"+label);
+                if (pf != null && rr.getFromAddress().getOffset() < 0xe185cL) dumpFunction(pf, "ptr-xref-"+label);
             }
         }
     }
@@ -78,7 +79,7 @@ public class Dump extends GhidraScript {
         Listing listing=currentProgram.getListing();
         InstructionIterator ii=listing.getInstructions(f.getBody(), true);
         int c=0;
-        while(ii.hasNext() && c<180) {
+        while(ii.hasNext() && c<220) {
             Instruction ins=ii.next();
             p("ASM " + ins.getAddress() + "  " + ins.toString());
             c++;
@@ -98,16 +99,69 @@ public class Dump extends GhidraScript {
 
     private Address addr(long x){ return toAddr(x); }
 
+    private void huntCodeRefs() throws Exception {
+        p("\n=== CODE REFERENCES INTO HIGH UI/DATA AREA ===");
+        InstructionIterator ii=currentProgram.getListing().getInstructions(true);
+        int n=0;
+        while(ii.hasNext()) {
+            Instruction ins=ii.next();
+            long from=ins.getAddress().getOffset();
+            if(from >= 0xe185cL) continue; // resource/data archive, not executable application code
+            for(Reference r: ins.getReferencesFrom()) {
+                long to=r.getToAddress().getOffset();
+                if(to>=0xd0000L && to<=0x16bb5fL) {
+                    Function f=getFunctionContaining(ins.getAddress());
+                    p("UIREF from="+ins.getAddress()+" to="+r.getToAddress()+" type="+r.getReferenceType()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+" ins="+ins);
+                    if(to>=0x16a000L && f!=null) dumpFunction(f,"high-ui-data-ref");
+                    if(++n>=1500) { p("UIREF truncated at 1500"); return; }
+                }
+            }
+        }
+        p("UIREF total="+n);
+    }
+
+    private void huntGpAndImmediates() throws Exception {
+        p("\n=== GP / HIGH IMMEDIATE HUNT ===");
+        InstructionIterator ii=currentProgram.getListing().getInstructions(true);
+        int gp=0, hi=0;
+        while(ii.hasNext()) {
+            Instruction ins=ii.next();
+            long from=ins.getAddress().getOffset();
+            if(from >= 0xe185cL) continue;
+            String txt=ins.toString();
+            String low=txt.toLowerCase();
+            if((low.contains("$gp") || low.contains(" gp") || low.contains("gp,")) && gp<1200) {
+                Function f=getFunctionContaining(ins.getAddress());
+                p("GP "+ins.getAddress()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+"  "+txt);
+                gp++;
+            }
+            for(int op=0; op<ins.getNumOperands(); op++) {
+                Scalar s=ins.getScalar(op);
+                if(s==null) continue;
+                long v=s.getUnsignedValue();
+                // Useful constants for direct/hi-part loads of UI addresses and RGB values.
+                if((v>=0x16a0L && v<=0x16c0L) || (v>=0x16a000L && v<=0x16bb5fL) ||
+                   v==0xfc9000L || v==0x3c70ffL || v==0xff3636L || v==0xff6c37L ||
+                   v==0xffc53fL || v==0x2cff56L || v==0x43fddeL || v==0x1abdffL || v==0xac2fffL) {
+                    Function f=getFunctionContaining(ins.getAddress());
+                    p("IMM "+ins.getAddress()+" v=0x"+Long.toHexString(v)+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+"  "+txt);
+                    if(f!=null && hi<120) { dumpFunction(f,"ui-immediate"); hi++; }
+                }
+            }
+        }
+        p("GP printed="+gp+" immediate_functions="+hi);
+    }
+
     @Override
     public void run() throws Exception {
         String[] args=getScriptArgs();
         File f=new File(args.length>0?args[0]:"pocket_ui_report.txt");
         out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8));
         try {
-            p("Pocket Master UI reverse-engineering evidence report");
+            p("Pocket Master UI reverse-engineering evidence report v2");
             p("language="+currentProgram.getLanguageID()+" compiler="+currentProgram.getCompilerSpec().getCompilerSpecID());
             p("imageBase="+currentProgram.getImageBase());
-            for(MemoryBlock b: currentProgram.getMemory().getBlocks()) p("BLOCK "+b.getName()+" "+b.getStart()+".."+b.getEnd()+" size="+b.getSize()+" x="+b.isExecute()+" r="+b.isRead()+" w="+b.isWrite());
+            for(MemoryBlock mb: currentProgram.getMemory().getBlocks()) p("BLOCK "+mb.getName()+" "+mb.getStart()+".."+mb.getEnd()+" size="+mb.getSize()+" x="+mb.isExecute()+" r="+mb.isRead()+" w="+mb.isWrite());
             long funcs=currentProgram.getFunctionManager().getFunctionCount();
             long ins=0; InstructionIterator all=currentProgram.getListing().getInstructions(true); while(all.hasNext()){all.next();ins++;}
             p("function_count="+funcs+" instruction_count="+ins);
@@ -119,21 +173,25 @@ public class Dump extends GhidraScript {
                 for(Address x:a) refsTo("str:"+s,x);
             }
 
-            // Known stable UI structures from V1.3.3 static mapping, runtime base = b offset + 0x10000.
             refsTo("English-language-block", addr(0x16b1e0L));
             refsTo("category-inactive-table", addr(0x16b328L));
             refsTo("category-selected-table", addr(0x16b34cL));
             refsTo("category-label-table", addr(0x16b370L));
             refsTo("candidate-rgb888-table", addr(0x16b398L));
 
-            // LVGL image descriptors which visually decode to the stock category cards.
-            long[] cards={0x0faadcL,0x0fbd18L,0x0fcf54L,0x0fe190L,0x0ff3ccL,0x100608L,0x101844L,0x102a80L,0x103cbcL,
-                          0x104ef8L,0x106134L,0x107370L,0x1085acL,0x1097e8L,0x10aa24L,0x10bc60L,0x10ce9cL,0x10e0d8L};
-            for(int i=0;i<cards.length;i++) refsTo("card-payload-"+i, addr(cards[i]));
+            long[] inactive={0x102a74L,0xff3c0L,0xfcf48L,0xfaad0L,0x101838L,0xfe184L,0x1005fcL,0xfbd0cL,0x103cb0L};
+            long[] selected={0x10ce90L,0x1097dcL,0x107364L,0x104eecL,0x10bc54L,0x1085a0L,0x10aa18L,0x106128L,0x10e0ccL};
+            long[] labels={0x114e28L,0x114b30L,0x1148e8L,0x114658L,0x114d78L,0x114a28L,0x114c38L,0x1147a8L,0x114f30L};
+            for(int i=0;i<inactive.length;i++) refsTo("inactive-desc-"+i,addr(inactive[i]));
+            for(int i=0;i<selected.length;i++) refsTo("selected-desc-"+i,addr(selected[i]));
+            for(int i=0;i<labels.length;i++) refsTo("label-desc-"+i,addr(labels[i]));
+
+            huntCodeRefs();
+            huntGpAndImmediates();
 
             p("\n=== FIRST FUNCTIONS ===");
             FunctionIterator fi=currentProgram.getFunctionManager().getFunctions(true); int q=0;
-            while(fi.hasNext() && q<150){ Function fn=fi.next(); p("FUNC "+fn.getEntryPoint()+" "+fn.getName()+" body="+fn.getBody()); q++; }
+            while(fi.hasNext() && q<80){ Function fn=fi.next(); p("FUNC "+fn.getEntryPoint()+" "+fn.getName()+" body="+fn.getBody()); q++; }
         } finally { out.close(); }
     }
 }
