@@ -118,4 +118,4 @@ jobs:
             ghidra_headless.log
           if-no-files-found: error
 
-# ui-re-hunt-v2
+# ui-re-trace-v3
