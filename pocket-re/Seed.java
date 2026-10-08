@@ -4,27 +4,32 @@
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
+import ghidra.program.model.mem.MemoryBlock;
 
 public class Seed extends GhidraScript {
     @Override
     public void run() throws Exception {
         Address base = toAddr(0x10000L);
         println("POCKET_RE SEED language=" + currentProgram.getLanguageID() + " base=" + base);
-        try {
-            currentProgram.getSymbolTable().addExternalEntryPoint(base);
-        } catch (Exception e) {
-            println("entry-point note: " + e.getMessage());
+        for (MemoryBlock b : currentProgram.getMemory().getBlocks()) {
+            try { b.setRead(true); b.setExecute(true); } catch (Exception ignored) {}
         }
-        boolean ok = disassemble(base);
-        println("disassemble(base)=" + ok);
-        Function f = getFunctionAt(base);
-        if (f == null) {
+
+        // Section b begins with an NDS32 exception/vector jump table. Seed each
+        // 4-byte vector slot so auto-analysis follows more than only reset.
+        for (int off = 0; off <= 0xa0; off += 4) {
+            Address a = base.add(off);
+            try { currentProgram.getSymbolTable().addExternalEntryPoint(a); } catch (Exception ignored) {}
             try {
-                f = createFunction(base, "pocket_b_entry");
-                println("created function at " + base + ": " + f);
-            } catch (Exception e) {
-                println("createFunction(base) note: " + e.getMessage());
-            }
+                boolean ok = disassemble(a);
+                println("vector " + a + " disasm=" + ok);
+                if (getFunctionAt(a) == null) {
+                    try { createFunction(a, String.format("vector_%03x", off)); } catch (Exception ignored) {}
+                }
+            } catch (Exception e) { println("vector " + a + " note=" + e.getMessage()); }
         }
+
+        Function f = getFunctionAt(base);
+        println("base function=" + f);
     }
 }
