@@ -6,7 +6,7 @@ import {
 } from './pocket-master-webmidi.mjs';
 
 const TARGETS = new Map([
-  ['a54186186e82ecf74d6abf4990b4d7d4782cbdd2430979fd35a79f9e7ebc072b', 'TTG FX v2.0 EXSIDERURGICA MODS FULL'],
+  ['61988a89ed19ce7d0d6519a2633b793db2f5ef458d2a6204cc4604880fdc4f75', 'TTG FX v2.0.1 SAFE BOOT'],
   ['c1f208574ebb8e2c7e9caf99166582eed80cd33332b31d562046a52237d7cd4d', 'TTG FX v1.3 TRUE CHAIN (rollback)'],
   ['d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3', 'Official Pocket Master V1.3.3 (recovery)']
 ]);
