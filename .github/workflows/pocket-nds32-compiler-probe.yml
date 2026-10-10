@@ -40,75 +40,63 @@ jobs:
           export PATH="/tmp/nds32/usr/bin:$PATH"
           nds32le-elf-gcc -dumpmachine | tee gcc-dumpmachine.txt
           nds32le-elf-gcc --version | tee gcc-version.txt
-          nds32le-elf-gcc -v 2>&1 | tee gcc-v.txt
           nds32le-elf-gcc -Q --help=target 2>&1 | tee gcc-target-help.txt
-          nds32le-elf-as --version | tee as-version.txt
           nds32le-elf-objdump --version | tee objdump-version.txt
 
-      - name: Build freestanding ABI probes
+      - name: Build freestanding ABI probes and linked GUI takeover callbacks
         run: |
           set -euxo pipefail
           export PATH="/tmp/nds32/usr/bin:$PATH"
           mkdir -p build
+
           cat > build/probe.c <<'EOF'
           #include <stdint.h>
-
-          __attribute__((noinline,used))
-          int ttg_noop(void *ctx, int arg) {
-              (void)ctx;
-              return arg + 1;
-          }
-
-          __attribute__((noinline,used))
-          void ttg_store32(volatile uint32_t *p, uint32_t v) {
-              *p = v;
-          }
-
-          __attribute__((noinline,used))
-          uint32_t ttg_mix(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
-              return (a ^ b) + (c << 1) - d;
-          }
-
-          __attribute__((noinline,used))
-          float ttg_float(float a, float b) {
-              return a * 0.5f + b;
-          }
+          __attribute__((noinline,used)) int ttg_noop(void *ctx, int arg){(void)ctx;return arg+1;}
+          __attribute__((noinline,used)) void ttg_store32(volatile uint32_t *p,uint32_t v){*p=v;}
+          __attribute__((noinline,used)) uint32_t ttg_mix(uint32_t a,uint32_t b,uint32_t c,uint32_t d){return (a^b)+(c<<1)-d;}
+          __attribute__((noinline,used)) float ttg_float(float a,float b){return a*0.5f+b;}
           EOF
 
           COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Os -Wall -Wextra'
-
-          build_one() {
-            name="$1"; shift
-            echo "=== BUILD $name : $* ===" | tee -a build/variants.txt
-            nds32le-elf-gcc $COMMON "$@" -c build/probe.c -o "build/probe-$name.o"
-            nds32le-elf-objdump -dr "build/probe-$name.o" > "build/probe-$name.dis"
-            nds32le-elf-readelf -h -A "build/probe-$name.o" > "build/probe-$name.elfinfo"
-            nds32le-elf-nm -n "build/probe-$name.o" > "build/probe-$name.nm"
-          }
-
-          build_one default
+          build_one(){ name="$1";shift; nds32le-elf-gcc $COMMON "$@" -c build/probe.c -o "build/probe-$name.o"; nds32le-elf-objdump -dr "build/probe-$name.o" > "build/probe-$name.dis"; nds32le-elf-readelf -h -A "build/probe-$name.o" > "build/probe-$name.elfinfo"; }
           build_one d1088 -mcpu=d1088 -mabi=2
           build_one d1088-fpu-soft -mcpu=d1088-fpu -mabi=2 -mext-fpu-sp
 
-          # The GCC driver advertises ABI 2fp+, but this packaged assembler rejects the
-          # textual ABI tag. Keep it diagnostic-only; GUI callbacks do not need hard FP.
-          if nds32le-elf-gcc $COMMON -mcpu=d1088-fpu -mabi=2fp+ -mext-fpu-sp -c build/probe.c -o build/probe-d1088-fpu-hard.o 2>build/probe-d1088-fpu-hard.err; then
-            nds32le-elf-objdump -dr build/probe-d1088-fpu-hard.o > build/probe-d1088-fpu-hard.dis
-            echo 'D1088 HARD ABI OK' >> build/variants.txt
-          else
-            echo 'D1088 HARD ABI REJECTED BY ASSEMBLER (non-blocking)' >> build/variants.txt
-          fi
+          cat > build/gui_takeover.c <<'EOF'
+          #include <stdint.h>
+          __attribute__((used,section(".text.ttg_page2_enter"),noinline))
+          uint32_t ttg_page2_enter(void *ctx, uint32_t param){(void)ctx;(void)param;return 0;}
+          __attribute__((used,section(".text.ttg_page2_leave"),noinline))
+          uint32_t ttg_page2_leave(void *ctx){(void)ctx;return 0;}
+          __attribute__((used,section(".text.ttg_page2_event"),noinline))
+          uint32_t ttg_page2_event(void *ctx){(void)ctx;return 0;}
+          EOF
 
-          for march in v3 v3m v3j v3s; do
-            if nds32le-elf-gcc $COMMON -march="$march" -mabi=2 -c build/probe.c -o "build/probe-$march.o" 2>"build/probe-$march.err"; then
-              nds32le-elf-objdump -dr "build/probe-$march.o" > "build/probe-$march.dis"
-              nds32le-elf-readelf -h -A "build/probe-$march.o" > "build/probe-$march.elfinfo"
-              echo "MARCH $march OK" | tee -a build/march-results.txt
-            else
-              echo "MARCH $march REJECTED" | tee -a build/march-results.txt
-            fi
-          done
+          cat > build/gui_takeover.ld <<'EOF'
+          ENTRY(ttg_page2_enter)
+          SECTIONS
+          {
+            . = 0x00022e80;
+            .ttg_enter : { KEEP(*(.text.ttg_page2_enter)) }
+            . = 0x000233e8;
+            .ttg_leave : { KEEP(*(.text.ttg_page2_leave)) }
+            . = 0x00023440;
+            .ttg_event : { KEEP(*(.text.ttg_page2_event)) }
+            /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) }
+          }
+          EOF
 
+          nds32le-elf-gcc $COMMON -mcpu=d1088 -mabi=2 -fno-pic -c build/gui_takeover.c -o build/gui_takeover.o
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,build/gui_takeover.ld build/gui_takeover.o -o build/gui_takeover.elf
+          nds32le-elf-objdump -dr -Mintel build/gui_takeover.elf > build/gui_takeover.dis || nds32le-elf-objdump -dr build/gui_takeover.elf > build/gui_takeover.dis
+          nds32le-elf-nm -n build/gui_takeover.elf > build/gui_takeover.nm
+          nds32le-elf-readelf -h -S -l -A build/gui_takeover.elf > build/gui_takeover.elfinfo
+          nds32le-elf-objcopy -O binary --only-section=.ttg_enter build/gui_takeover.elf build/ttg_page2_enter.bin
+          nds32le-elf-objcopy -O binary --only-section=.ttg_leave build/gui_takeover.elf build/ttg_page2_leave.bin
+          nds32le-elf-objcopy -O binary --only-section=.ttg_event build/gui_takeover.elf build/ttg_page2_event.bin
+
+          printf 'Expected stock callback addresses:\n enter 0x22e80\n leave 0x233e8\n event 0x23440\n' > build/gui_takeover_map.txt
+          wc -c build/ttg_page2_*.bin | tee -a build/gui_takeover_map.txt
           sha256sum build/* > build/SHA256SUMS.txt
 
       - name: Upload compiler probe
@@ -117,7 +105,6 @@ jobs:
           name: pocket-nds32-compiler-probe
           path: |
             gcc-*.txt
-            as-version.txt
             objdump-version.txt
             build/
           retention-days: 30
