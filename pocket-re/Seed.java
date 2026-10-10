@@ -12,6 +12,7 @@ public class Seed extends GhidraScript {
     seed(0x5fb18L,"app_bootstrap");seed(0x5fb7cL,"app_bootstrap_after_unknown");seed(0x5fcc2L,"app_bootstrap_error_tail");
     seed(0x5431cL,"MainApp_task");seed(0x2c414L,"GUI_task_mode1");seed(0x2c46cL,"GUI_task_mode0");seed(0x2c4b0L,"GUI_task_mode3");
     seed(0x23c84L,"GUI_page0_enter");seed(0x23d38L,"GUI_page0_leave");seed(0x23d7cL,"GUI_page0_event");seed(0x23c44L,"GUI_page0_widget_event");
+    seed(0x22e80L,"GUI_page2_enter");seed(0x233e8L,"GUI_page2_leave");seed(0x23440L,"GUI_page2_event");
     seed(0x2c9c4L,"GUI_global_leave");seed(0x2c9f0L,"GUI_global_event");
   }
 }
