@@ -1,0 +1,103 @@
+name: Pocket Master NDS32 compiler probe
+
+on:
+  push:
+    branches: [pocket-ui-re]
+    paths:
+      - '.github/workflows/pocket-nds32-compiler-probe.yml'
+      - 'pocket-re/compiler-probe/**'
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ui-re
+
+      - name: Install runtime dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1
+
+      - name: Download Arch NDS32 GCC + binutils
+        run: |
+          set -euxo pipefail
+          BINUTILS_URL='https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst'
+          GCC_URL='https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-gcc-15.2.0-1-x86_64.pkg.tar.zst'
+          curl -fL --retry 4 "$BINUTILS_URL" -o /tmp/binutils.pkg.tar.zst
+          curl -fL --retry 4 "$GCC_URL" -o /tmp/gcc.pkg.tar.zst
+          mkdir -p /tmp/nds32
+          tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
+          tar --zstd -xf /tmp/gcc.pkg.tar.zst -C /tmp/nds32
+          echo "/tmp/nds32/usr/bin" >> "$GITHUB_PATH"
+
+      - name: Inspect compiler target
+        run: |
+          set -euxo pipefail
+          export PATH="/tmp/nds32/usr/bin:$PATH"
+          nds32le-elf-gcc -dumpmachine | tee gcc-dumpmachine.txt
+          nds32le-elf-gcc --version | tee gcc-version.txt
+          nds32le-elf-gcc -v 2>&1 | tee gcc-v.txt
+          nds32le-elf-gcc -Q --help=target 2>&1 | tee gcc-target-help.txt
+          nds32le-elf-as --version | tee as-version.txt
+          nds32le-elf-objdump --version | tee objdump-version.txt
+
+      - name: Build freestanding ABI probes
+        run: |
+          set -euxo pipefail
+          export PATH="/tmp/nds32/usr/bin:$PATH"
+          mkdir -p build
+          cat > build/probe.c <<'EOF'
+          #include <stdint.h>
+
+          __attribute__((noinline,used))
+          int ttg_noop(void *ctx, int arg) {
+              (void)ctx;
+              return arg + 1;
+          }
+
+          __attribute__((noinline,used))
+          void ttg_store32(volatile uint32_t *p, uint32_t v) {
+              *p = v;
+          }
+
+          __attribute__((noinline,used))
+          uint32_t ttg_mix(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
+              return (a ^ b) + (c << 1) - d;
+          }
+          EOF
+
+          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Os -Wall -Wextra'
+
+          # Always build the compiler default first. Additional variants are best-effort
+          # and show which ISA names this GCC accepts.
+          nds32le-elf-gcc $COMMON -c build/probe.c -o build/probe-default.o
+          nds32le-elf-objdump -dr -Mintel build/probe-default.o > build/probe-default.dis || nds32le-elf-objdump -dr build/probe-default.o > build/probe-default.dis
+          nds32le-elf-readelf -h -A build/probe-default.o > build/probe-default.elfinfo
+
+          for march in v3 v3m v3j v3s; do
+            if nds32le-elf-gcc $COMMON -march="$march" -c build/probe.c -o "build/probe-$march.o" 2>"build/probe-$march.err"; then
+              nds32le-elf-objdump -dr "build/probe-$march.o" > "build/probe-$march.dis"
+              nds32le-elf-readelf -h -A "build/probe-$march.o" > "build/probe-$march.elfinfo"
+              echo "MARCH $march OK" | tee -a build/march-results.txt
+            else
+              echo "MARCH $march REJECTED" | tee -a build/march-results.txt
+            fi
+          done
+
+          nds32le-elf-nm -n build/probe-default.o > build/probe-default.nm
+          sha256sum build/* > build/SHA256SUMS.txt
+
+      - name: Upload compiler probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocket-nds32-compiler-probe
+          path: |
+            gcc-*.txt
+            as-version.txt
+            objdump-version.txt
+            build/
+          retention-days: 30
