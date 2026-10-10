@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#050505">
+<title>Pocket Master · TTG Code Probe</title>
+<style>
+:root{color-scheme:dark;--bg:#050505;--panel:#111;--line:#303030;--text:#f5f5f5;--muted:#999;--accent:#ee4c3f;--ok:#65d889;--bad:#ff6961}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px}.shell{max-width:820px;margin:auto}.brand{font-weight:950;letter-spacing:.08em}.brand b{color:var(--accent)}h1{font-size:clamp(30px,8vw,52px);line-height:1;margin:14px 0 8px}.sub,.tiny{color:var(--muted)}.tiny{font-size:12px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}.warn{border-color:#6f302b;background:#17100f}.safe{border-color:#275b3b}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:650px){.row{grid-template-columns:1fr}}button,.fileBtn,select{width:100%;border:1px solid #3a3a3a;background:#191919;color:#fff;border-radius:12px;padding:14px;font-weight:850;font-size:14px;margin:5px 0}.primary{background:var(--accent);color:#080808;border-color:var(--accent)}.rescan{background:#202020;border-color:var(--accent);color:var(--accent)}.force{border-color:#734;background:#1b1012}button:disabled{opacity:.35}.fileBtn{display:block;text-align:center;cursor:pointer}input[type=file]{display:none}.status{font-weight:900;padding:12px;background:#090909;border:1px solid #262626;border-radius:12px}.ok{color:var(--ok)}.bad{color:var(--bad)}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#090909;border:1px solid #262626;border-radius:12px;padding:12px;color:#d0d0d0;max-height:360px;overflow:auto}progress{width:100%;height:18px;accent-color:var(--accent)}.check{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.help{border:1px dashed #6f302b}
+</style></head><body><main class="shell">
+<div class="brand"><b>EXS</b> / POCKET MASTER</div>
+<h1>TTG CODE PROBE<br>v0.3</h1>
+<p class="sub">Primo test di codice compilato da noi dentro un singolo algoritmo audio. Nessuna modifica a UI, preset, IR o firmware principale.</p>
+<section class="card safe"><b class="ok">PATCH MINIMA</b><p>Solo Auto Wah / regione <code>g</code>. Quando Auto Wah è ON, il probe moltiplica il buffer stereo per 0.5 (~−6 dB). Tutto il resto resta stock.</p></section>
+<section class="card warn"><b>RECOVERY GIÀ VERIFICATA</b><p>In caso di boot errato: recovery hardware a freddo + firmware ufficiale V1.3.3. Durante una scrittura attiva non scollegare USB/alimentazione.</p></section>
+<section class="card"><div id="browserStatus" class="status">Checking browser…</div><button id="connectBtn">1 · CONNECT MIDI / ALLOW SYSEX</button></section>
+<section class="card"><label class="fileBtn" for="firmwareFile">2 · CHOOSE PROBE / OFFICIAL .BIN</label><input id="firmwareFile" type="file" accept=".bin,application/octet-stream"><pre id="inspectBox">No firmware selected.</pre></section>
+<section class="card"><label class="tiny">MIDI device</label><select id="deviceSelect"><option value="">Connect first</option></select></section>
+<section class="card"><label class="check"><input id="agree" type="checkbox"><span>Ho il firmware ufficiale V1.3.3 disponibile e non interromperò USB/alimentazione durante la scrittura.</span></label><button id="flashBtn" class="primary">3 · FLASH SELECTED IMAGE</button><button id="cancelBtn" class="bad" hidden>CANCEL / STOP SENDING</button></section>
+<section id="reconnectHelp" class="card help" hidden><b>BOOTLOADER IN ATTESA</b><p>Lascia il Pocket collegato. Tocca RESCAN / CONTINUE. Se il Pocket è chiaramente in update mode ma Android ricicla gli stessi ID MIDI, usa FORCE SAME-PORT CONTINUE.</p><button id="rescanBtn" class="rescan" hidden>RESCAN / CONTINUE</button><button id="forceSameBtn" class="force" hidden>FORCE SAME-PORT CONTINUE</button></section>
+<section class="card"><div id="state" class="status">IDLE</div><div style="height:10px"></div><progress id="progress" max="100" value="0"></progress><div id="progressText" class="tiny">0%</div><pre id="log">Ready.\n</pre></section>
+<p class="tiny">Safety lock: accetta esclusivamente TTG Code Probe v0.3 e Official Pocket Master V1.3.3.</p>
+<script type="module" src="./app.mjs?v=probe-v03-20261010"></script>
+</main></body></html>
