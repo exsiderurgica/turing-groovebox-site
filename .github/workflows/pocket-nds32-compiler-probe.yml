@@ -20,7 +20,7 @@ jobs:
         run: |
           set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1
+          sudo apt-get install -y zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1 libdebuginfod1
 
       - name: Download Arch NDS32 GCC + binutils
         run: |
@@ -68,18 +68,31 @@ jobs:
           uint32_t ttg_mix(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
               return (a ^ b) + (c << 1) - d;
           }
+
+          __attribute__((noinline,used))
+          float ttg_float(float a, float b) {
+              return a * 0.5f + b;
+          }
           EOF
 
           COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Os -Wall -Wextra'
 
-          # Always build the compiler default first. Additional variants are best-effort
-          # and show which ISA names this GCC accepts.
-          nds32le-elf-gcc $COMMON -c build/probe.c -o build/probe-default.o
-          nds32le-elf-objdump -dr -Mintel build/probe-default.o > build/probe-default.dis || nds32le-elf-objdump -dr build/probe-default.o > build/probe-default.dis
-          nds32le-elf-readelf -h -A build/probe-default.o > build/probe-default.elfinfo
+          build_one() {
+            name="$1"; shift
+            echo "=== BUILD $name : $* ===" | tee -a build/variants.txt
+            nds32le-elf-gcc $COMMON "$@" -c build/probe.c -o "build/probe-$name.o"
+            nds32le-elf-objdump -dr "build/probe-$name.o" > "build/probe-$name.dis"
+            nds32le-elf-readelf -h -A "build/probe-$name.o" > "build/probe-$name.elfinfo"
+            nds32le-elf-nm -n "build/probe-$name.o" > "build/probe-$name.nm"
+          }
+
+          build_one default
+          build_one d1088 -mcpu=d1088 -mabi=2
+          build_one d1088-fpu-soft -mcpu=d1088-fpu -mabi=2
+          build_one d1088-fpu-hard -mcpu=d1088-fpu -mabi=2fp+ -mext-fpu-sp
 
           for march in v3 v3m v3j v3s; do
-            if nds32le-elf-gcc $COMMON -march="$march" -c build/probe.c -o "build/probe-$march.o" 2>"build/probe-$march.err"; then
+            if nds32le-elf-gcc $COMMON -march="$march" -mabi=2 -c build/probe.c -o "build/probe-$march.o" 2>"build/probe-$march.err"; then
               nds32le-elf-objdump -dr "build/probe-$march.o" > "build/probe-$march.dis"
               nds32le-elf-readelf -h -A "build/probe-$march.o" > "build/probe-$march.elfinfo"
               echo "MARCH $march OK" | tee -a build/march-results.txt
@@ -88,7 +101,6 @@ jobs:
             fi
           done
 
-          nds32le-elf-nm -n build/probe-default.o > build/probe-default.nm
           sha256sum build/* > build/SHA256SUMS.txt
 
       - name: Upload compiler probe
