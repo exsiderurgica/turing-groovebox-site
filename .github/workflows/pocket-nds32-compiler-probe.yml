@@ -43,33 +43,64 @@ jobs:
           nds32le-elf-gcc -Q --help=target 2>&1 | tee gcc-target-help.txt
           nds32le-elf-objdump --version | tee objdump-version.txt
 
-      - name: Build freestanding ABI probes and linked GUI takeover callbacks
+      - name: Build first custom page-2 takeover
         run: |
           set -euxo pipefail
           export PATH="/tmp/nds32/usr/bin:$PATH"
           mkdir -p build
 
-          cat > build/probe.c <<'EOF'
-          #include <stdint.h>
-          __attribute__((noinline,used)) int ttg_noop(void *ctx, int arg){(void)ctx;return arg+1;}
-          __attribute__((noinline,used)) void ttg_store32(volatile uint32_t *p,uint32_t v){*p=v;}
-          __attribute__((noinline,used)) uint32_t ttg_mix(uint32_t a,uint32_t b,uint32_t c,uint32_t d){return (a^b)+(c<<1)-d;}
-          __attribute__((noinline,used)) float ttg_float(float a,float b){return a*0.5f+b;}
-          EOF
-
-          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -Os -Wall -Wextra'
-          build_one(){ name="$1";shift; nds32le-elf-gcc $COMMON "$@" -c build/probe.c -o "build/probe-$name.o"; nds32le-elf-objdump -dr "build/probe-$name.o" > "build/probe-$name.dis"; nds32le-elf-readelf -h -A "build/probe-$name.o" > "build/probe-$name.elfinfo"; }
-          build_one d1088 -mcpu=d1088 -mabi=2
-          build_one d1088-fpu-soft -mcpu=d1088-fpu -mabi=2 -mext-fpu-sp
-
           cat > build/gui_takeover.c <<'EOF'
           #include <stdint.h>
+          #include <stddef.h>
+
+          typedef void *(*ttg_get_screen_fn)(void);
+          typedef void *(*ttg_create_text_fn)(void *parent);
+          typedef void (*ttg_set_text_fn)(void *obj, const char *text);
+          typedef void (*ttg_set_pos_fn)(void *obj, int32_t x, int32_t y);
+
+          #define TTG_GET_SCREEN  ((ttg_get_screen_fn)(uintptr_t)0x0002cce0u)
+          #define TTG_CREATE_TEXT ((ttg_create_text_fn)(uintptr_t)0x00047998u)
+          #define TTG_SET_TEXT    ((ttg_set_text_fn)(uintptr_t)0x000479b8u)
+          #define TTG_SET_POS     ((ttg_set_pos_fn)(uintptr_t)0x0002f15cu)
+
+          __attribute__((used,section(".ttg_strings"),aligned(1)))
+          static const char ttg_title[] = "TTG FX";
+          __attribute__((used,section(".ttg_strings"),aligned(1)))
+          static const char ttg_brand[] = "EXSIDERURGICA";
+          __attribute__((used,section(".ttg_strings"),aligned(1)))
+          static const char ttg_status[] = "CUSTOM UI CORE";
+
+          static __attribute__((always_inline)) inline void add_text(void *parent, const char *s, int32_t x, int32_t y) {
+              void *t = TTG_CREATE_TEXT(parent);
+              if (t) {
+                  TTG_SET_TEXT(t, s);
+                  TTG_SET_POS(t, x, y);
+              }
+          }
+
           __attribute__((used,section(".text.ttg_page2_enter"),noinline))
-          uint32_t ttg_page2_enter(void *ctx, uint32_t param){(void)ctx;(void)param;return 0;}
+          uint32_t ttg_page2_enter(void *ctx, uint32_t param) {
+              (void)ctx;
+              (void)param;
+              void *screen = TTG_GET_SCREEN();
+              if (!screen) return 0;
+              add_text(screen, ttg_title, 12, 14);
+              add_text(screen, ttg_brand, 12, 44);
+              add_text(screen, ttg_status, 12, 74);
+              return 0;
+          }
+
           __attribute__((used,section(".text.ttg_page2_leave"),noinline))
-          uint32_t ttg_page2_leave(void *ctx){(void)ctx;return 0;}
+          uint32_t ttg_page2_leave(void *ctx) {
+              (void)ctx;
+              return 0;
+          }
+
           __attribute__((used,section(".text.ttg_page2_event"),noinline))
-          uint32_t ttg_page2_event(void *ctx){(void)ctx;return 0;}
+          uint32_t ttg_page2_event(void *ctx) {
+              (void)ctx;
+              return 0;
+          }
           EOF
 
           cat > build/gui_takeover.ld <<'EOF'
@@ -78,25 +109,38 @@ jobs:
           {
             . = 0x00022e80;
             .ttg_enter : { KEEP(*(.text.ttg_page2_enter)) }
+            . = 0x00023080;
+            .ttg_strings : { KEEP(*(.ttg_strings)) }
             . = 0x000233e8;
             .ttg_leave : { KEEP(*(.text.ttg_page2_leave)) }
             . = 0x00023440;
             .ttg_event : { KEEP(*(.text.ttg_page2_event)) }
-            /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) }
+            /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) *(.data*) *(.bss*) }
           }
+          ASSERT(SIZEOF(.ttg_enter) <= 0x200, "custom enter exceeds reserved code window")
+          ASSERT(SIZEOF(.ttg_strings) <= 0x100, "custom strings exceed reserved window")
+          ASSERT(SIZEOF(.ttg_leave) <= 0x58, "custom leave exceeds stock callback slot")
+          ASSERT(SIZEOF(.ttg_event) <= 0x22e, "custom event exceeds stock callback slot")
           EOF
 
-          nds32le-elf-gcc $COMMON -mcpu=d1088 -mabi=2 -fno-pic -c build/gui_takeover.c -o build/gui_takeover.o
+          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -fno-merge-constants -Os -Wall -Wextra -mcpu=d1088 -mabi=2 -G0'
+          nds32le-elf-gcc $COMMON -c build/gui_takeover.c -o build/gui_takeover.o
           nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,build/gui_takeover.ld build/gui_takeover.o -o build/gui_takeover.elf
-          nds32le-elf-objdump -dr -Mintel build/gui_takeover.elf > build/gui_takeover.dis || nds32le-elf-objdump -dr build/gui_takeover.elf > build/gui_takeover.dis
+          nds32le-elf-objdump -dr build/gui_takeover.elf > build/gui_takeover.dis
+          nds32le-elf-objdump -s build/gui_takeover.elf > build/gui_takeover.hex
           nds32le-elf-nm -n build/gui_takeover.elf > build/gui_takeover.nm
-          nds32le-elf-readelf -h -S -l -A build/gui_takeover.elf > build/gui_takeover.elfinfo
+          nds32le-elf-readelf -h -S -l -A -r build/gui_takeover.elf > build/gui_takeover.elfinfo
           nds32le-elf-objcopy -O binary --only-section=.ttg_enter build/gui_takeover.elf build/ttg_page2_enter.bin
+          nds32le-elf-objcopy -O binary --only-section=.ttg_strings build/gui_takeover.elf build/ttg_page2_strings.bin
           nds32le-elf-objcopy -O binary --only-section=.ttg_leave build/gui_takeover.elf build/ttg_page2_leave.bin
           nds32le-elf-objcopy -O binary --only-section=.ttg_event build/gui_takeover.elf build/ttg_page2_event.bin
 
-          printf 'Expected stock callback addresses:\n enter 0x22e80\n leave 0x233e8\n event 0x23440\n' > build/gui_takeover_map.txt
+          printf 'Patch map (runtime addresses in region b):\n enter   0x22e80\n strings 0x23080\n leave   0x233e8\n event   0x23440\n' > build/gui_takeover_map.txt
           wc -c build/ttg_page2_*.bin | tee -a build/gui_takeover_map.txt
+          if grep -Eq 'R_NDS32|RELOCATION RECORDS FOR' build/gui_takeover.dis; then
+            echo 'ERROR: unexpected unresolved relocation in final ELF' >&2
+            exit 1
+          fi
           sha256sum build/* > build/SHA256SUMS.txt
 
       - name: Upload compiler probe
