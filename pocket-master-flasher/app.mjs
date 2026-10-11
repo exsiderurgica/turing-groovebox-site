@@ -6,6 +6,7 @@ import {
 } from './pocket-master-webmidi.mjs';
 
 const TARGETS = new Map([
+  ['09c444c2cf72ce877a7c956f82d722f458238532fec4747226e1c05e6ff4d379', 'TTG FX v1.7 LIVE INPUT MONITOR v0.1'],
   ['6e72918b5a13a74b1b3c989476e6000272719097d7269dcad8b2f7761e0a89b2', 'TTG FX v1.8.2 TTG LOOK'],
   ['e54fb461a4eba8136df65eb2af3b841b985f32f04b50e3a383cebc9f8ca436d5', 'TTG FX v1.8.1 FILTER RESTORE'],
   ['b3c7b55b2deb35ddf8691e3bc6fcd886c322bbf18987e452432ca4b8a10f0ac6', 'TTG FX v1.8 STRUCTURE + FILTERS'],
