@@ -1,0 +1,132 @@
+name: Pocket TTG FX CLEAN ROOT UI FINAL v0.4
+on:
+  push:
+    branches: [pocket-ttg-clean]
+    paths:
+      - 'pocket-ttg-clean/stage_e/**'
+      - '.github/workflows/pocket-ttg-clean-stage-e.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ttg-clean
+
+      - name: Download and verify official V1.3.3 only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 -o pocket-fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile,pathlib,hashlib
+          E='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          z=zipfile.ZipFile('pocket-fw.zip');b=[x for x in z.namelist() if x.lower().endswith('.bin')];assert len(b)==1
+          raw=z.read(b[0]);s=hashlib.sha256(raw).hexdigest();print('official',s);assert s==E
+          pathlib.Path('Pocket_Master_Firmware_V1.3.3.bin').write_bytes(raw)
+          PY
+
+      - name: Install ARM and NDS32 toolchains
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1 libdebuginfod1
+          python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+          curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst' -o /tmp/binutils.pkg.tar.zst
+          curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-gcc-15.2.0-1-x86_64.pkg.tar.zst' -o /tmp/gcc.pkg.tar.zst
+          mkdir -p /tmp/nds32
+          tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
+          tar --zstd -xf /tmp/gcc.pkg.tar.zst -C /tmp/nds32
+          echo '/tmp/nds32/usr/bin' >> "$GITHUB_PATH"
+
+      - name: Compile audio chain from source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cp pocket-ttg-clean/stage_d/build_arm.sh /tmp/build_arm.sh
+          sed -i 's/;#define ENG/;\n#define ENG/' /tmp/build_arm.sh
+          # Script resolves ROOT from its own location; run the repository copy after fixing it in-place temporarily.
+          sed -i 's/;#define ENG/;\n#define ENG/' pocket-ttg-clean/stage_d/build_arm.sh
+          CC=clang OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump bash pocket-ttg-clean/stage_d/build_arm.sh
+
+      - name: Compile complete replacement page and hardware controls
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export PATH="/tmp/nds32/usr/bin:$PATH"
+          mkdir -p pocket-ttg-clean/stage_e/build/nds
+          B=pocket-ttg-clean/stage_e/build/nds
+          C='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Oz -Wall -Wextra -mcpu=d1088 -mabi=2 -mext-fpu-sp'
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/ttg_ui.c -o $B/ttg_ui.o
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/patch_controls.S -o $B/patch_controls.o
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -mext-fpu-sp -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_e/ttg_ui.ld $B/ttg_ui.o $B/patch_controls.o -o $B/ttg_ui.elf
+          nds32le-elf-readelf -h -S -l -A -r $B/ttg_ui.elf > $B/ttg_ui.elfinfo
+          nds32le-elf-objdump -dr $B/ttg_ui.elf > $B/ttg_ui.dis
+          nds32le-elf-nm -n $B/ttg_ui.elf > $B/ttg_ui.nm
+          if nds32le-elf-readelf -r $B/ttg_ui.elf | grep -q 'R_NDS32_'; then echo unresolved relocation >&2; exit 1; fi
+          for s in page_enter page_leave page_event patch_pre patch_next patch_enc_down patch_enc_up patch_enc_press ttg_text ttg_aux; do
+            nds32le-elf-objcopy -O binary --only-section=.$s $B/ttg_ui.elf $B/$s.bin
+          done
+          wc -c $B/*.bin
+          test $(wc -c < $B/page_enter.bin) -le $((0x568))
+          test $(wc -c < $B/page_leave.bin) -le $((0x58))
+          test $(wc -c < $B/page_event.bin) -le $((0x230))
+          grep -q 'ttg_page2_enter' $B/ttg_ui.nm
+          grep -q '00022e80' $B/ttg_ui.nm
+          grep -q '00023440' $B/ttg_ui.nm
+          grep -q 'fmtsr.*fs0' $B/ttg_ui.dis
+          grep -q '50348' $B/ttg_ui.dis
+
+      - name: Build stock-rooted final firmware
+        shell: bash
+        run: |
+          set -euxo pipefail
+          A=pocket-ttg-clean/stage_d/build/arm;N=pocket-ttg-clean/stage_e/build/nds
+          python3 pocket-ttg-clean/stage_e/build_stage_e.py Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_ROOT_UI_FINAL_v0.4.bin \
+            --d1-bin $A/d1.bin --d1-nm $A/d1.nm --d2-bin $A/d2.bin --d2-nm $A/d2.nm --f1-bin $A/f1.bin --f1-nm $A/f1.nm --f2-bin $A/f2.bin --f2-nm $A/f2.nm --cloud-bin $A/cloud.bin --cloud-nm $A/cloud.nm \
+            --enter $N/page_enter.bin --leave $N/page_leave.bin --event $N/page_event.bin \
+            --pre $N/patch_pre.bin --next $N/patch_next.bin --enc-down $N/patch_enc_down.bin --enc-up $N/patch_enc_up.bin --enc-press $N/patch_enc_press.bin \
+            --text $N/ttg_text.bin --rodata $N/ttg_aux.bin \
+            --manifest Pocket_TTG_FX_CLEAN_ROOT_UI_FINAL_v0.4.json
+          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_ROOT_UI_FINAL_v0.4.bin | tee pocket-ttg-clean/stage_e/build/SHA256SUMS.txt
+
+      - name: Independent final audit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          m=json.loads(Path('Pocket_TTG_FX_CLEAN_ROOT_UI_FINAL_v0.4.json').read_text())
+          f=Path('Pocket_TTG_FX_CLEAN_ROOT_UI_FINAL_v0.4.bin').read_bytes()
+          assert hashlib.sha256(f).hexdigest()==m['output_sha256']
+          assert m['base_sha256']=='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          assert m['changed_regions']==['g','b','e'],m['changed_regions']
+          assert m['legacy_binary_input'] is False
+          assert m['stock_page2_enter_removed'] is True
+          assert m['stock_page2_event_removed'] is True
+          assert m['stock_page2_leave_removed'] is True
+          assert m['internal_route']==[1,2,6,5,7,8,0,3,4,9]
+          assert m['top_level_0x04_preserved']=='24ac0100'
+          print('FINAL ROOT UI AUDIT PASS',m['output_sha256'])
+          PY
+
+      - name: Upload final firmware and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocket-ttg-clean-root-ui-final-v0.4
+          path: |
+            Pocket_TTG_FX_CLEAN_ROOT_UI_FINAL_v0.4.bin
+            Pocket_TTG_FX_CLEAN_ROOT_UI_FINAL_v0.4.json
+            pocket-ttg-clean/stage_e/build/SHA256SUMS.txt
+            pocket-ttg-clean/stage_e/build/nds/ttg_ui.dis
+            pocket-ttg-clean/stage_e/build/nds/ttg_ui.nm
+            pocket-ttg-clean/stage_e/build/nds/ttg_ui.elfinfo
+            pocket-ttg-clean/stage_d/build/arm/*.nm
+            pocket-ttg-clean/stage_d/build/arm/*.dis
+          if-no-files-found: error
+          retention-days: 30
