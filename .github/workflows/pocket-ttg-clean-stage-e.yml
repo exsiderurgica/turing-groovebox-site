@@ -1,4 +1,4 @@
-name: Pocket TTG FX ROOT UI RAW EVENT OWNERSHIP v0.6
+name: Pocket TTG FX ROOT UI VERIFIED EVENT DISPATCH v0.7
 on:
   push:
     branches: [pocket-ttg-clean]
@@ -50,7 +50,7 @@ jobs:
           sed -i 's/;#define ENG/;\n#define ENG/' pocket-ttg-clean/stage_d/build_arm.sh
           CC=clang OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump bash pocket-ttg-clean/stage_d/build_arm.sh
 
-      - name: Compile custom root plus upstream raw-event gate
+      - name: Compile custom root plus verified event-code gate
         shell: bash
         run: |
           set -euxo pipefail
@@ -59,12 +59,11 @@ jobs:
           B=pocket-ttg-clean/stage_e/build/nds
           C='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Oz -Wall -Wextra -mcpu=d1088 -mabi=2 -mext-fpu-sp'
           nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/ttg_ui.c -o $B/ttg_ui_base.o
-          # v0.6 replaces the old render-only page_event with a consumer of raw queued events.
           nds32le-elf-objcopy --remove-section=.page_event $B/ttg_ui_base.o $B/ttg_ui.o
-          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/event_v06.c -o $B/event_v06.o
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/event_v07.c -o $B/event_v07.o
           nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/patch_controls.S -o $B/patch_controls.o
           nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/event_gate.S -o $B/event_gate.o
-          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -mext-fpu-sp -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_e/ttg_ui.ld $B/ttg_ui.o $B/event_v06.o $B/patch_controls.o $B/event_gate.o -o $B/ttg_ui.elf
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -mext-fpu-sp -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_e/ttg_ui.ld $B/ttg_ui.o $B/event_v07.o $B/patch_controls.o $B/event_gate.o -o $B/ttg_ui.elf
           nds32le-elf-readelf -h -S -l -A -r $B/ttg_ui.elf > $B/ttg_ui.elfinfo
           nds32le-elf-objdump -dr $B/ttg_ui.elf > $B/ttg_ui.dis
           nds32le-elf-nm -n $B/ttg_ui.elf > $B/ttg_ui.nm
@@ -81,61 +80,60 @@ jobs:
           grep -q 'ttg_page2_enter' $B/ttg_ui.nm
           grep -q '00022e80' $B/ttg_ui.nm
           grep -q '00023440.*ttg_page2_event' $B/ttg_ui.nm
-          grep -q '00052b00.*ttg_patch_event_entry' $B/ttg_ui.nm
+          grep -q '00052c40.*ttg_patch_event_entry' $B/ttg_ui.nm
           grep -q 'ttg_raw_event_gate' $B/ttg_ui.nm
           grep -qi '7f36' $B/ttg_ui.dis
           grep -qi '7f37' $B/ttg_ui.dis
           grep -qi '7f5d' $B/ttg_ui.dis
           grep -qi '7f5e' $B/ttg_ui.dis
           grep -qi '7f46' $B/ttg_ui.dis
-          grep -qi '7b0e' $B/ttg_ui.dis
           grep -q 'fmtsr.*fs0' $B/ttg_ui.dis
           grep -q '50348' $B/ttg_ui.dis
 
-      - name: Build stock-rooted v0.6 firmware
+      - name: Build stock-rooted v0.7 firmware
         shell: bash
         run: |
           set -euxo pipefail
           A=pocket-ttg-clean/stage_d/build/arm;N=pocket-ttg-clean/stage_e/build/nds
-          python3 pocket-ttg-clean/stage_e/build_stage_f.py Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_ROOT_UI_RAW_EVENTS_v0.6.bin \
+          python3 pocket-ttg-clean/stage_e/build_stage_f.py Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_ROOT_UI_VERIFIED_EVENTS_v0.7.bin \
             --d1-bin $A/d1.bin --d1-nm $A/d1.nm --d2-bin $A/d2.bin --d2-nm $A/d2.nm --f1-bin $A/f1.bin --f1-nm $A/f1.nm --f2-bin $A/f2.bin --f2-nm $A/f2.nm --cloud-bin $A/cloud.bin --cloud-nm $A/cloud.nm \
             --enter $N/page_enter.bin --leave $N/page_leave.bin --event $N/page_event.bin --event-gate $N/patch_event_entry.bin \
             --text $N/ttg_text.bin --rodata $N/ttg_aux.bin \
-            --manifest Pocket_TTG_FX_ROOT_UI_RAW_EVENTS_v0.6.json
-          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_ROOT_UI_RAW_EVENTS_v0.6.bin | tee pocket-ttg-clean/stage_e/build/SHA256SUMS_v06.txt
+            --manifest Pocket_TTG_FX_ROOT_UI_VERIFIED_EVENTS_v0.7.json
+          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_ROOT_UI_VERIFIED_EVENTS_v0.7.bin | tee pocket-ttg-clean/stage_e/build/SHA256SUMS_v07.txt
 
-      - name: Independent v0.6 audit
+      - name: Independent v0.7 audit
         shell: bash
         run: |
           set -euxo pipefail
           python3 - <<'PY'
           import json,hashlib
           from pathlib import Path
-          m=json.loads(Path('Pocket_TTG_FX_ROOT_UI_RAW_EVENTS_v0.6.json').read_text())
-          f=Path('Pocket_TTG_FX_ROOT_UI_RAW_EVENTS_v0.6.bin').read_bytes()
+          m=json.loads(Path('Pocket_TTG_FX_ROOT_UI_VERIFIED_EVENTS_v0.7.json').read_text())
+          f=Path('Pocket_TTG_FX_ROOT_UI_VERIFIED_EVENTS_v0.7.bin').read_bytes()
           assert hashlib.sha256(f).hexdigest()==m['output_sha256']
           assert m['base_sha256']=='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
           assert m['changed_regions']==['g','b','e'],m['changed_regions']
           assert m['legacy_binary_input'] is False
           assert m['stock_page2_enter_removed'] is True and m['stock_page2_event_removed'] is True and m['stock_page2_leave_removed'] is True
-          assert m['raw_event_intercept_runtime']=='0x52b00'
-          assert m['raw_event_intercept_before_mode_gate'] is True
+          assert m['event_intercept_runtime']=='0x52c40'
+          assert m['event_intercept_verified_r0_7fxx'] is True
+          assert m['stock_pass_runtime']=='0x52c44' and m['stock_handled_runtime']=='0x52abc'
           assert m['old_downstream_patches_removed'] is True
-          assert m['sentinel_after_consume'].startswith('0x7b0e')
           assert m['internal_route']==[1,2,6,5,7,8,0,3,4,9]
           assert m['top_level_0x04_preserved']=='24ac0100'
           assert set(m['consumed_events'])=={'0x7f36','0x7f37','0x7f5d','0x7f5e','0x7f46'}
-          print('V0.6 RAW EVENT OWNERSHIP AUDIT PASS',m['output_sha256'])
+          print('V0.7 VERIFIED EVENT DISPATCH AUDIT PASS',m['output_sha256'])
           PY
 
-      - name: Upload v0.6 firmware and evidence
+      - name: Upload v0.7 firmware and evidence
         uses: actions/upload-artifact@v4
         with:
-          name: pocket-ttg-root-ui-raw-events-v0.6
+          name: pocket-ttg-root-ui-verified-events-v0.7
           path: |
-            Pocket_TTG_FX_ROOT_UI_RAW_EVENTS_v0.6.bin
-            Pocket_TTG_FX_ROOT_UI_RAW_EVENTS_v0.6.json
-            pocket-ttg-clean/stage_e/build/SHA256SUMS_v06.txt
+            Pocket_TTG_FX_ROOT_UI_VERIFIED_EVENTS_v0.7.bin
+            Pocket_TTG_FX_ROOT_UI_VERIFIED_EVENTS_v0.7.json
+            pocket-ttg-clean/stage_e/build/SHA256SUMS_v07.txt
             pocket-ttg-clean/stage_e/build/nds/ttg_ui.dis
             pocket-ttg-clean/stage_e/build/nds/ttg_ui.nm
             pocket-ttg-clean/stage_e/build/nds/ttg_ui.elfinfo
