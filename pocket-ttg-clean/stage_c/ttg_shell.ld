@@ -12,9 +12,10 @@ SECTIONS
   {
     KEEP(*(.ttg_text))
     KEEP(*(.ttg_rodata))
+    KEEP(*(.rodata*))
   }
 
-  /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) *(.data*) *(.bss*) *(.rodata*) }
+  /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) *(.data*) *(.bss*) }
 }
 ASSERT(SIZEOF(.patch_page2) == 4, "page2 patch must be one 32-bit JAL")
 ASSERT(SIZEOF(.patch_pre)   == 4, "PRE patch must be one 32-bit JAL")
