@@ -4,7 +4,9 @@
 typedef void   (*fn_void_u32)(uint32_t);
 typedef void   (*fn_void_ptr)(void *);
 typedef void   (*fn_prep_data)(void *,uint32_t);
-typedef void * (*fn_screen_create)(void);
+typedef void * (*fn_get_display)(void);
+typedef void * (*fn_get_active_screen)(void *);
+typedef void * (*fn_screen_create)(void *);
 typedef void * (*fn_obj_create)(void *);
 typedef void   (*fn_pos)(void *,int,int);
 typedef void   (*fn_style_init)(void *);
@@ -18,32 +20,35 @@ typedef void   (*fn_set_algorithm)(uint32_t,uint32_t);
 typedef void   (*fn_set_enable)(const uint8_t *);
 extern void ttg_set_param_raw(uint32_t slot,uint32_t param,uint32_t dirty,uint32_t float_bits);
 
-/* Exact GUI primitives and setup sequence recovered from the stock page2 path. */
-#define PAGE_PREP0      ((fn_void_u32)(uintptr_t)0x00015ac4u)
-#define PAGE_PREP1      ((fn_prep_data)(uintptr_t)0x00016358u)
-#define PAGE_DELAY      ((fn_void_u32)(uintptr_t)0x00016280u)
-#define CREATE_SCREEN   ((fn_screen_create)(uintptr_t)0x0002ca44u)
-#define CREATE_OBJ      ((fn_obj_create)(uintptr_t)0x00047880u)
-#define CREATE_LABEL    ((fn_obj_create)(uintptr_t)0x0004838cu)
-#define SET_POS         ((fn_pos)(uintptr_t)0x0002f15cu)
-#define SET_SIZE        ((fn_pos)(uintptr_t)0x0002f1dcu)
-#define STYLE_INIT      ((fn_style_init)(uintptr_t)0x00045c38u)
-#define STYLE_RESET     ((fn_style_init)(uintptr_t)0x00045c40u)
-#define COLOR_GET       ((fn_color)(uintptr_t)0x0002c1d0u)
-#define STYLE_COLOR     ((fn_style_u32)(uintptr_t)0x000463a8u)
-#define STYLE_FONT      ((void(*)(void*,void*))(uintptr_t)0x000463c0u)
-#define STYLE_BG_COLOR  ((fn_style_u32)(uintptr_t)0x00046210u)
-#define STYLE_BG_OPA    ((fn_style_u32)(uintptr_t)0x00046438u)
-#define STYLE_BG_A      ((fn_style_u32)(uintptr_t)0x00046408u)
-#define STYLE_BG_B      ((fn_style_u32)(uintptr_t)0x00046360u)
-#define STYLE_BG_C      ((fn_style_u32)(uintptr_t)0x000461b0u)
-#define STYLE_BG_D      ((fn_style_u32)(uintptr_t)0x000461c8u)
-#define STYLE_BG_E      ((fn_style_u32)(uintptr_t)0x00046180u)
-#define STYLE_BG_F      ((fn_style_u32)(uintptr_t)0x00046198u)
-#define FONT_GET        ((fn_font)(uintptr_t)0x00015ab0u)
-#define APPLY_STYLE     ((fn_apply_style)(uintptr_t)0x00032810u)
-#define TEXT            ((fn_text)(uintptr_t)0x00048cd0u)
-#define DELETE_ROOT     ((fn_void_ptr)(uintptr_t)0x00033980u)
+/* GUI sequence copied byte-for-byte from the stock page2 creation path:
+   display = 0x436b0(); parent = 0x2cce0(display); root = 0x2ca44(parent). */
+#define PAGE_PREP0        ((fn_void_u32)(uintptr_t)0x00015ac4u)
+#define PAGE_PREP1        ((fn_prep_data)(uintptr_t)0x00016358u)
+#define PAGE_DELAY        ((fn_void_u32)(uintptr_t)0x00016280u)
+#define GET_DISPLAY       ((fn_get_display)(uintptr_t)0x000436b0u)
+#define GET_ACTIVE_SCREEN ((fn_get_active_screen)(uintptr_t)0x0002cce0u)
+#define CREATE_SCREEN     ((fn_screen_create)(uintptr_t)0x0002ca44u)
+#define CREATE_OBJ        ((fn_obj_create)(uintptr_t)0x00047880u)
+#define CREATE_LABEL      ((fn_obj_create)(uintptr_t)0x0004838cu)
+#define SET_POS           ((fn_pos)(uintptr_t)0x0002f15cu)
+#define SET_SIZE          ((fn_pos)(uintptr_t)0x0002f1dcu)
+#define STYLE_INIT        ((fn_style_init)(uintptr_t)0x00045c38u)
+#define STYLE_RESET       ((fn_style_init)(uintptr_t)0x00045c40u)
+#define COLOR_GET         ((fn_color)(uintptr_t)0x0002c1d0u)
+#define STYLE_COLOR       ((fn_style_u32)(uintptr_t)0x000463a8u)
+#define STYLE_FONT        ((void(*)(void*,void*))(uintptr_t)0x000463c0u)
+#define STYLE_BG_COLOR    ((fn_style_u32)(uintptr_t)0x00046210u)
+#define STYLE_BG_OPA      ((fn_style_u32)(uintptr_t)0x00046438u)
+#define STYLE_BG_A        ((fn_style_u32)(uintptr_t)0x00046408u)
+#define STYLE_BG_B        ((fn_style_u32)(uintptr_t)0x00046360u)
+#define STYLE_BG_C        ((fn_style_u32)(uintptr_t)0x000461b0u)
+#define STYLE_BG_D        ((fn_style_u32)(uintptr_t)0x000461c8u)
+#define STYLE_BG_E        ((fn_style_u32)(uintptr_t)0x00046180u)
+#define STYLE_BG_F        ((fn_style_u32)(uintptr_t)0x00046198u)
+#define FONT_GET          ((fn_font)(uintptr_t)0x00015ab0u)
+#define APPLY_STYLE       ((fn_apply_style)(uintptr_t)0x00032810u)
+#define TEXT              ((fn_text)(uintptr_t)0x00048cd0u)
+#define DELETE_ROOT       ((fn_void_ptr)(uintptr_t)0x00033980u)
 
 #define LOAD_PRESET     ((fn_load_preset)(uintptr_t)0x0004e96cu)
 #define SET_ALGORITHM   ((fn_set_algorithm)(uintptr_t)0x0004eb1cu)
@@ -110,11 +115,14 @@ static __attribute__((section(".ttg_text"))) void setup_styles(void*ctx){
   STYLE_INIT(bg);STYLE_BG_COLOR(bg,COLOR_GET(2u,0xffu));STYLE_BG_OPA(bg,0xffu);STYLE_BG_A(bg,1u);STYLE_BG_B(bg,0u);STYLE_BG_C(bg,0u);STYLE_BG_D(bg,0u);STYLE_BG_E(bg,0u);STYLE_BG_F(bg,0u);
 }
 
-/* Complete replacement: the stock page2 renderer is never executed. */
+/* Complete replacement: stock renderer is not called. The parent sequence below is
+   the exact ABI used by stock page0_enter and page2_enter. */
 __attribute__((used,section(".page_enter"),noinline)) uint32_t ttg_page2_enter(void*ctx){
   if(!ctx)return 0;if(ST.magic!=STATE_MAGIC)init_chain();ST.ctx=(uint32_t)(uintptr_t)ctx;
   PAGE_PREP0(0u);PAGE_PREP1((void*)(uintptr_t)0x000e0b18u,0x0bu);PAGE_DELAY(10u);setup_styles(ctx);
-  void*root=CREATE_SCREEN();CTX_SCREEN(ctx)=root;if(!root)return 0;SET_SIZE(root,0x2064,0x2064);
+  void*display=GET_DISPLAY();if(!display)return 0;
+  void*parent=GET_ACTIVE_SCREEN(display);if(!parent)return 0;
+  void*root=CREATE_SCREEN(parent);CTX_SCREEN(ctx)=root;if(!root)return 0;SET_SIZE(root,0x2064,0x2064);
   void*panel=CREATE_OBJ(root);if(!panel)return 0;APPLY_STYLE(panel,CTX_STYLE_BG(ctx),0u);SET_POS(panel,0,0);SET_SIZE(panel,0x2064,0x2064);
   make_label(panel,CTX_STYLE_SM(ctx),8,6,title,0);
   make_label(panel,CTX_STYLE_LG(ctx),8,32,page_name[ST.page],(void**)&CTX_PAGE(ctx));
