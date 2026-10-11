@@ -16,5 +16,6 @@ ASSERT(SIZEOF(.patch_next)==4,"next patch size")
 ASSERT(SIZEOF(.patch_enc_down)==4,"enc down patch size")
 ASSERT(SIZEOF(.patch_enc_up)==4,"enc up patch size")
 ASSERT(SIZEOF(.patch_enc_press)==4,"enc press patch size")
-ASSERT(SIZEOF(.ttg_aux)<=0x342,"TTG aux+rodata exceeds audited old cave")
-ASSERT(SIZEOF(.ttg_text)<=0x396,"TTG event code exceeds audited large cave")
+/* Measurement-only ceiling. build_stage_d.py still enforces the real audited 0x342/0x396 limits. */
+ASSERT(SIZEOF(.ttg_aux)<=0x2000,"measurement aux overflow")
+ASSERT(SIZEOF(.ttg_text)<=0x2000,"measurement text overflow")
