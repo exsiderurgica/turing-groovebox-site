@@ -16,10 +16,10 @@ public class Dump extends GhidraScript {
     long ep=f.getEntryPoint().getOffset(); if(!dumped.add(ep))return;
     p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" body="+f.getBody()+" ---");
     InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true); int n=0;
-    while(ii.hasNext()&&n++<1800){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
+    while(ii.hasNext()&&n++<2600){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
     try{
       DecompInterface d=new DecompInterface(); d.openProgram(currentProgram);
-      DecompileResults r=d.decompileFunction(f,360,monitor);
+      DecompileResults r=d.decompileFunction(f,480,monitor);
       if(r!=null&&r.decompileCompleted()&&r.getDecompiledFunction()!=null){p("C-BEGIN");p(r.getDecompiledFunction().getC());p("C-END");}
       else p("C-FAIL "+(r==null?"null":r.getErrorMessage())); d.dispose();
     }catch(Exception e){p("C-EXCEPTION "+e);}
@@ -30,8 +30,7 @@ public class Dump extends GhidraScript {
     ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(ep));
     LinkedHashSet<Long> eps=new LinkedHashSet<>();
     while(it.hasNext()){
-      Reference r=it.next();
-      if(!r.getReferenceType().isCall())continue;
+      Reference r=it.next(); if(!r.getReferenceType().isCall())continue;
       Function f=getFunctionContaining(r.getFromAddress());
       p("CALL from="+r.getFromAddress()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));
       if(f!=null)eps.add(f.getEntryPoint().getOffset());
@@ -42,19 +41,34 @@ public class Dump extends GhidraScript {
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_clean_boot_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket TTG FX clean boot/screen trace v1");
+      p("Pocket TTG FX clean Effects/input trace v2");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
-      dump(0x5fb18L,"app bootstrap");
-      dump(0x5431cL,"main app task");
-      dump(0x2c414L,"GUI task mode1");
-      dump(0x2c46cL,"GUI task mode0");
-      dump(0x2c4b0L,"GUI task mode3");
-      dump(0x23c84L,"page0 enter");
-      dump(0x22e80L,"page2/effects enter");
-      dump(0x16288L,"screen switch API");
-      callers(0x16288L,"screen-switch",40);
-      callers(0x23c84L,"page0-enter",20);
-      callers(0x22e80L,"page2-enter",20);
+      dump(0x23c84L,"page0 enter / splash");
+      dump(0x23d7cL,"page0 event / splash timeout");
+      dump(0x22e80L,"page2 Effects enter");
+      dump(0x23440L,"page2 Effects event");
+      dump(0x22800L,"page2 common updater");
+      dump(0x22628L,"page2 helper A");
+      dump(0x2267cL,"page2 helper B");
+      dump(0x226ccL,"page2 helper C");
+      dump(0x2294cL,"page2 helper D");
+      dump(0x22b98L,"page2 helper E");
+      dump(0x22bf8L,"page2 helper F");
+      dump(0x22ca8L,"page2 helper G");
+      dump(0x22d18L,"page2 state helper");
+      dump(0x5219cL,"indexed three-way hardware input accessor");
+      dump(0x521bcL,"single hardware input accessor");
+      dump(0x14800L,"Effects selected-block getter candidate");
+      dump(0x14920L,"page/splash phase getter candidate");
+      dump(0x50000L,"page2 byte state accessor");
+      dump(0x5022cL,"page2 16-bit state accessor");
+      dump(0x50280L,"page2 indexed 0..8 accessor");
+      dump(0x502ccL,"page2 32-bit accessor");
+      dump(0x50454L,"page2 final byte accessor");
+      callers(0x5219cL,"indexed-input",20);
+      callers(0x521bcL,"single-input",20);
+      callers(0x14800L,"selected-block-getter",30);
+      callers(0x22800L,"page2-common-updater",20);
     }finally{out.close();}
   }
 }
