@@ -56,7 +56,7 @@ jobs:
           set -euxo pipefail
           export PATH="/tmp/nds32/usr/bin:$PATH"
           mkdir -p build
-          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Os -Wall -Wextra -mcpu=d1088 -mabi=2'
+          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Oz -Wall -Wextra -mcpu=d1088 -mabi=2'
           nds32le-elf-gcc $COMMON -c pocket-ttg-clean/stage_c2/ttg_shell.c -o build/ttg_shell.o
           nds32le-elf-gcc $COMMON -c pocket-ttg-clean/stage_c2/patch_sites.S -o build/patch_sites.o
           nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_c2/ttg_shell.ld build/ttg_shell.o build/patch_sites.o -o build/ttg_shell.elf
