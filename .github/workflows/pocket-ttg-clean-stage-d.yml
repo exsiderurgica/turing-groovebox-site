@@ -44,28 +44,26 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          # Repair the one generated-source preprocessor newline before execution.
           sed -i 's/;#define ENG/;\n#define ENG/' pocket-ttg-clean/stage_d/build_arm.sh
           CC=clang OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump bash pocket-ttg-clean/stage_d/build_arm.sh
-      - name: Compile NDS32 hard-float TTG UI and real parameter controls
+      - name: Compile NDS32 soft ABI + explicit fs0 bridge
         shell: bash
         run: |
           set -euxo pipefail
           export PATH="/tmp/nds32/usr/bin:$PATH"
           mkdir -p pocket-ttg-clean/stage_d/build/nds
           B=pocket-ttg-clean/stage_d/build/nds
-          C='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Oz -Wall -Wextra -mcpu=d1088 -mabi=2fp+ -mext-fpu-sp'
+          C='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Oz -Wall -Wextra -mcpu=d1088 -mabi=2 -mext-fpu-sp'
           nds32le-elf-gcc $C -c pocket-ttg-clean/stage_d/ttg_main.c -o $B/ttg_main.o
           nds32le-elf-gcc $C -c pocket-ttg-clean/stage_d/patch_sites.S -o $B/patch_sites.o
-          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2fp+ -mext-fpu-sp -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_d/ttg_main.ld $B/ttg_main.o $B/patch_sites.o -o $B/ttg_main.elf
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -mext-fpu-sp -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_d/ttg_main.ld $B/ttg_main.o $B/patch_sites.o -o $B/ttg_main.elf
           nds32le-elf-readelf -h -S -l -A -r $B/ttg_main.elf > $B/ttg_main.elfinfo
           nds32le-elf-objdump -dr $B/ttg_main.elf > $B/ttg_main.dis
           nds32le-elf-nm -n $B/ttg_main.elf > $B/ttg_main.nm
           if nds32le-elf-readelf -r $B/ttg_main.elf | grep -q 'R_NDS32_'; then echo unresolved relocation >&2; exit 1; fi
           for s in patch_page2 patch_pre patch_next patch_enc_down patch_enc_up patch_enc_press ttg_text ttg_rodata; do nds32le-elf-objcopy -O binary --only-section=.$s $B/ttg_main.elf $B/$s.bin; done
           wc -c $B/*.bin
-          # Hard-float ABI is mandatory: SET_PARAM expects the float in fs0.
-          grep -qi 'hard\|2fp' $B/ttg_main.elfinfo
+          grep -q 'fmtsr.*fs0' $B/ttg_main.dis
           grep -q '50348' $B/ttg_main.dis
       - name: Build one stock-rooted combined firmware
         shell: bash
@@ -91,6 +89,7 @@ jobs:
           assert m['changed_regions']==['g','b','e'],m['changed_regions']
           assert m['legacy_binary_input'] is False
           assert m['internal_route']==[1,2,6,5,7,8,0,3,4,9]
+          assert m['top_level_0x04_preserved']=='24ac0100'
           print('FINAL AUDIT PASS',m['output_sha256'])
           PY
       - name: Upload M2 firmware + evidence
