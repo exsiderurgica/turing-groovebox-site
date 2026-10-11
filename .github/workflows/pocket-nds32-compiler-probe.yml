@@ -15,13 +15,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: pocket-ui-re
-
       - name: Install runtime dependencies
         run: |
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1 libdebuginfod1
-
       - name: Download Arch NDS32 GCC + binutils
         run: |
           set -euxo pipefail
@@ -33,23 +31,19 @@ jobs:
           tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
           tar --zstd -xf /tmp/gcc.pkg.tar.zst -C /tmp/nds32
           echo "/tmp/nds32/usr/bin" >> "$GITHUB_PATH"
-
       - name: Build live page2 event hook
         run: |
           set -euxo pipefail
           export PATH="/tmp/nds32/usr/bin:$PATH"
           mkdir -p build
-
           cat > build/live_hook.c <<'EOF'
           #include <stdint.h>
           #include <stddef.h>
-
           typedef void (*fn_update)(void *);
           typedef void *(*fn_child)(void *, int);
           typedef void (*fn_text)(void *, const char *);
           typedef uint32_t (*fn_u32)(void);
           typedef uint32_t (*fn_idx)(uint32_t);
-
           #define STOCK_UPDATE ((fn_update)(uintptr_t)0x00022800u)
           #define GET_CHILD    ((fn_child)(uintptr_t)0x000337b0u)
           #define SET_TEXT     ((fn_text)(uintptr_t)0x00048cd0u)
@@ -58,38 +52,23 @@ jobs:
           #define GET_SELECT   ((fn_u32)(uintptr_t)0x00014800u)
           #define GET_PHASE    ((fn_u32)(uintptr_t)0x00014920u)
           #define GET_BITS     ((fn_idx)(uintptr_t)0x0005219cu)
-
-          static __attribute__((always_inline)) inline char hx(uint32_t v) {
-              v &= 15u;
-              return (char)(v < 10u ? ('0' + v) : ('A' + v - 10u));
-          }
-
+          static __attribute__((always_inline)) inline char hx(uint32_t v){v&=15u;return(char)(v<10u?('0'+v):('A'+v-10u));}
           __attribute__((used,section(".ttg_hook"),noinline))
-          uint32_t ttg_event_hook(void *ctx) {
-              STOCK_UPDATE(ctx);
-              if (!ctx) return 0;
-              void *root = *(void **)((uint8_t *)ctx + 8);
-              if (!root) return 0;
-              void *label = GET_CHILD(root, 13);
-              if (!label) return 0;
-
-              uint32_t m = GET_MODE();
-              uint32_t w = GET_WORD();
-              uint32_t s = GET_SELECT();
-              uint32_t p = GET_PHASE();
-              uint32_t k = (GET_BITS(2) << 2) | (GET_BITS(0) << 1) | GET_BITS(1);
-              char b[24];
-              b[0]='T'; b[1]='T'; b[2]='G'; b[3]=' ';
-              b[4]='M'; b[5]=hx(m); b[6]=' ';
-              b[7]='V'; b[8]=hx(w>>12); b[9]=hx(w>>8); b[10]=hx(w>>4); b[11]=hx(w); b[12]=' ';
-              b[13]='S'; b[14]=hx(s); b[15]=' ';
-              b[16]='P'; b[17]=hx(p); b[18]=' ';
-              b[19]='K'; b[20]=hx(k); b[21]=0;
-              SET_TEXT(label,b);
-              return 0;
+          uint32_t ttg_event_hook(void *ctx){
+            STOCK_UPDATE(ctx);
+            if(!ctx)return 0;
+            void *root=*(void **)((uint8_t*)ctx+8); if(!root)return 0;
+            void *label=GET_CHILD(root,13); if(!label)return 0;
+            uint32_t m=GET_MODE(),w=GET_WORD(),s=GET_SELECT(),p=GET_PHASE();
+            uint32_t k=(GET_BITS(2)<<2)|(GET_BITS(0)<<1)|GET_BITS(1);
+            char b[24];
+            b[0]='T';b[1]='T';b[2]='G';b[3]=' ';b[4]='M';b[5]=hx(m);b[6]=' ';
+            b[7]='V';b[8]=hx(w>>12);b[9]=hx(w>>8);b[10]=hx(w>>4);b[11]=hx(w);b[12]=' ';
+            b[13]='S';b[14]=hx(s);b[15]=' ';b[16]='P';b[17]=hx(p);b[18]=' ';
+            b[19]='K';b[20]=hx(k);b[21]=0;
+            SET_TEXT(label,b); return 0;
           }
           EOF
-
           cat > build/patch_event.S <<'EOF'
           .section .patch_event,"ax",@progbits
           .balign 2
@@ -99,39 +78,32 @@ jobs:
               jal ttg_event_hook
           .size ttg_patch_event, .-ttg_patch_event
           EOF
-
           cat > build/live_hook.ld <<'EOF'
           ENTRY(ttg_event_hook)
           SECTIONS
           {
             .patch_event 0x000235b6 : SUBALIGN(2) { KEEP(*(.patch_event)) }
-            .ttg_hook 0x001001ae : SUBALIGN(2) { KEEP(*(.ttg_hook)) }
+            .ttg_hook 0x000ff313 : SUBALIGN(2) { KEEP(*(.ttg_hook)) }
             /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) *(.data*) *(.bss*) *(.rodata*) }
           }
           ASSERT(SIZEOF(.patch_event) == 4, "event patch must be exactly one 32-bit JAL")
-          ASSERT(SIZEOF(.ttg_hook) <= 0xfc, "hook exceeds verified 252-byte zero cave")
+          ASSERT(SIZEOF(.ttg_hook) <= 0x343, "hook exceeds verified 835-byte zero cave")
           EOF
-
           COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -fno-merge-constants -Os -Wall -Wextra -mcpu=d1088 -mabi=2'
           nds32le-elf-gcc $COMMON -c build/live_hook.c -o build/live_hook.o
           nds32le-elf-gcc $COMMON -c build/patch_event.S -o build/patch_event.o
           nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,build/live_hook.ld build/live_hook.o build/patch_event.o -o build/live_hook.elf
-
           nds32le-elf-objdump -dr build/live_hook.elf > build/live_hook.dis
           nds32le-elf-objdump -s build/live_hook.elf > build/live_hook.hex
           nds32le-elf-nm -n build/live_hook.elf > build/live_hook.nm
           nds32le-elf-readelf -h -S -l -A -r build/live_hook.elf > build/live_hook.elfinfo
           nds32le-elf-objcopy -O binary --only-section=.patch_event build/live_hook.elf build/ttg_event_call_patch.bin
           nds32le-elf-objcopy -O binary --only-section=.ttg_hook build/live_hook.elf build/ttg_live_hook.bin
-          printf 'runtime patch site 0x235b6\nruntime hook cave 0x1001ae\n' > build/live_hook_map.txt
+          printf 'runtime patch site 0x235b6\nruntime hook cave 0xff313\n' > build/live_hook_map.txt
           wc -c build/ttg_event_call_patch.bin build/ttg_live_hook.bin | tee -a build/live_hook_map.txt
           nds32le-elf-readelf -r build/live_hook.elf | tee build/relocations.txt
-          if grep -Eq 'R_NDS32_' build/relocations.txt; then
-            echo 'ERROR: unresolved relocations remain' >&2
-            exit 1
-          fi
+          if grep -Eq 'R_NDS32_' build/relocations.txt; then echo 'ERROR: unresolved relocations remain' >&2; exit 1; fi
           sha256sum build/* > build/SHA256SUMS.txt
-
       - name: Upload compiler probe
         uses: actions/upload-artifact@v4
         with:
