@@ -1,0 +1,110 @@
+name: Pocket TTG FX CLEAN DIRECT CHAIN M2 v0.3
+on:
+  push:
+    branches: [pocket-ttg-clean]
+    paths:
+      - 'pocket-ttg-clean/stage_d/**'
+      - '.github/workflows/pocket-ttg-clean-stage-d.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ttg-clean
+      - name: Download and verify official V1.3.3 only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 -o pocket-fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile,pathlib,hashlib
+          E='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          z=zipfile.ZipFile('pocket-fw.zip');b=[x for x in z.namelist() if x.lower().endswith('.bin')];assert len(b)==1
+          raw=z.read(b[0]);s=hashlib.sha256(raw).hexdigest();print(s);assert s==E
+          pathlib.Path('Pocket_Master_Firmware_V1.3.3.bin').write_bytes(raw)
+          PY
+      - name: Install ARM + NDS32 build dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1 libdebuginfod1
+          python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+          curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst' -o /tmp/binutils.pkg.tar.zst
+          curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-gcc-15.2.0-1-x86_64.pkg.tar.zst' -o /tmp/gcc.pkg.tar.zst
+          mkdir -p /tmp/nds32
+          tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
+          tar --zstd -xf /tmp/gcc.pkg.tar.zst -C /tmp/nds32
+          echo '/tmp/nds32/usr/bin' >> "$GITHUB_PATH"
+      - name: Compile clean ARM DSP modules from source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # Repair the one generated-source preprocessor newline before execution.
+          sed -i 's/;#define ENG/;\n#define ENG/' pocket-ttg-clean/stage_d/build_arm.sh
+          CC=clang OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump bash pocket-ttg-clean/stage_d/build_arm.sh
+      - name: Compile NDS32 hard-float TTG UI and real parameter controls
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export PATH="/tmp/nds32/usr/bin:$PATH"
+          mkdir -p pocket-ttg-clean/stage_d/build/nds
+          B=pocket-ttg-clean/stage_d/build/nds
+          C='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Oz -Wall -Wextra -mcpu=d1088 -mabi=2fp+ -mext-fpu-sp'
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_d/ttg_main.c -o $B/ttg_main.o
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_d/patch_sites.S -o $B/patch_sites.o
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2fp+ -mext-fpu-sp -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_d/ttg_main.ld $B/ttg_main.o $B/patch_sites.o -o $B/ttg_main.elf
+          nds32le-elf-readelf -h -S -l -A -r $B/ttg_main.elf > $B/ttg_main.elfinfo
+          nds32le-elf-objdump -dr $B/ttg_main.elf > $B/ttg_main.dis
+          nds32le-elf-nm -n $B/ttg_main.elf > $B/ttg_main.nm
+          if nds32le-elf-readelf -r $B/ttg_main.elf | grep -q 'R_NDS32_'; then echo unresolved relocation >&2; exit 1; fi
+          for s in patch_page2 patch_pre patch_next patch_enc_down patch_enc_up patch_enc_press ttg_text ttg_rodata; do nds32le-elf-objcopy -O binary --only-section=.$s $B/ttg_main.elf $B/$s.bin; done
+          wc -c $B/*.bin
+          # Hard-float ABI is mandatory: SET_PARAM expects the float in fs0.
+          grep -qi 'hard\|2fp' $B/ttg_main.elfinfo
+          grep -q '50348' $B/ttg_main.dis
+      - name: Build one stock-rooted combined firmware
+        shell: bash
+        run: |
+          set -euxo pipefail
+          A=pocket-ttg-clean/stage_d/build/arm;N=pocket-ttg-clean/stage_d/build/nds
+          python3 pocket-ttg-clean/stage_d/build_stage_d.py Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_DIRECT_CHAIN_M2_v0.3.bin \
+            --d1-bin $A/d1.bin --d1-nm $A/d1.nm --d2-bin $A/d2.bin --d2-nm $A/d2.nm --f1-bin $A/f1.bin --f1-nm $A/f1.nm --f2-bin $A/f2.bin --f2-nm $A/f2.nm --cloud-bin $A/cloud.bin --cloud-nm $A/cloud.nm \
+            --page2 $N/patch_page2.bin --pre $N/patch_pre.bin --next $N/patch_next.bin --enc-down $N/patch_enc_down.bin --enc-up $N/patch_enc_up.bin --enc-press $N/patch_enc_press.bin --text $N/ttg_text.bin --rodata $N/ttg_rodata.bin \
+            --manifest Pocket_TTG_FX_CLEAN_DIRECT_CHAIN_M2_v0.3.json
+          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_DIRECT_CHAIN_M2_v0.3.bin | tee pocket-ttg-clean/stage_d/build/SHA256SUMS.txt
+      - name: Independent final audit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          m=json.loads(Path('Pocket_TTG_FX_CLEAN_DIRECT_CHAIN_M2_v0.3.json').read_text())
+          f=Path('Pocket_TTG_FX_CLEAN_DIRECT_CHAIN_M2_v0.3.bin').read_bytes()
+          assert hashlib.sha256(f).hexdigest()==m['output_sha256']
+          assert m['base_sha256']=='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          assert m['changed_regions']==['g','b','e'],m['changed_regions']
+          assert m['legacy_binary_input'] is False
+          assert m['internal_route']==[1,2,6,5,7,8,0,3,4,9]
+          print('FINAL AUDIT PASS',m['output_sha256'])
+          PY
+      - name: Upload M2 firmware + evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocket-ttg-clean-direct-chain-m2-v0.3
+          path: |
+            Pocket_TTG_FX_CLEAN_DIRECT_CHAIN_M2_v0.3.bin
+            Pocket_TTG_FX_CLEAN_DIRECT_CHAIN_M2_v0.3.json
+            pocket-ttg-clean/stage_d/build/SHA256SUMS.txt
+            pocket-ttg-clean/stage_d/build/nds/ttg_main.dis
+            pocket-ttg-clean/stage_d/build/nds/ttg_main.nm
+            pocket-ttg-clean/stage_d/build/nds/ttg_main.elfinfo
+            pocket-ttg-clean/stage_d/build/arm/*.nm
+            pocket-ttg-clean/stage_d/build/arm/*.dis
+          if-no-files-found: error
+          retention-days: 30
