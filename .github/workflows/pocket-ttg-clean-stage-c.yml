@@ -1,0 +1,99 @@
+name: Pocket TTG FX clean Stage C interactive shell
+
+on:
+  push:
+    branches: [pocket-ttg-clean]
+    paths:
+      - 'pocket-ttg-clean/stage_c/**'
+      - '.github/workflows/pocket-ttg-clean-stage-c.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ttg-clean
+
+      - name: Download and verify official V1.3.3 only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 -o pocket-fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile,pathlib,hashlib
+          EXPECT='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          z=zipfile.ZipFile('pocket-fw.zip'); bins=[n for n in z.namelist() if n.lower().endswith('.bin')]
+          assert len(bins)==1,bins
+          raw=z.read(bins[0]); sha=hashlib.sha256(raw).hexdigest(); print(sha)
+          assert sha==EXPECT,(sha,EXPECT)
+          pathlib.Path('Pocket_Master_Firmware_V1.3.3.bin').write_bytes(raw)
+          PY
+
+      - name: Install NDS32 toolchain and image dependency
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1 libdebuginfod1
+          python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+          BINUTILS_URL='https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst'
+          GCC_URL='https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-gcc-15.2.0-1-x86_64.pkg.tar.zst'
+          curl -fL --retry 4 "$BINUTILS_URL" -o /tmp/binutils.pkg.tar.zst
+          curl -fL --retry 4 "$GCC_URL" -o /tmp/gcc.pkg.tar.zst
+          mkdir -p /tmp/nds32
+          tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
+          tar --zstd -xf /tmp/gcc.pkg.tar.zst -C /tmp/nds32
+          echo '/tmp/nds32/usr/bin' >> "$GITHUB_PATH"
+
+      - name: Compile new NDS32 shell from source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export PATH="/tmp/nds32/usr/bin:$PATH"
+          mkdir -p build
+          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Os -Wall -Wextra -mcpu=d1088 -mabi=2'
+          nds32le-elf-gcc $COMMON -c pocket-ttg-clean/stage_c/ttg_shell.c -o build/ttg_shell.o
+          nds32le-elf-gcc $COMMON -c pocket-ttg-clean/stage_c/patch_sites.S -o build/patch_sites.o
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_c/ttg_shell.ld build/ttg_shell.o build/patch_sites.o -o build/ttg_shell.elf
+          nds32le-elf-readelf -h -S -l -A -r build/ttg_shell.elf > build/ttg_shell.elfinfo
+          nds32le-elf-objdump -dr build/ttg_shell.elf > build/ttg_shell.dis
+          nds32le-elf-nm -n build/ttg_shell.elf > build/ttg_shell.nm
+          if nds32le-elf-readelf -r build/ttg_shell.elf | grep -q 'R_NDS32_'; then echo 'unresolved relocation' >&2; exit 1; fi
+          nds32le-elf-objcopy -O binary --only-section=.patch_page2 build/ttg_shell.elf build/patch_page2.bin
+          nds32le-elf-objcopy -O binary --only-section=.patch_pre build/ttg_shell.elf build/patch_pre.bin
+          nds32le-elf-objcopy -O binary --only-section=.patch_next build/ttg_shell.elf build/patch_next.bin
+          nds32le-elf-objcopy -O binary --only-section=.ttg_hook build/ttg_shell.elf build/ttg_hook.bin
+          wc -c build/patch_page2.bin build/patch_pre.bin build/patch_next.bin build/ttg_hook.bin
+
+      - name: Build firmware directly from official stock
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 pocket-ttg-clean/stage_c/build_stage_c.py \
+            Pocket_Master_Firmware_V1.3.3.bin \
+            Pocket_TTG_FX_CLEAN_INTERACTIVE_SHELL_v0.1.bin \
+            --page2-patch build/patch_page2.bin \
+            --pre-patch build/patch_pre.bin \
+            --next-patch build/patch_next.bin \
+            --hook build/ttg_hook.bin \
+            --manifest Pocket_TTG_FX_CLEAN_INTERACTIVE_SHELL_v0.1.json
+          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_INTERACTIVE_SHELL_v0.1.bin | tee build/SHA256SUMS.txt
+
+      - name: Upload auditable firmware and compiler evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocket-ttg-clean-interactive-shell-v0.1
+          path: |
+            Pocket_TTG_FX_CLEAN_INTERACTIVE_SHELL_v0.1.bin
+            Pocket_TTG_FX_CLEAN_INTERACTIVE_SHELL_v0.1.json
+            build/ttg_shell.dis
+            build/ttg_shell.nm
+            build/ttg_shell.elfinfo
+            build/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
