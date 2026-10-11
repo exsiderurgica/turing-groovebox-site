@@ -1,4 +1,4 @@
-// Pocket Master hardware input accessor + caller trace (NDS32 LE).
+// Pocket Master three-way physical input mapping (NDS32 LE).
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
@@ -18,10 +18,10 @@ public class Dump extends GhidraScript {
     if(!dumped.add(ep))return;
     p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" body="+f.getBody()+" ---");
     InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true);int n=0;
-    while(ii.hasNext()&&n++<1000){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
+    while(ii.hasNext()&&n++<1200){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
     try{
       DecompInterface d=new DecompInterface();d.openProgram(currentProgram);
-      DecompileResults r=d.decompileFunction(f,240,monitor);
+      DecompileResults r=d.decompileFunction(f,300,monitor);
       if(r!=null&&r.decompileCompleted()&&r.getDecompiledFunction()!=null){p("C-BEGIN");p(r.getDecompiledFunction().getC());p("C-END");}
       else p("C-FAIL "+(r==null?"null":r.getErrorMessage()));
       d.dispose();
@@ -40,33 +40,34 @@ public class Dump extends GhidraScript {
       if(f!=null)eps.add(f.getEntryPoint().getOffset());
     }
     p("UNIQUE_CALLERS="+eps.size());
-    int n=0;
-    for(long x:eps){if(n++>=maxDump)break;dump(x,"caller-of:"+label);}
+    int n=0;for(long x:eps){if(n++>=maxDump)break;dump(x,"caller-of:"+label);}
   }
   @Override public void run()throws Exception{
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_ui_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket Master hardware input map v17");
+      p("Pocket Master physical input resolver v18");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
 
-      // Functions polled by the operational page-2 event loop.
-      dump(0x50000L,"page2 polled byte accessor / candidate knob-or-state");
-      dump(0x5022cL,"page2 polled 16-bit accessor / candidate encoder-or-preset");
-      dump(0x521bcL,"page2 polled single-byte accessor / candidate VALUE button state");
-      dump(0x5219cL,"page2 indexed input accessor, called with indices 0,1,2");
-      dump(0x50280L,"page2 indexed 0..8 accessor");
-      dump(0x502ccL,"page2 32-bit accessor");
-      dump(0x50454L,"page2 final byte accessor");
+      dump(0x5219cL,"three-way input dispatcher");
+      dump(0x65a78L,"input index 0 target");
+      dump(0x15240L,"input index 1 target");
+      dump(0x1504cL,"input index 2 target");
+      callers(0x65a78L,"index0-target",16);
+      callers(0x15240L,"index1-target",16);
+      callers(0x1504cL,"index2-target",16);
 
-      callers(0x5219cL,"indexed-input-5219c",16);
-      callers(0x521bcL,"single-input-521bc",16);
-      callers(0x50000L,"state-50000",10);
-      callers(0x5022cL,"state-5022c",10);
+      dump(0x521bcL,"single-byte hardware/accessory state");
+      dump(0x153dcL,"consumer of 521bc");
+      dump(0x14accL,"consumer action A");
+      dump(0x14b00L,"consumer action B");
+      dump(0x5223cL,"hardware state setter used by 538fc");
+      dump(0x538fcL,"secondary hardware-state consumer");
 
-      // Existing page callbacks for context.
-      dump(0x23440L,"operational page2 event");
-      dump(0x16288L,"screen switch API");
+      // Likely low-level event/state helpers near the three input targets.
+      dump(0x15000L,"near input2 target");
+      dump(0x15200L,"near input1 target");
+      dump(0x65a00L,"near input0 target");
     }finally{out.close();}
   }
 }
