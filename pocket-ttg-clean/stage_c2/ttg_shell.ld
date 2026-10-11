@@ -8,8 +8,7 @@ SECTIONS
   .patch_enc_up    0x00053c88 : SUBALIGN(2) { KEEP(*(.patch_enc_up)) }
   .patch_enc_press 0x00053cd4 : SUBALIGN(2) { KEEP(*(.patch_enc_press)) }
 
-  /* Measurement link only. build_stage_c2.py still refuses anything over the
-   * audited stock cave 0x342, so no oversized firmware can be produced. */
+  /* Official V1.3.3 audited all-zero executable cave: 0x342 bytes. */
   .ttg_hook 0x0010f314 : SUBALIGN(2)
   {
     KEEP(*(.ttg_text))
@@ -25,4 +24,4 @@ ASSERT(SIZEOF(.patch_next)==4,"next patch size")
 ASSERT(SIZEOF(.patch_enc_down)==4,"enc down patch size")
 ASSERT(SIZEOF(.patch_enc_up)==4,"enc up patch size")
 ASSERT(SIZEOF(.patch_enc_press)==4,"enc press patch size")
-ASSERT(SIZEOF(.ttg_hook)<=0x2000,"measurement ceiling")
+ASSERT(SIZEOF(.ttg_hook)<=0x342,"TTG shell exceeds verified code cave")
