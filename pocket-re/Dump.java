@@ -1,4 +1,4 @@
-// Pocket Master physical key/accessor resolver (NDS32 LE).
+// Pocket Master stock key-message translator trace (NDS32 LE).
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
@@ -18,48 +18,49 @@ public class Dump extends GhidraScript {
     long ep=f.getEntryPoint().getOffset(); if(!dumped.add(ep))return;
     p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" body="+f.getBody()+" ---");
     InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true);int n=0;
-    while(ii.hasNext()&&n++<1800){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
-    try{DecompInterface d=new DecompInterface();d.openProgram(currentProgram);DecompileResults r=d.decompileFunction(f,360,monitor);
+    while(ii.hasNext()&&n++<2200){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
+    try{DecompInterface d=new DecompInterface();d.openProgram(currentProgram);DecompileResults r=d.decompileFunction(f,420,monitor);
       if(r!=null&&r.decompileCompleted()&&r.getDecompiledFunction()!=null){p("C-BEGIN");p(r.getDecompiledFunction().getC());p("C-END");}
       else p("C-FAIL "+(r==null?"null":r.getErrorMessage()));d.dispose();}catch(Exception e){p("C-EXCEPTION "+e);}
   }
-  private void dump(long ep,String why)throws Exception{dumpFn(getFunctionAt(toAddr(ep)),why);}
-  private Function nearestBefore(Address a){
-    Function last=null; FunctionIterator it=currentProgram.getFunctionManager().getFunctions(true);
-    while(it.hasNext()){Function f=it.next(); if(f.getEntryPoint().compareTo(a)>0)break; last=f;} return last;
+  private Function nearestBefore(Address a){Function last=null;FunctionIterator it=currentProgram.getFunctionManager().getFunctions(true);while(it.hasNext()){Function f=it.next();if(f.getEntryPoint().compareTo(a)>0)break;last=f;}return last;}
+  private void window(long addr,String why)throws Exception{
+    Address a=toAddr(addr);Listing l=currentProgram.getListing();Function f=getFunctionContaining(a);if(f!=null){dumpFn(f,"contains:"+why);return;}
+    p("\n=== WINDOW "+why+" target="+a+" ===");Instruction cur=l.getInstructionAt(a);if(cur==null)cur=l.getInstructionContaining(a);if(cur==null)cur=l.getInstructionAfter(a);
+    if(cur==null){p("NO INSTRUCTION");return;}Instruction start=cur;for(int i=0;i<36;i++){Instruction q=l.getInstructionBefore(start.getAddress());if(q==null)break;start=q;}
+    Instruction q=start;for(int i=0;i<120&&q!=null;i++){p("WIN "+q.getAddress()+"  "+q);q=l.getInstructionAfter(q.getAddress());}
   }
-  private void around(long addr,String why)throws Exception{
-    Address a=toAddr(addr); Function f=getFunctionContaining(a); if(f==null)f=nearestBefore(a);
-    p("\n=== NEAREST "+why+" target="+a+" -> "+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+" ===");
-    if(f!=null)dumpFn(f,"nearest:"+why);
+  private void xrefs(long addr,String label)throws Exception{
+    p("\n=== XREFS "+label+" @ 0x"+Long.toHexString(addr)+" ===");ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(addr));LinkedHashSet<Function> fs=new LinkedHashSet<>();int refs=0;
+    while(it.hasNext()){Reference r=it.next();refs++;Function f=getFunctionContaining(r.getFromAddress());p("REF from="+r.getFromAddress()+" type="+r.getReferenceType()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));if(f!=null)fs.add(f);else window(r.getFromAddress().getOffset(),"xref-site:"+label);}
+    p("REF_COUNT="+refs+" UNIQUE_FUNCS="+fs.size());for(Function f:fs)dumpFn(f,"xref:"+label);
   }
-  private void callers(long addr,String label,int max)throws Exception{
-    p("\n=== CALLERS "+label+" @ 0x"+Long.toHexString(addr)+" ===");
-    ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(addr)); LinkedHashSet<Function> fs=new LinkedHashSet<>();
-    while(it.hasNext()){Reference r=it.next(); if(!r.getReferenceType().isCall())continue; Function f=getFunctionContaining(r.getFromAddress());
-      p("CALL from="+r.getFromAddress()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())); if(f!=null)fs.add(f);}
-    int n=0; for(Function f:fs){if(n++>=max)break;dumpFn(f,"caller:"+label);} p("UNIQUE_CALLERS="+fs.size());
-  }
-  private void refsRange(long lo,long hi,String label)throws Exception{
-    p("\n=== REFS RANGE "+label+" 0x"+Long.toHexString(lo)+"..0x"+Long.toHexString(hi)+" ===");
-    ReferenceManager rm=currentProgram.getReferenceManager(); LinkedHashSet<Function> fs=new LinkedHashSet<>();
-    for(long a=lo;a<=hi;a+=4){ReferenceIterator it=rm.getReferencesTo(toAddr(a));while(it.hasNext()){Reference r=it.next();Function f=getFunctionContaining(r.getFromAddress());
-      p("REF target=0x"+Long.toHexString(a)+" from="+r.getFromAddress()+" type="+r.getReferenceType()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())); if(f!=null)fs.add(f);}}
-    int n=0;for(Function f:fs){if(n++>=24)break;dumpFn(f,"table-user:"+label);}p("UNIQUE_FUNCS="+fs.size());
+  private void force(long ep,String name)throws Exception{
+    Address a=toAddr(ep);try{disassemble(a);}catch(Exception ignored){}Function f=getFunctionAt(a);if(f==null){try{f=createFunction(a,name);}catch(Exception ignored){}}
+    if(f!=null)dumpFn(f,"forced:"+name);else window(ep,"forced-window:"+name);
   }
   @Override public void run()throws Exception{
     String[] args=getScriptArgs();out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_ui_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket Master physical key resolver v25");
+      p("Pocket Master stock key-message translator v26");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
-      long[] acc={0x146ccL,0x14800L,0x14920L,0x50000L,0x5022cL,0x50250L,0x50280L,0x502ccL,0x50454L};
-      String[] names={"state146cc","select14800","phase14920","state50000","word5022c","block50250","indexed50280","word502cc","state50454"};
-      for(int i=0;i<acc.length;i++){dump(acc[i],names[i]);callers(acc[i],names[i],10);}
-      refsRange(0x000e05d0L,0x000e0630L,"Left/Right descriptor neighborhood");
-      around(0x00029b14L,"factory encoder test text switch");
-      dump(0x00023c44L,"splash callback");
-      dump(0x00023440L,"page2 event");
-      dump(0x0005431cL,"MainApp task");
+      // raw-b string offset + 0x10000 runtime base
+      xrefs(0x0014100cL,"MSG_NEXT");
+      xrefs(0x00141018L,"MSG_PRE");
+      xrefs(0x00141174L,"menu key");
+      xrefs(0x00141180L,"MSG_MUTE");
+      xrefs(0x0014118cL,"MSG_MAIN_VOL_UP");
+      xrefs(0x0014119cL,"MSG_MAIN_VOL_DW");
+      xrefs(0x000e11d0L,"Please Test Enc Key");
+      xrefs(0x000e1426L,"VALUE/VOL");
+      // Force code around factory encoder switch and raw Left/Right descriptor references.
+      force(0x00029a80L,"factory_enc_switch_area");
+      force(0x00016e80L,"key_descriptor_init_area");
+      force(0x00016f00L,"key_descriptor_init_area2");
+      // Core UI and message queue context.
+      force(0x0005431cL,"MainApp_task");
+      force(0x0002c9f0L,"GUI_global_event");
+      force(0x00023440L,"GUI_page2_event");
     }finally{out.close();}
   }
 }
