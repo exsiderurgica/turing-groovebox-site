@@ -1,4 +1,5 @@
 ENTRY(ttg_page2_hook)
+PROVIDE(STOCK_SET_PARAM = 0x00050348);
 SECTIONS {
   .patch_page2     0x000235b6 : SUBALIGN(2) { KEEP(*(.patch_page2)) }
   .patch_pre       0x00052e48 : SUBALIGN(2) { KEEP(*(.patch_pre)) }
@@ -16,6 +17,5 @@ ASSERT(SIZEOF(.patch_next)==4,"next patch size")
 ASSERT(SIZEOF(.patch_enc_down)==4,"enc down patch size")
 ASSERT(SIZEOF(.patch_enc_up)==4,"enc up patch size")
 ASSERT(SIZEOF(.patch_enc_press)==4,"enc press patch size")
-/* Measurement-only ceiling. build_stage_d.py still enforces the real audited 0x342/0x396 limits. */
-ASSERT(SIZEOF(.ttg_aux)<=0x2000,"measurement aux overflow")
-ASSERT(SIZEOF(.ttg_text)<=0x2000,"measurement text overflow")
+ASSERT(SIZEOF(.ttg_aux)<=0x342,"TTG aux+rodata exceeds audited old cave")
+ASSERT(SIZEOF(.ttg_text)<=0x396,"TTG event code exceeds audited large cave")
