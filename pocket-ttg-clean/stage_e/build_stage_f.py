@@ -14,7 +14,8 @@ P08_ROUTE_FILE=0x1BBE90;TTG_ROUTE=bytes([1,2,6,5,7,8,0,3,4,9])
 ENTER_RT=0x22e80;ENTER_LEN=0x568;ENTER_SHA='5c3f53d2ce7b6fb8e16c72229c4f4e2150528f826eafdc7eba454f60ef1f0cb8'
 LEAVE_RT=0x233e8;LEAVE_LEN=0x58;LEAVE_SHA='4f5161320b366051ca271e78356786c8cc8746ca689de2a7ac94e91205a1c6fa'
 EVENT_RT=0x23440;EVENT_LEN=0x230;EVENT_SHA='089cb064500d25625182997617219a9d7524b78348cc248f6cbc2bf673237407'
-RAW_GATE_RT=0x52b00;RAW_GATE_OLD=bytes.fromhex('44107805')
+# VERIFIED in exact stock V1.3.3: r0 is the real 0x7Fxx event at this site.
+RAW_GATE_RT=0x52c40;RAW_GATE_OLD=bytes.fromhex('44207f33')
 LEGACY_SITES=[
  ('PRE',0x52e48,'4902b8a9'),('NEXT',0x52ee4,'4902b84e'),
  ('enc_down',0x53a54,'4900248a'),('enc_up',0x53c88,'490022d8'),('menu_key',0x53cd4,'49001fd8')]
@@ -117,14 +118,14 @@ def main():
  patch.append(replace_function(b,LEAVE_RT,LEAVE_LEN,LEAVE_SHA,Path(a.leave).read_bytes(),'REPLACE stock page2_leave'))
  patch.append(replace_function(b,EVENT_RT,EVENT_LEN,EVENT_SHA,Path(a.event).read_bytes(),'REPLACE stock page2_event'))
 
- # v0.6 takes ownership at the raw queue dispatcher, BEFORE the stock mode gate.
+ # v0.7 hook: exact event-code layer, after stock has established mode==4.
  o=RAW_GATE_RT-BASE_RUNTIME;gate=Path(a.event_gate).read_bytes()
- if b[o:o+4]!=RAW_GATE_OLD:raise SystemExit(f'raw gate stock guard {b[o:o+4].hex()}')
- if len(gate)!=4:raise SystemExit(f'raw gate patch size {len(gate)}')
+ if b[o:o+4]!=RAW_GATE_OLD:raise SystemExit(f'event-code gate stock guard {b[o:o+4].hex()}')
+ if len(gate)!=4:raise SystemExit(f'event gate patch size {len(gate)}')
  b[o:o+4]=gate
- patch.append({'name':'RAW EVENT OWNERSHIP','runtime':hex(RAW_GATE_RT),'stock':RAW_GATE_OLD.hex(),'new':gate.hex(),'before_stock_mode_gate':True})
+ patch.append({'name':'VERIFIED EVENT-CODE OWNERSHIP','runtime':hex(RAW_GATE_RT),'stock':RAW_GATE_OLD.hex(),'new':gate.hex(),'r0_is_0x7Fxx_here':True})
 
- # The five old downstream action-call patches must remain exactly stock.
+ # The previous downstream action-call patches remain stock; v0.7 owns events upstream.
  for n,rt,hx in LEGACY_SITES:
   q=rt-BASE_RUNTIME
   if b[q:q+4]!=bytes.fromhex(hx):raise SystemExit(f'legacy downstream site changed: {n} {b[q:q+4].hex()}')
@@ -134,7 +135,7 @@ def main():
  if any(b[t0:t1]) or any(b[r0:r1]) or len(text)>t1-t0 or len(ro)>r1-r0:raise SystemExit(f'cave guard text={len(text)} ro={len(ro)}')
  b[t0:t0+len(text)]=text;b[r0:r0+len(ro)]=ro
  patch += [
-  {'name':'TTG helper + raw-event gate code','runtime':'0x1101ae','bytes':len(text),'budget':t1-t0},
+  {'name':'TTG helper + event gate code','runtime':'0x1101ae','bytes':len(text),'budget':t1-t0},
   {'name':'TTG state/rodata helpers','runtime':'0x10f314','bytes':len(ro),'budget':r1-r0}
  ]
 
@@ -169,18 +170,19 @@ def main():
   _,s,n=reg(raw,rid);_,ss,nn=reg(src,rid)
   if raw[s:s+n]!=src[ss:ss+nn]:changed.append(rid)
  m={
-  'name':'Pocket TTG FX ROOT UI RAW EVENT OWNERSHIP v0.6',
+  'name':'Pocket TTG FX ROOT UI VERIFIED EVENT DISPATCH v0.7',
   'base_sha256':OFFICIAL_SHA,'output_sha256':sha,'size':len(raw),'changed_regions':changed,
   'changed_bytes':sum(x!=y for x,y in zip(src,raw)),'regions':regs,'patches':patch,
   'legacy_binary_input':False,
   'stock_page2_enter_removed':True,'stock_page2_event_removed':True,'stock_page2_leave_removed':True,
-  'raw_event_intercept_runtime':'0x52b00','raw_event_intercept_before_mode_gate':True,
-  'consumed_events':{'0x7f36':'MSG_PRE / previous TTG page','0x7f37':'MSG_NEXT / next TTG page','0x7f5d':'MSG_MAIN_VOL_UP / encoder up','0x7f5e':'MSG_MAIN_VOL_DW / encoder down','0x7f46':'menu key / TTG press while custom page active'},
-  'sentinel_after_consume':'0x7b0e (stock no-op/loop event)',
+  'event_intercept_runtime':'0x52c40','event_intercept_verified_r0_7fxx':True,
+  'stock_pass_runtime':'0x52c44','stock_handled_runtime':'0x52abc',
+  'consumed_events':{'0x7f36':'MSG_PRE / previous TTG page','0x7f37':'MSG_NEXT / next TTG page','0x7f5d':'MSG_MAIN_VOL_UP / encoder clockwise','0x7f5e':'MSG_MAIN_VOL_DW / encoder counterclockwise','0x7f46':'menu key / long VALUE used as TTG edit/toggle'},
+  'short_encoder_press':'not yet statically identified; long VALUE 0x7f46 is owned in this milestone',
   'old_downstream_patches_removed':True,
   'ui':['TTG FX','page title','current parameter','D1 F1 F2 D2 DLY CLD'],
   'chain':['D1','F1','F2','D2','DLY','CLOUD'],'internal_route':list(TTG_ROUTE),
-  'controls':{'left':'previous block','right':'next block','encoder_rotate':'select/edit','encoder_press':'edit/toggle or bypass; 0x7f46 ownership'},
+  'controls':{'left/PRE':'previous block','right/NEXT':'next block','encoder_rotate':'select/edit','VALUE long press':'edit/toggle or bypass'},
   'audio':{'D1':'new source DSP','F1':'new source bridge','F2':'new source serial filter DSP','D2':'new source DSP','DLY':'stock Sweep delay','CLOUD':'new source macro wrapper'},
   'top_level_0x04_preserved':raw[4:8].hex()
  }
