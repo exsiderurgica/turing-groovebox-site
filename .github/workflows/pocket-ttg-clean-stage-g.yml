@@ -1,0 +1,170 @@
+name: Pocket TTG FX ROOT UI UNIVERSAL INPUT v0.8
+on:
+  push:
+    branches: [pocket-ttg-clean]
+    paths:
+      - 'pocket-ttg-clean/stage_e/event_gate_v08.S'
+      - 'pocket-ttg-clean/stage_e/ttg_ui_v08.ld'
+      - 'pocket-ttg-clean/stage_e/build_stage_g.py'
+      - 'pocket-ttg-clean/stage_e/ttg_ui.c'
+      - 'pocket-ttg-clean/stage_e/patch_controls.S'
+      - 'pocket-ttg-clean/stage_d/**'
+      - '.github/workflows/pocket-ttg-clean-stage-g.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ttg-clean
+
+      - name: Download and verify official V1.3.3 only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 -o pocket-fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile,pathlib,hashlib
+          E='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          z=zipfile.ZipFile('pocket-fw.zip'); b=[x for x in z.namelist() if x.lower().endswith('.bin')]; assert len(b)==1
+          raw=z.read(b[0]); s=hashlib.sha256(raw).hexdigest(); print('official',s); assert s==E
+          pathlib.Path('Pocket_Master_Firmware_V1.3.3.bin').write_bytes(raw)
+          PY
+
+      - name: Install ARM and NDS32 toolchains
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm zstd libgmp10 libmpfr6 libmpc3 libisl23 zlib1g libzstd1 libdebuginfod1
+          python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0'
+          curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst' -o /tmp/binutils.pkg.tar.zst
+          curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-gcc-15.2.0-1-x86_64.pkg.tar.zst' -o /tmp/gcc.pkg.tar.zst
+          mkdir -p /tmp/nds32
+          tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
+          tar --zstd -xf /tmp/gcc.pkg.tar.zst -C /tmp/nds32
+          echo '/tmp/nds32/usr/bin' >> "$GITHUB_PATH"
+
+      - name: Compile audio chain from source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sed -i 's/;#define ENG/;\n#define ENG/' pocket-ttg-clean/stage_d/build_arm.sh
+          CC=clang OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump bash pocket-ttg-clean/stage_d/build_arm.sh
+
+      - name: Compile custom root and universal input gate
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export PATH="/tmp/nds32/usr/bin:$PATH"
+          mkdir -p pocket-ttg-clean/stage_e/build/v08
+          B=pocket-ttg-clean/stage_e/build/v08
+          C='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -Oz -Wall -Wextra -mcpu=d1088 -mabi=2 -mext-fpu-sp'
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/ttg_ui.c -o $B/ttg_ui.o
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/patch_controls.S -o $B/patch_controls.o
+          nds32le-elf-gcc $C -c pocket-ttg-clean/stage_e/event_gate_v08.S -o $B/event_gate.o
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -mext-fpu-sp -Wl,--gc-sections -Wl,-T,pocket-ttg-clean/stage_e/ttg_ui_v08.ld $B/ttg_ui.o $B/patch_controls.o $B/event_gate.o -o $B/ttg_ui.elf
+          nds32le-elf-readelf -h -S -l -A -r $B/ttg_ui.elf > $B/ttg_ui.elfinfo
+          nds32le-elf-objdump -dr $B/ttg_ui.elf > $B/ttg_ui.dis
+          nds32le-elf-nm -n $B/ttg_ui.elf > $B/ttg_ui.nm
+          if nds32le-elf-readelf -r $B/ttg_ui.elf | grep -q 'R_NDS32_'; then echo unresolved relocation >&2; exit 1; fi
+          for s in page_enter page_leave page_event patch_event_entry ttg_text ttg_aux; do
+            nds32le-elf-objcopy -O binary --only-section=.$s $B/ttg_ui.elf $B/$s.bin
+          done
+          wc -c $B/*.bin
+          test $(wc -c < $B/page_enter.bin) -le $((0x568))
+          test $(wc -c < $B/page_leave.bin) -le $((0x58))
+          test $(wc -c < $B/page_event.bin) -le $((0x230))
+          test $(wc -c < $B/patch_event_entry.bin) -eq 4
+          test $(wc -c < $B/ttg_text.bin) -le $((0x396))
+          grep -q '00022e80.*ttg_page2_enter' $B/ttg_ui.nm
+          grep -q '00023440.*ttg_page2_event' $B/ttg_ui.nm
+          grep -q '00052b00.*ttg_patch_event_entry' $B/ttg_ui.nm
+          grep -q 'ttg_raw_event_gate' $B/ttg_ui.nm
+          grep -qi '7f36' $B/ttg_ui.dis
+          grep -qi '7f37' $B/ttg_ui.dis
+          grep -qi '7f5d' $B/ttg_ui.dis
+          grep -qi '7f5e' $B/ttg_ui.dis
+          grep -qi '7f46' $B/ttg_ui.dis
+          grep -q 'ttg_prev' $B/ttg_ui.nm
+          grep -q 'ttg_next' $B/ttg_ui.nm
+          grep -q 'ttg_enc_up' $B/ttg_ui.nm
+          grep -q 'ttg_enc_down' $B/ttg_ui.nm
+          grep -q 'ttg_enc_press' $B/ttg_ui.nm
+          grep -q 'fmtsr.*fs0' $B/ttg_ui.dis
+          grep -q '50348' $B/ttg_ui.dis
+
+      - name: Verify exact stock universal hook bytes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          raw=Path('Pocket_Master_Firmware_V1.3.3.bin').read_bytes()
+          n=int.from_bytes(raw[0x22:0x24],'little'); base=0x38+n*16
+          for i in range(n):
+            e=0x38+i*16
+            if chr(raw[e+3])=='b':
+              s=base+int.from_bytes(raw[e+8:e+12],'little'); break
+          off=s+(0x52b00-0x10000)
+          got=raw[off:off+4]
+          print('stock 0x52b00',got.hex())
+          assert got==bytes.fromhex('44107805')
+          # previous instruction must be the halfword load that supplies r0.
+          print('stock 0x52afc',raw[s+(0x52afc-0x10000):s+(0x52b00-0x10000)].hex())
+          assert raw[s+(0x52afc-0x10000):s+(0x52b00-0x10000)]==bytes.fromhex('020f8004')
+          PY
+
+      - name: Build stock-rooted v0.8 firmware
+        shell: bash
+        run: |
+          set -euxo pipefail
+          A=pocket-ttg-clean/stage_d/build/arm; N=pocket-ttg-clean/stage_e/build/v08
+          python3 pocket-ttg-clean/stage_e/build_stage_g.py Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_ROOT_UI_UNIVERSAL_INPUT_v0.8.bin \
+            --d1-bin $A/d1.bin --d1-nm $A/d1.nm --d2-bin $A/d2.bin --d2-nm $A/d2.nm --f1-bin $A/f1.bin --f1-nm $A/f1.nm --f2-bin $A/f2.bin --f2-nm $A/f2.nm --cloud-bin $A/cloud.bin --cloud-nm $A/cloud.nm \
+            --enter $N/page_enter.bin --leave $N/page_leave.bin --event $N/page_event.bin --event-gate $N/patch_event_entry.bin \
+            --text $N/ttg_text.bin --rodata $N/ttg_aux.bin \
+            --manifest Pocket_TTG_FX_ROOT_UI_UNIVERSAL_INPUT_v0.8.json
+          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_ROOT_UI_UNIVERSAL_INPUT_v0.8.bin | tee pocket-ttg-clean/stage_e/build/SHA256SUMS_v08.txt
+
+      - name: Independent v0.8 audit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          m=json.loads(Path('Pocket_TTG_FX_ROOT_UI_UNIVERSAL_INPUT_v0.8.json').read_text())
+          f=Path('Pocket_TTG_FX_ROOT_UI_UNIVERSAL_INPUT_v0.8.bin').read_bytes()
+          assert hashlib.sha256(f).hexdigest()==m['output_sha256']
+          assert m['base_sha256']=='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          assert m['changed_regions']==['g','b','e'],m['changed_regions']
+          assert m['legacy_binary_input'] is False
+          assert m['stock_page2_enter_removed'] is True and m['stock_page2_event_removed'] is True and m['stock_page2_leave_removed'] is True
+          assert m['event_intercept_runtime']=='0x52b00'
+          assert m['event_intercept_verified_post_dequeue'] is True
+          assert m['stock_pass_runtime']=='0x52b04' and m['stock_handled_runtime']=='0x52abc'
+          assert m['internal_route']==[1,2,6,5,7,8,0,3,4,9]
+          assert m['top_level_0x04_preserved']=='24ac0100'
+          assert set(m['consumed_events'])=={'0x7f36','0x7f37','0x7f5d','0x7f5e','0x7f46'}
+          print('V0.8 UNIVERSAL INPUT AUDIT PASS',m['output_sha256'])
+          PY
+
+      - name: Upload v0.8 firmware and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocket-ttg-root-ui-universal-input-v0.8
+          path: |
+            Pocket_TTG_FX_ROOT_UI_UNIVERSAL_INPUT_v0.8.bin
+            Pocket_TTG_FX_ROOT_UI_UNIVERSAL_INPUT_v0.8.json
+            pocket-ttg-clean/stage_e/build/SHA256SUMS_v08.txt
+            pocket-ttg-clean/stage_e/build/v08/ttg_ui.dis
+            pocket-ttg-clean/stage_e/build/v08/ttg_ui.nm
+            pocket-ttg-clean/stage_e/build/v08/ttg_ui.elfinfo
+            pocket-ttg-clean/stage_e/build/v08/patch_event_entry.bin
+            pocket-ttg-clean/stage_d/build/arm/*.nm
+            pocket-ttg-clean/stage_d/build/arm/*.dis
+          if-no-files-found: error
+          retention-days: 30
