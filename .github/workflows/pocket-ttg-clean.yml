@@ -1,0 +1,58 @@
+name: Pocket TTG FX clean rebuild
+
+on:
+  push:
+    branches: [pocket-ttg-clean]
+    paths:
+      - 'pocket-ttg-clean/**'
+      - '.github/workflows/pocket-ttg-clean.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-stage-a:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ttg-clean
+
+      - name: Download official Pocket Master V1.3.3 only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 3 -o pocket-fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile, pathlib, hashlib
+          EXPECT='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          z=zipfile.ZipFile('pocket-fw.zip')
+          bins=[n for n in z.namelist() if n.lower().endswith('.bin')]
+          if len(bins)!=1: raise SystemExit(f'expected exactly one BIN, got {bins}')
+          raw=z.read(bins[0])
+          sha=hashlib.sha256(raw).hexdigest()
+          print('official SHA256',sha)
+          if sha!=EXPECT: raise SystemExit('official firmware SHA mismatch — refusing build')
+          pathlib.Path('Pocket_Master_Firmware_V1.3.3.bin').write_bytes(raw)
+          PY
+
+      - name: Build CLEAN Stage A directly from stock
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 pocket-ttg-clean/build_stage_a.py \
+            Pocket_Master_Firmware_V1.3.3.bin \
+            Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin \
+            --manifest Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.json
+          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin
+
+      - name: Upload clean artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pocket-ttg-fx-clean-stage-a-v0.1
+          path: |
+            Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin
+            Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.json
+          if-no-files-found: error
+          retention-days: 30
