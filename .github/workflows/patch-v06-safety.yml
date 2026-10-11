@@ -1,0 +1,43 @@
+name: Patch Pocket flasher safety lock for v0.6
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-v06-safety.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Add verified v0.6 SHA to safety lock
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('pocket-master-flasher/app.mjs')
+          s=p.read_text()
+          sha='09f257a3e09fa307e3ed3a488eda8591f5536319255ebb287b93d8d83579df16'
+          label='TTG FX ROOT UI RAW EVENTS v0.6 · upstream event ownership'
+          if sha not in s:
+              needle='const TARGETS = new Map([\n'
+              if needle not in s:
+                  raise SystemExit('TARGETS map anchor not found')
+              s=s.replace(needle, needle+f"  ['{sha}', '{label}'],\n", 1)
+              p.write_text(s)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pocket-master-flasher/app.mjs
+          if git diff --cached --quiet; then
+            echo 'Safety lock already contains v0.6.'
+          else
+            git commit -m 'Allow TTG FX raw-event v0.6 in flasher'
+            git push origin main
+          fi
