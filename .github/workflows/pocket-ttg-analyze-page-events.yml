@@ -34,15 +34,16 @@ jobs:
           sudo apt-get install -y zstd libdebuginfod1 libzstd1 zlib1g libgmp10 libmpfr6 libmpc3 libisl23 >/dev/null
           curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst' -o /tmp/binutils.pkg.tar.zst
           mkdir -p /tmp/nds32 && tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
-          export PATH="/tmp/nds32/usr/bin:$PATH"
-          nds32le-elf-objdump -D -b binary -m nds32 --adjust-vma=0x10000 b.bin > stock_b.dis
+          echo '/tmp/nds32/usr/bin' >> "$GITHUB_PATH"
+          /tmp/nds32/usr/bin/nds32le-elf-objdump -D -b binary -m nds32 --adjust-vma=0x10000 b.bin > stock_b.dis
       - name: Print page2 event and hardware sites
         shell: bash
         run: |
           set -euxo pipefail
+          O=/tmp/nds32/usr/bin/nds32le-elf-objdump
           echo '=== PAGE2 EVENT 0x23440..0x23670 ==='
-          nds32le-elf-objdump -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x23440 --stop-address=0x23670 b.bin
-          for R in '52e00 52f20' '539f0 53aa0' '53c20 53d30'; do set -- $R; echo "=== $1..$2 ==="; nds32le-elf-objdump -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x$1 --stop-address=0x$2 b.bin; done
+          $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x23440 --stop-address=0x23670 b.bin
+          for R in '52e00 52f20' '539f0 53aa0' '53c20 53d30'; do set -- $R; echo "=== $1..$2 ==="; $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x$1 --stop-address=0x$2 b.bin; done
           echo '=== EVENT CONSTANT REFERENCES ==='
           grep -i -n -E '7f36|7f37|7f3[0-9a-f]|7f2[0-9a-f]' stock_b.dis | head -200 || true
       - uses: actions/upload-artifact@v4
