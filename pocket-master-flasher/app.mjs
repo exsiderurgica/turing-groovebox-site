@@ -6,6 +6,7 @@ import {
 } from './pocket-master-webmidi.mjs';
 
 const TARGETS = new Map([
+  ['316020a5dbfa9c54c2990618b63100c0fa875fa6377bc4c8f315c87fb36f13cf', 'TTG FX CLEAN DIRECT CHAIN M2 v0.3 · stock-rooted full milestone'],
   ['f090df778e75309f95a67cc217d6a81b41f06be29931154ed11478b74f29cf7c', 'TTG FX DIRECT CHAIN M1 v0.2 · stock-rooted milestone'],
   ['8e12f3de3db74da385b9e7de88fe6973990d7e12fae370c169708683a8880cb5', 'TTG FX CLEAN INTERACTIVE SHELL v0.1 · stock-rooted'],
   ['6516ba606026de2b73a8482c332997863f68cb813fbba0e58768f2d3505506f6', 'TTG FX CLEAN Stage B · stock-rooted boot + Effects'],
