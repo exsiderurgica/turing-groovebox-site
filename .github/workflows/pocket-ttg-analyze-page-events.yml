@@ -1,0 +1,52 @@
+name: Pocket TTG analyze page events
+on:
+  workflow_dispatch:
+  push:
+    branches: [pocket-ttg-clean]
+    paths: ['.github/workflows/pocket-ttg-analyze-page-events.yml']
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ttg-clean
+      - name: Get stock and NDS32 objdump
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 4 -o fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile,pathlib,hashlib
+          z=zipfile.ZipFile('fw.zip'); n=[x for x in z.namelist() if x.lower().endswith('.bin')][0]; raw=z.read(n)
+          assert hashlib.sha256(raw).hexdigest()=='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          pathlib.Path('stock.bin').write_bytes(raw)
+          cnt=int.from_bytes(raw[0x22:0x24],'little'); base=0x38+cnt*16
+          for i in range(cnt):
+            e=0x38+i*16
+            if chr(raw[e+3])=='b':
+              o=base+int.from_bytes(raw[e+8:e+12],'little'); l=int.from_bytes(raw[e+12:e+16],'little')
+              pathlib.Path('b.bin').write_bytes(raw[o:o+l]); print('B',hex(o),hex(l)); break
+          PY
+          sudo apt-get update -qq
+          sudo apt-get install -y zstd >/dev/null
+          curl -fL --retry 4 'https://geo.mirror.pkgbuild.com/extra/os/x86_64/nds32le-elf-binutils-2.45.1-1-x86_64.pkg.tar.zst' -o /tmp/binutils.pkg.tar.zst
+          mkdir -p /tmp/nds32 && tar --zstd -xf /tmp/binutils.pkg.tar.zst -C /tmp/nds32
+          export PATH="/tmp/nds32/usr/bin:$PATH"
+          nds32le-elf-objdump -D -b binary -m nds32 --adjust-vma=0x10000 b.bin > stock_b.dis
+      - name: Print page2 event and hardware sites
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo '=== PAGE2 EVENT 0x23440..0x23670 ==='
+          awk '$1 ~ /^234[0-9a-f]+:|^235[0-9a-f]+:|^236[0-6][0-9a-f]+:/' stock_b.dis || true
+          for R in '52e00 52f20' '539f0 53aa0' '53c20 53d30'; do set -- $R; echo "=== $1..$2 ==="; nds32le-elf-objdump -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x$1 --stop-address=0x$2 b.bin; done
+          echo '=== EVENT CONSTANT REFERENCES ==='
+          grep -i -n -E '7f36|7f37|7f3[0-9a-f]|7f2[0-9a-f]' stock_b.dis | head -200 || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocket-stock-page-event-analysis
+          path: stock_b.dis
+          retention-days: 7
