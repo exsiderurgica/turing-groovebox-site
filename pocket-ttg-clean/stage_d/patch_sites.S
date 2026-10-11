@@ -29,11 +29,9 @@ ttg_patch_enc_up:
 ttg_patch_enc_press:
     jal ttg_enc_press
 
-/* Soft ABI wrapper: a0=slot, a1=param, a2=dirty, a3=IEEE754 bits.
-   Stock setter 0x50348 forwards a0/a1/a2 and expects the value in fs0. */
 .section .ttg_text,"ax",@progbits
 .balign 2
 .global ttg_set_param_raw
 ttg_set_param_raw:
     fmtsr $a3, $fs0
-    j 0x00050348
+    j STOCK_SET_PARAM
