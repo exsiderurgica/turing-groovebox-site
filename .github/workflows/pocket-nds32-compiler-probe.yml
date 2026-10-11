@@ -53,11 +53,13 @@ jobs:
           #include <stdint.h>
           #include <stddef.h>
 
-          typedef void *(*ttg_get_screen_fn)(void);
+          typedef void *(*ttg_get_gui_fn)(void);
+          typedef void *(*ttg_get_screen_fn)(void *gui);
           typedef void *(*ttg_create_text_fn)(void *parent);
           typedef void (*ttg_set_text_fn)(void *obj, const char *text);
           typedef void (*ttg_set_pos_fn)(void *obj, int32_t x, int32_t y);
 
+          #define TTG_GET_GUI     ((ttg_get_gui_fn)(uintptr_t)0x000436b0u)
           #define TTG_GET_SCREEN  ((ttg_get_screen_fn)(uintptr_t)0x0002cce0u)
           #define TTG_CREATE_TEXT ((ttg_create_text_fn)(uintptr_t)0x00047998u)
           #define TTG_SET_TEXT    ((ttg_set_text_fn)(uintptr_t)0x000479b8u)
@@ -82,7 +84,9 @@ jobs:
           uint32_t ttg_page2_enter(void *ctx, uint32_t param) {
               (void)ctx;
               (void)param;
-              void *screen = TTG_GET_SCREEN();
+              void *gui = TTG_GET_GUI();
+              if (!gui) return 0;
+              void *screen = TTG_GET_SCREEN(gui);
               if (!screen) return 0;
               add_text(screen, ttg_title, 12, 14);
               add_text(screen, ttg_brand, 12, 44);
