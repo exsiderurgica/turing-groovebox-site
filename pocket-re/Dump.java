@@ -30,13 +30,18 @@ public class Dump extends GhidraScript {
   }
   private void dump(long ep,String why)throws Exception{dumpFn(getFunctionAt(toAddr(ep)),why);}
   private void around(long addr,String why)throws Exception{
-    Address a=toAddr(addr);
+    Address a=toAddr(addr); Listing l=currentProgram.getListing();
     Function f=getFunctionContaining(a);
-    if(f==null)f=currentProgram.getFunctionManager().getFunctionBefore(a);
-    p("\n=== NEAREST "+why+" target="+a+" nearest="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+" ===");
-    if(f!=null)dumpFn(f,"nearest:"+why);
-    Instruction ins=currentProgram.getListing().getInstructionAt(a);
-    if(ins!=null)p("AT "+a+" "+ins);
+    p("\n=== WINDOW "+why+" target="+a+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+" ===");
+    if(f!=null){dumpFn(f,"containing:"+why);return;}
+    Instruction cur=l.getInstructionAt(a);
+    if(cur==null)cur=l.getInstructionContaining(a);
+    if(cur==null){cur=l.getInstructionAfter(a);}
+    if(cur==null){p("NO INSTRUCTION AROUND "+a);return;}
+    Instruction start=cur;
+    for(int i=0;i<24;i++){Instruction q=l.getInstructionBefore(start.getAddress());if(q==null)break;start=q;}
+    Instruction q=start;
+    for(int i=0;i<72 && q!=null;i++){p("WIN "+q.getAddress()+"  "+q);q=l.getInstructionAfter(q.getAddress());}
   }
   private void xrefs(long addr,String label)throws Exception{
     p("\n=== XREFS "+label+" @ 0x"+Long.toHexString(addr)+" ===");
@@ -54,17 +59,13 @@ public class Dump extends GhidraScript {
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_ui_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket Master clean boot/control resolver v23");
+      p("Pocket Master clean boot/control resolver v24");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
-
-      // Boot / initial page.
       dump(0x00023c84L,"GUI page0 enter / boot page");
       dump(0x00023d38L,"GUI page0 leave");
       dump(0x00023d7cL,"GUI page0 event");
       dump(0x00023c44L,"GUI page0 widget event");
       dump(0x00016288L,"screen/page switch API candidate");
-
-      // String pointers and descriptor table slots found in stock.
       xrefs(0x000dfc64L,"Left string");
       xrefs(0x000dfc6cL,"Right string");
       xrefs(0x000e0600L,"Left descriptor pointer slot");
@@ -72,8 +73,6 @@ public class Dump extends GhidraScript {
       xrefs(0x000e11d0L,"Please Test Enc Key string");
       xrefs(0x000e1426L,"VALUE/VOL string");
       around(0x00029b14L,"instruction referencing encoder-test string");
-
-      // Likely UI/event plumbing.
       dump(0x000a7bf0L,"factory UI event dispatcher");
       dump(0x0005431cL,"MainApp task");
       dump(0x0002c414L,"GUI task mode1");
