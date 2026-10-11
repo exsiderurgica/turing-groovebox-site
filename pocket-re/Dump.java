@@ -1,7 +1,8 @@
-// Pocket Master physical controls resolver: LEFT / RIGHT / VALUE-VOL / encoder factory strings.
+// Pocket Master clean boot/page0 + physical control descriptor resolver (NDS32 LE).
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
+import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.symbol.*;
 import java.io.*;
@@ -27,35 +28,57 @@ public class Dump extends GhidraScript {
       d.dispose();
     }catch(Exception e){p("C-EXCEPTION "+e);}
   }
+  private void dump(long ep,String why)throws Exception{dumpFn(getFunctionAt(toAddr(ep)),why);}
+  private void around(long addr,String why)throws Exception{
+    Address a=toAddr(addr);
+    Function f=getFunctionContaining(a);
+    if(f==null)f=currentProgram.getFunctionManager().getFunctionBefore(a);
+    p("\n=== NEAREST "+why+" target="+a+" nearest="+(f==null?"-":f.getName()+"@"+f.getEntryPoint())+" ===");
+    if(f!=null)dumpFn(f,"nearest:"+why);
+    Instruction ins=currentProgram.getListing().getInstructionAt(a);
+    if(ins!=null)p("AT "+a+" "+ins);
+  }
   private void xrefs(long addr,String label)throws Exception{
     p("\n=== XREFS "+label+" @ 0x"+Long.toHexString(addr)+" ===");
     ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(addr));
     LinkedHashSet<Function> fs=new LinkedHashSet<>();
     while(it.hasNext()){
-      Reference r=it.next();
-      Function f=getFunctionContaining(r.getFromAddress());
+      Reference r=it.next(); Function f=getFunctionContaining(r.getFromAddress());
       p("REF from="+r.getFromAddress()+" type="+r.getReferenceType()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));
-      if(f!=null)fs.add(f);
+      if(f!=null)fs.add(f); else around(r.getFromAddress().getOffset(),"xref-site:"+label);
     }
     p("UNIQUE_FUNCS="+fs.size());
     for(Function f:fs)dumpFn(f,"xref:"+label);
   }
-  private void dump(long ep,String why)throws Exception{dumpFn(getFunctionAt(toAddr(ep)),why);}
   @Override public void run()throws Exception{
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_ui_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket Master physical control resolver v22");
+      p("Pocket Master clean boot/control resolver v23");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
-      // These are Ghidra addresses: raw b offset + 0x10000.
+
+      // Boot / initial page.
+      dump(0x00023c84L,"GUI page0 enter / boot page");
+      dump(0x00023d38L,"GUI page0 leave");
+      dump(0x00023d7cL,"GUI page0 event");
+      dump(0x00023c44L,"GUI page0 widget event");
+      dump(0x00016288L,"screen/page switch API candidate");
+
+      // String pointers and descriptor table slots found in stock.
       xrefs(0x000dfc64L,"Left string");
       xrefs(0x000dfc6cL,"Right string");
+      xrefs(0x000e0600L,"Left descriptor pointer slot");
+      xrefs(0x000e0604L,"Right descriptor pointer slot");
       xrefs(0x000e11d0L,"Please Test Enc Key string");
       xrefs(0x000e1426L,"VALUE/VOL string");
-      // Context around page manager / operational page event.
-      dump(0x00023440L,"page2 event");
-      dump(0x00023c80L,"nearby UI/event dispatcher candidate");
-      dump(0x000a7bf0L,"factory UI event dispatcher previously found");
+      around(0x00029b14L,"instruction referencing encoder-test string");
+
+      // Likely UI/event plumbing.
+      dump(0x000a7bf0L,"factory UI event dispatcher");
+      dump(0x0005431cL,"MainApp task");
+      dump(0x0002c414L,"GUI task mode1");
+      dump(0x0002c46cL,"GUI task mode0");
+      dump(0x0002c4b0L,"GUI task mode3");
     }finally{out.close();}
   }
 }
