@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  build-stage-a:
+  build-clean:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,29 +30,48 @@ jobs:
           z=zipfile.ZipFile('pocket-fw.zip')
           bins=[n for n in z.namelist() if n.lower().endswith('.bin')]
           if len(bins)!=1: raise SystemExit(f'expected exactly one BIN, got {bins}')
-          raw=z.read(bins[0])
-          sha=hashlib.sha256(raw).hexdigest()
-          print('official SHA256',sha)
+          raw=z.read(bins[0]); sha=hashlib.sha256(raw).hexdigest(); print('official SHA256',sha)
           if sha!=EXPECT: raise SystemExit('official firmware SHA mismatch — refusing build')
           pathlib.Path('Pocket_Master_Firmware_V1.3.3.bin').write_bytes(raw)
           PY
+
+      - name: Install deterministic image dependency
+        run: python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0'
 
       - name: Build CLEAN Stage A directly from stock
         shell: bash
         run: |
           set -euxo pipefail
-          python3 pocket-ttg-clean/build_stage_a.py \
-            Pocket_Master_Firmware_V1.3.3.bin \
-            Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin \
-            --manifest Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.json
-          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin
+          python3 pocket-ttg-clean/build_stage_a.py Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin --manifest Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.json
 
-      - name: Upload clean artifact
+      - name: Build CLEAN Stage B directly from the SAME stock file
+        shell: bash
+        run: |
+          set -euxo pipefail
+          # Stage B deliberately receives official stock again, never Stage A or any prior custom image.
+          python3 pocket-ttg-clean/build_stage_b.py Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_STAGE_B_v0.1.bin --manifest Pocket_TTG_FX_CLEAN_STAGE_B_v0.1.json
+          sha256sum Pocket_Master_Firmware_V1.3.3.bin Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin Pocket_TTG_FX_CLEAN_STAGE_B_v0.1.bin
+
+      - name: Assert manifests are stock-rooted
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          EXPECT='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          for p in ['Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.json','Pocket_TTG_FX_CLEAN_STAGE_B_v0.1.json']:
+              j=json.load(open(p))
+              assert j['base_sha256']==EXPECT,(p,j['base_sha256'])
+              print(p,'base OK',j['base_sha256'],'out',j['output_sha256'])
+          PY
+
+      - name: Upload clean artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pocket-ttg-fx-clean-stage-a-v0.1
+          name: pocket-ttg-fx-clean-v0.1
           path: |
             Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.bin
             Pocket_TTG_FX_CLEAN_STAGE_A_v0.1.json
+            Pocket_TTG_FX_CLEAN_STAGE_B_v0.1.bin
+            Pocket_TTG_FX_CLEAN_STAGE_B_v0.1.json
           if-no-files-found: error
           retention-days: 30
