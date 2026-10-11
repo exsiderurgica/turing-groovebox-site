@@ -34,115 +34,100 @@ jobs:
           tar --zstd -xf /tmp/gcc.pkg.tar.zst -C /tmp/nds32
           echo "/tmp/nds32/usr/bin" >> "$GITHUB_PATH"
 
-      - name: Inspect compiler target
-        run: |
-          set -euxo pipefail
-          export PATH="/tmp/nds32/usr/bin:$PATH"
-          nds32le-elf-gcc -dumpmachine | tee gcc-dumpmachine.txt
-          nds32le-elf-gcc --version | tee gcc-version.txt
-          nds32le-elf-gcc -Q --help=target 2>&1 | tee gcc-target-help.txt
-          nds32le-elf-objdump --version | tee objdump-version.txt
-
-      - name: Build first custom page-2 takeover
+      - name: Build live page2 event hook
         run: |
           set -euxo pipefail
           export PATH="/tmp/nds32/usr/bin:$PATH"
           mkdir -p build
 
-          cat > build/gui_takeover.c <<'EOF'
+          cat > build/live_hook.c <<'EOF'
           #include <stdint.h>
           #include <stddef.h>
 
-          typedef void *(*ttg_get_gui_fn)(void);
-          typedef void *(*ttg_get_screen_fn)(void *gui);
-          typedef void *(*ttg_create_text_fn)(void *parent);
-          typedef void (*ttg_set_text_fn)(void *obj, const char *text);
-          typedef void (*ttg_set_pos_fn)(void *obj, int32_t x, int32_t y);
+          typedef void (*fn_update)(void *);
+          typedef void *(*fn_child)(void *, int);
+          typedef void (*fn_text)(void *, const char *);
+          typedef uint32_t (*fn_u32)(void);
+          typedef uint32_t (*fn_idx)(uint32_t);
 
-          #define TTG_GET_GUI     ((ttg_get_gui_fn)(uintptr_t)0x000436b0u)
-          #define TTG_GET_SCREEN  ((ttg_get_screen_fn)(uintptr_t)0x0002cce0u)
-          #define TTG_CREATE_TEXT ((ttg_create_text_fn)(uintptr_t)0x00047998u)
-          #define TTG_SET_TEXT    ((ttg_set_text_fn)(uintptr_t)0x000479b8u)
-          #define TTG_SET_POS     ((ttg_set_pos_fn)(uintptr_t)0x0002f15cu)
+          #define STOCK_UPDATE ((fn_update)(uintptr_t)0x00022800u)
+          #define GET_CHILD    ((fn_child)(uintptr_t)0x000337b0u)
+          #define SET_TEXT     ((fn_text)(uintptr_t)0x00048cd0u)
+          #define GET_MODE     ((fn_u32)(uintptr_t)0x0004e490u)
+          #define GET_WORD     ((fn_u32)(uintptr_t)0x0004e958u)
+          #define GET_SELECT   ((fn_u32)(uintptr_t)0x00014800u)
+          #define GET_PHASE    ((fn_u32)(uintptr_t)0x00014920u)
+          #define GET_BITS     ((fn_idx)(uintptr_t)0x0005219cu)
 
-          __attribute__((used,section(".ttg_strings"),aligned(1)))
-          static const char ttg_title[] = "TTG FX";
-          __attribute__((used,section(".ttg_strings"),aligned(1)))
-          static const char ttg_brand[] = "EXSIDERURGICA";
-          __attribute__((used,section(".ttg_strings"),aligned(1)))
-          static const char ttg_status[] = "CUSTOM UI CORE";
-
-          static __attribute__((always_inline)) inline void add_text(void *parent, const char *s, int32_t x, int32_t y) {
-              void *t = TTG_CREATE_TEXT(parent);
-              if (t) {
-                  TTG_SET_TEXT(t, s);
-                  TTG_SET_POS(t, x, y);
-              }
+          static __attribute__((always_inline)) inline char hx(uint32_t v) {
+              v &= 15u;
+              return (char)(v < 10u ? ('0' + v) : ('A' + v - 10u));
           }
 
-          __attribute__((used,section(".text.ttg_page2_enter"),noinline))
-          uint32_t ttg_page2_enter(void *ctx, uint32_t param) {
-              (void)ctx;
-              (void)param;
-              void *gui = TTG_GET_GUI();
-              if (!gui) return 0;
-              void *screen = TTG_GET_SCREEN(gui);
-              if (!screen) return 0;
-              add_text(screen, ttg_title, 12, 14);
-              add_text(screen, ttg_brand, 12, 44);
-              add_text(screen, ttg_status, 12, 74);
-              return 0;
-          }
+          __attribute__((used,section(".ttg_hook"),noinline))
+          uint32_t ttg_event_hook(void *ctx) {
+              STOCK_UPDATE(ctx);
+              if (!ctx) return 0;
+              void *root = *(void **)((uint8_t *)ctx + 8);
+              if (!root) return 0;
+              void *label = GET_CHILD(root, 13);
+              if (!label) return 0;
 
-          __attribute__((used,section(".text.ttg_page2_leave"),noinline))
-          uint32_t ttg_page2_leave(void *ctx) {
-              (void)ctx;
-              return 0;
-          }
-
-          __attribute__((used,section(".text.ttg_page2_event"),noinline))
-          uint32_t ttg_page2_event(void *ctx) {
-              (void)ctx;
+              uint32_t m = GET_MODE();
+              uint32_t w = GET_WORD();
+              uint32_t s = GET_SELECT();
+              uint32_t p = GET_PHASE();
+              uint32_t k = (GET_BITS(2) << 2) | (GET_BITS(0) << 1) | GET_BITS(1);
+              char b[24];
+              b[0]='T'; b[1]='T'; b[2]='G'; b[3]=' ';
+              b[4]='M'; b[5]=hx(m); b[6]=' ';
+              b[7]='V'; b[8]=hx(w>>12); b[9]=hx(w>>8); b[10]=hx(w>>4); b[11]=hx(w); b[12]=' ';
+              b[13]='S'; b[14]=hx(s); b[15]=' ';
+              b[16]='P'; b[17]=hx(p); b[18]=' ';
+              b[19]='K'; b[20]=hx(k); b[21]=0;
+              SET_TEXT(label,b);
               return 0;
           }
           EOF
 
-          cat > build/gui_takeover.ld <<'EOF'
-          ENTRY(ttg_page2_enter)
+          cat > build/patch_event.S <<'EOF'
+          .section .patch_event,"ax",@progbits
+          .balign 2
+          .global ttg_patch_event
+          .type ttg_patch_event,@function
+          ttg_patch_event:
+              jal ttg_event_hook
+          .size ttg_patch_event, .-ttg_patch_event
+          EOF
+
+          cat > build/live_hook.ld <<'EOF'
+          ENTRY(ttg_event_hook)
           SECTIONS
           {
-            . = 0x00022e80;
-            .ttg_enter : { KEEP(*(.text.ttg_page2_enter)) }
-            . = 0x00023080;
-            .ttg_strings : { KEEP(*(.ttg_strings)) }
-            . = 0x000233e8;
-            .ttg_leave : { KEEP(*(.text.ttg_page2_leave)) }
-            . = 0x00023440;
-            .ttg_event : { KEEP(*(.text.ttg_page2_event)) }
-            /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) *(.data*) *(.bss*) }
+            .patch_event 0x000235b6 : SUBALIGN(2) { KEEP(*(.patch_event)) }
+            .ttg_hook 0x001001ae : SUBALIGN(2) { KEEP(*(.ttg_hook)) }
+            /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) *(.data*) *(.bss*) *(.rodata*) }
           }
-          ASSERT(SIZEOF(.ttg_enter) <= 0x200, "custom enter exceeds reserved code window")
-          ASSERT(SIZEOF(.ttg_strings) <= 0x100, "custom strings exceed reserved window")
-          ASSERT(SIZEOF(.ttg_leave) <= 0x58, "custom leave exceeds stock callback slot")
-          ASSERT(SIZEOF(.ttg_event) <= 0x22e, "custom event exceeds stock callback slot")
+          ASSERT(SIZEOF(.patch_event) == 4, "event patch must be exactly one 32-bit JAL")
+          ASSERT(SIZEOF(.ttg_hook) <= 0xfc, "hook exceeds verified 252-byte zero cave")
           EOF
 
           COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -fno-merge-constants -Os -Wall -Wextra -mcpu=d1088 -mabi=2'
-          nds32le-elf-gcc $COMMON -c build/gui_takeover.c -o build/gui_takeover.o
-          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,build/gui_takeover.ld build/gui_takeover.o -o build/gui_takeover.elf
-          nds32le-elf-objdump -dr build/gui_takeover.elf > build/gui_takeover.dis
-          nds32le-elf-objdump -s build/gui_takeover.elf > build/gui_takeover.hex
-          nds32le-elf-nm -n build/gui_takeover.elf > build/gui_takeover.nm
-          nds32le-elf-readelf -h -S -l -A -r build/gui_takeover.elf > build/gui_takeover.elfinfo
-          nds32le-elf-objcopy -O binary --only-section=.ttg_enter build/gui_takeover.elf build/ttg_page2_enter.bin
-          nds32le-elf-objcopy -O binary --only-section=.ttg_strings build/gui_takeover.elf build/ttg_page2_strings.bin
-          nds32le-elf-objcopy -O binary --only-section=.ttg_leave build/gui_takeover.elf build/ttg_page2_leave.bin
-          nds32le-elf-objcopy -O binary --only-section=.ttg_event build/gui_takeover.elf build/ttg_page2_event.bin
+          nds32le-elf-gcc $COMMON -c build/live_hook.c -o build/live_hook.o
+          nds32le-elf-gcc $COMMON -c build/patch_event.S -o build/patch_event.o
+          nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,build/live_hook.ld build/live_hook.o build/patch_event.o -o build/live_hook.elf
 
-          printf 'Patch map (runtime addresses in region b):\n enter   0x22e80\n strings 0x23080\n leave   0x233e8\n event   0x23440\n' > build/gui_takeover_map.txt
-          wc -c build/ttg_page2_*.bin | tee -a build/gui_takeover_map.txt
-          if grep -Eq 'R_NDS32|RELOCATION RECORDS FOR' build/gui_takeover.dis; then
-            echo 'ERROR: unexpected unresolved relocation in final ELF' >&2
+          nds32le-elf-objdump -dr build/live_hook.elf > build/live_hook.dis
+          nds32le-elf-objdump -s build/live_hook.elf > build/live_hook.hex
+          nds32le-elf-nm -n build/live_hook.elf > build/live_hook.nm
+          nds32le-elf-readelf -h -S -l -A -r build/live_hook.elf > build/live_hook.elfinfo
+          nds32le-elf-objcopy -O binary --only-section=.patch_event build/live_hook.elf build/ttg_event_call_patch.bin
+          nds32le-elf-objcopy -O binary --only-section=.ttg_hook build/live_hook.elf build/ttg_live_hook.bin
+          printf 'runtime patch site 0x235b6\nruntime hook cave 0x1001ae\n' > build/live_hook_map.txt
+          wc -c build/ttg_event_call_patch.bin build/ttg_live_hook.bin | tee -a build/live_hook_map.txt
+          nds32le-elf-readelf -r build/live_hook.elf | tee build/relocations.txt
+          if grep -Eq 'R_NDS32_' build/relocations.txt; then
+            echo 'ERROR: unresolved relocations remain' >&2
             exit 1
           fi
           sha256sum build/* > build/SHA256SUMS.txt
@@ -151,8 +136,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pocket-nds32-compiler-probe
-          path: |
-            gcc-*.txt
-            objdump-version.txt
-            build/
+          path: build/
           retention-days: 30
