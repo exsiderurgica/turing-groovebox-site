@@ -1,5 +1,6 @@
 ENTRY(ttg_page2_enter)
 PROVIDE(STOCK_SET_PARAM = 0x00050348);
+PROVIDE(STOCK_EVENT_CONT = 0x00052b04);
 SECTIONS {
   .page_enter 0x00022e80 : SUBALIGN(2) { KEEP(*(.page_enter)) }
   .page_leave 0x000233e8 : SUBALIGN(2) { KEEP(*(.page_leave)) }
