@@ -43,7 +43,7 @@ jobs:
           O=/tmp/nds32/usr/bin/nds32le-elf-objdump
           echo '=== PAGE2 EVENT 0x23440..0x23670 ==='
           $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x23440 --stop-address=0x23670 b.bin
-          for R in '52c20 53080' '53940 53d30' '14920 15360' '65980 65c20'; do set -- $R; echo "=== $1..$2 ==="; $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x$1 --stop-address=0x$2 b.bin; done
+          for R in '52120 52240' '52c20 53080' '53940 53d30' '14920 15360' '65980 65c20'; do set -- $R; echo "=== $1..$2 ==="; $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x$1 --stop-address=0x$2 b.bin; done
       - name: Dump printable diagnostic strings by runtime address
         shell: bash
         run: |
