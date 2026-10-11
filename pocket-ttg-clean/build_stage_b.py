@@ -5,6 +5,12 @@ from PIL import Image, ImageDraw, ImageFont
 OFFICIAL_SHA256='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
 REGION_TABLE=0x38
 DESC_SIZE=16
+# Ghidra loads raw region b at runtime base 0x10000.
+# Stock page0_event @ 0x23d7c automatically executes movi55 a0,0x0e @ 0x23da6,
+# then GUI_screen_switch. Raw region-b offset is therefore 0x13da6.
+PAGE0_AUTO_TARGET_OFF=0x13da6
+PAGE0_AUTO_TARGET_OLD=b'\x84\x0e'  # movi55 a0,0x0e
+PAGE0_AUTO_TARGET_NEW=b'\x84\x02'  # movi55 a0,0x02 = Effects/page2
 
 def u16le(b,o): return b[o] | (b[o+1]<<8)
 def u32le(b,o): return int.from_bytes(b[o:o+4],'little')
@@ -69,7 +75,6 @@ def make_logo_gif():
         d=ImageDraw.Draw(im); text='TTG FX'
         bb=d.textbbox((0,0),text,font=font); tw=bb[2]-bb[0]; th=bb[3]-bb[1]
         d.text(((148-tw)//2,(48-th)//2-2),text,font=font,fill=1)
-        # subtle 91-frame pulse so the stock animation/event timing remains intact
         phase=i%30; w=80+(phase if phase<=15 else 30-phase)*2
         d.rectangle(((148-w)//2,42,(148+w)//2,43),fill=1)
         frames.append(im)
@@ -88,14 +93,14 @@ def main():
     if src[:4]!=b'HTFW': raise SystemExit('not HTFW')
     raw=bytearray(src); bdesc,bstart,blen=find_region(raw,'b'); b=bytearray(raw[bstart:bstart+blen]); patches=[]
 
-    # CLEAN shell labels, direct from stock only.
+    # CLEAN shell labels, direct from official stock only.
     old=b'NR\0\0FX1\0DRV\0AMP\0IR\0\0EQ\0\0FX2\0DLY\0RVB\0'
     new=b'IN\0\0D1\0\0F1\0\0F2\0\0D2\0\0DLY\0CLD\0OUT\0SYS\0'
     patches.append({'name':'effect_slots','b_offset':replace_once(b,old,new,'effect slots'),'length':len(old)})
     patches.append({'name':'effects_title','b_offset':replace_once(b,b'Effects\0',b'TTG FX\0\0','Effects title'),'length':8})
     patches.append({'name':'preset_volume','b_offset':replace_once(b,b'Preset VOL\0',b'MASTER VOL\0','Preset VOL'),'length':11})
 
-    # Stock splash is exactly one embedded 148x48 animated GIF. Replace only its byte window.
+    # Clean boot asset: replace the one stock 148x48 animated GIF with a generated TTG FX animation.
     gif_hits=[]; p=0
     while True:
         q=b.find(b'GIF89a',p)
@@ -106,6 +111,13 @@ def main():
     if len(gif)>stock_gif_len: raise SystemExit(f'generated splash {len(gif)} > stock slot {stock_gif_len}')
     b[goff:goff+stock_gif_len]=gif+b'\0'*(stock_gif_len-len(gif))
     patches.append({'name':'ttg_fx_splash_gif','b_offset':goff,'slot_length':stock_gif_len,'gif_length':len(gif),'size':'148x48','frames':91,'duration_ms':40})
+
+    # VERIFICATO by clean Ghidra trace: page0_event's timeout path loads screen 0x0e here,
+    # while its alternate path already loads screen 2, which is GUI_page2 / Effects.
+    if bytes(b[PAGE0_AUTO_TARGET_OFF:PAGE0_AUTO_TARGET_OFF+2]) != PAGE0_AUTO_TARGET_OLD:
+        raise SystemExit('page0 auto-target bytes do not match official stock; refusing patch')
+    b[PAGE0_AUTO_TARGET_OFF:PAGE0_AUTO_TARGET_OFF+2] = PAGE0_AUTO_TARGET_NEW
+    patches.append({'name':'splash_timeout_direct_to_effects','b_offset':PAGE0_AUTO_TARGET_OFF,'old_hex':PAGE0_AUTO_TARGET_OLD.hex(),'new_hex':PAGE0_AUTO_TARGET_NEW.hex(),'runtime_address':'0x23da6','target_screen':2})
 
     raw[bstart:bstart+blen]=b; newcrc=crc16_modbus(b); raw[bdesc]=(newcrc>>8)&255; raw[bdesc+1]=newcrc&255
 
@@ -124,9 +136,10 @@ def main():
     diff=sum(x!=y for x,y in zip(src,raw))
     manifest={'name':'Pocket TTG FX CLEAN Stage B','base':'Official Pocket Master V1.3.3','base_sha256':OFFICIAL_SHA256,
       'output_sha256':outsha,'size':len(raw),'top_level_field_hex':bytes(raw[4:8]).hex(),'regions':reginfo,
-      'changed_bytes':diff,'patches':patches,'boot':'stock runtime -> TTG FX 148x48/91f splash -> stock Effects page renamed TTG FX',
+      'changed_regions':['b'],'changed_bytes':diff,'patches':patches,
+      'boot':'stock runtime -> generated TTG FX 148x48/91f splash -> screen 2 / Effects',
       'visual_order':['IN','D1','F1','F2','D2','DLY','CLD','OUT','SYS'],
-      'note':'Stage B contains no legacy TTG binary data. DSP/routing and custom navigation are intentionally not yet changed.'}
+      'note':'Stage B contains no legacy TTG binary data. DSP/routing and custom hardware navigation are intentionally not yet changed.'}
     mp=Path(a.manifest) if a.manifest else out.with_suffix('.json'); mp.write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps(manifest,indent=2))
 
