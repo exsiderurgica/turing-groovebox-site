@@ -82,12 +82,14 @@ jobs:
           ENTRY(ttg_event_hook)
           SECTIONS
           {
+            /* Ghidra imports raw region b at 0x10000. 0x235b6 is raw b+0x135b6. */
             .patch_event 0x000235b6 : SUBALIGN(2) { KEEP(*(.patch_event)) }
-            .ttg_hook 0x000ff313 : SUBALIGN(2) { KEEP(*(.ttg_hook)) }
+            /* Verified zero cave is raw b+0xff313..0xff655, therefore runtime 0x10f313..0x10f655. */
+            .ttg_hook 0x0010f314 : SUBALIGN(2) { KEEP(*(.ttg_hook)) }
             /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame*) *(.data*) *(.bss*) *(.rodata*) }
           }
           ASSERT(SIZEOF(.patch_event) == 4, "event patch must be exactly one 32-bit JAL")
-          ASSERT(SIZEOF(.ttg_hook) <= 0x343, "hook exceeds verified 835-byte zero cave")
+          ASSERT(SIZEOF(.ttg_hook) <= 0x342, "hook exceeds aligned portion of verified 835-byte zero cave")
           EOF
           COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -fno-merge-constants -Os -Wall -Wextra -mcpu=d1088 -mabi=2'
           nds32le-elf-gcc $COMMON -c build/live_hook.c -o build/live_hook.o
@@ -99,7 +101,7 @@ jobs:
           nds32le-elf-readelf -h -S -l -A -r build/live_hook.elf > build/live_hook.elfinfo
           nds32le-elf-objcopy -O binary --only-section=.patch_event build/live_hook.elf build/ttg_event_call_patch.bin
           nds32le-elf-objcopy -O binary --only-section=.ttg_hook build/live_hook.elf build/ttg_live_hook.bin
-          printf 'runtime patch site 0x235b6\nruntime hook cave 0xff313\n' > build/live_hook_map.txt
+          printf 'runtime patch site 0x235b6 / raw b+0x135b6\nruntime hook 0x10f314 / raw b+0xff314\n' > build/live_hook_map.txt
           wc -c build/ttg_event_call_patch.bin build/ttg_live_hook.bin | tee -a build/live_hook_map.txt
           nds32le-elf-readelf -r build/live_hook.elf | tee build/relocations.txt
           if grep -Eq 'R_NDS32_' build/relocations.txt; then echo 'ERROR: unresolved relocations remain' >&2; exit 1; fi
