@@ -13,8 +13,8 @@ ttg_patch_event_entry:
 .balign 2
 .global ttg_raw_event_gate
 ttg_raw_event_gate:
-    sethi $r1, #0x2001
-    ori   $r1, $r1, #0xbb40
+    sethi $r1, #0x2001b
+    ori   $r1, $r1, #0xb40
     lbi   $r15, [$r1 + #0x32]
     beqz  $r15, .Lpass
 
