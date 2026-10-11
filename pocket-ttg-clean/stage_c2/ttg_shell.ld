@@ -12,6 +12,7 @@ SECTIONS
   .ttg_hook 0x0010f314 : SUBALIGN(2)
   {
     KEEP(*(.ttg_text))
+    KEEP(*(.text*))
     KEEP(*(.ttg_rodata))
     KEEP(*(.rodata*))
   }
