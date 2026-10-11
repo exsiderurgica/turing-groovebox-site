@@ -11,12 +11,11 @@ typedef void (*fn_text)(void *,const char *);
 typedef struct __attribute__((packed)){ uint8_t page,param,edit,value[66]; } S;
 #define ST (*(volatile S *)(uintptr_t)0x2001bb40u)
 
-/* Fixed-width compact tables: no terminators in parameter names. */
 static const char page_name[24] __attribute__((section(".ttg_rodata")))=
   {'D','1',0,0,'F','1',0,0,'F','2',0,0,'D','2',0,0,'D','L','Y',0,'C','L','D',0};
-static const char pname[60] __attribute__((section(".ttg_rodata")))=
+/* 60 useful bytes + one unused NUL keep the source warning-free. */
+static const char pname[61] __attribute__((section(".ttg_rodata")))=
   "DRVCOLLVLBYPIN CUTRESMODTONMIXTIMFBKPOSSIZDENTEXPITSPRREVFRZ";
-/* offsets delimit 6 variable-length page rows in pmap */
 static const uint8_t off[7] __attribute__((section(".ttg_rodata")))={0,4,10,16,20,25,36};
 static const uint8_t pmap[36] __attribute__((section(".ttg_rodata")))={
   0,1,2,3,
