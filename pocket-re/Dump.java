@@ -1,4 +1,4 @@
-// Pocket Master three-way physical input mapping (NDS32 LE).
+// Pocket Master factory encoder-key test + VALUE/VOL xref trace (NDS32 LE).
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
@@ -18,56 +18,66 @@ public class Dump extends GhidraScript {
     if(!dumped.add(ep))return;
     p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" body="+f.getBody()+" ---");
     InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true);int n=0;
-    while(ii.hasNext()&&n++<1200){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
+    while(ii.hasNext()&&n++<1800){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
     try{
       DecompInterface d=new DecompInterface();d.openProgram(currentProgram);
-      DecompileResults r=d.decompileFunction(f,300,monitor);
+      DecompileResults r=d.decompileFunction(f,360,monitor);
       if(r!=null&&r.decompileCompleted()&&r.getDecompiledFunction()!=null){p("C-BEGIN");p(r.getDecompiledFunction().getC());p("C-END");}
       else p("C-FAIL "+(r==null?"null":r.getErrorMessage()));
       d.dispose();
     }catch(Exception e){p("C-EXCEPTION "+e);}
   }
   private void dump(long ep,String why)throws Exception{dumpFn(getFunctionAt(toAddr(ep)),why);}
-  private void callers(long ep,String label,int maxDump)throws Exception{
-    p("\n=== CALLERS "+label+" target=0x"+Long.toHexString(ep)+" ===");
-    ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(ep));
+  private void xrefs(long addr,String label,int maxDump)throws Exception{
+    p("\n=== XREFS "+label+" @ 0x"+Long.toHexString(addr)+" ===");
+    ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(addr));
     LinkedHashSet<Long> eps=new LinkedHashSet<>();
     while(it.hasNext()){
       Reference r=it.next();
-      if(!r.getReferenceType().isCall())continue;
       Function f=getFunctionContaining(r.getFromAddress());
-      p("CALL from="+r.getFromAddress()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));
+      p("REF from="+r.getFromAddress()+" type="+r.getReferenceType()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));
       if(f!=null)eps.add(f.getEntryPoint().getOffset());
     }
-    p("UNIQUE_CALLERS="+eps.size());
-    int n=0;for(long x:eps){if(n++>=maxDump)break;dump(x,"caller-of:"+label);}
+    p("UNIQUE_FUNCS="+eps.size());
+    int n=0;for(long x:eps){if(n++>=maxDump)break;dump(x,"xref:"+label);}
+  }
+  private void childList(long ep,String label)throws Exception{
+    Function f=getFunctionAt(toAddr(ep));if(f==null)return;
+    InstructionIterator it=currentProgram.getListing().getInstructions(f.getBody(),true);
+    LinkedHashSet<Long>s=new LinkedHashSet<>();
+    while(it.hasNext()){
+      Instruction i=it.next();
+      for(Reference r:i.getReferencesFrom())if(r.getReferenceType().isCall()){
+        long x=r.getToAddress().getOffset(); if(x>=0x10000&&x<0x160000)s.add(x);
+      }
+    }
+    for(long x:s)p("CHILD "+label+" -> 0x"+Long.toHexString(x)+" fn="+(getFunctionAt(toAddr(x))==null?"-":getFunctionAt(toAddr(x)).getName()));
   }
   @Override public void run()throws Exception{
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_ui_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket Master physical input resolver v18");
+      p("Pocket Master factory controls trace v19");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
 
-      dump(0x5219cL,"three-way input dispatcher");
-      dump(0x65a78L,"input index 0 target");
-      dump(0x15240L,"input index 1 target");
-      dump(0x1504cL,"input index 2 target");
-      callers(0x65a78L,"index0-target",16);
-      callers(0x15240L,"index1-target",16);
-      callers(0x1504cL,"index2-target",16);
+      // Exact stock string addresses in region b.
+      xrefs(0x000d11d0L,"Please Test Enc Key",12);
+      xrefs(0x000d16a9L,"Press VALUE/VOL to Search for devices",12);
+      xrefs(0x000d16d0L,"Press VALUE/VOL to Reset",12);
+      xrefs(0x00131174L,"menu key",12);
 
-      dump(0x521bcL,"single-byte hardware/accessory state");
-      dump(0x153dcL,"consumer of 521bc");
-      dump(0x14accL,"consumer action A");
-      dump(0x14b00L,"consumer action B");
-      dump(0x5223cL,"hardware state setter used by 538fc");
-      dump(0x538fcL,"secondary hardware-state consumer");
+      // Known input accessors, for correlation with those xref'd routines.
+      dump(0x5219cL,"three-way state dispatcher");
+      dump(0x521bcL,"single-byte state");
+      dump(0x14800L,"small 1..5 state getter used by page2");
+      dump(0x153dcL,"BLE role handler using 521bc");
 
-      // Likely low-level event/state helpers near the three input targets.
-      dump(0x15000L,"near input2 target");
-      dump(0x15200L,"near input1 target");
-      dump(0x65a00L,"near input0 target");
+      // Once xrefs identify the factory-test function, child list makes its key readers obvious.
+      ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(0x000d11d0L));
+      while(it.hasNext()){
+        Reference r=it.next(); Function f=getFunctionContaining(r.getFromAddress());
+        if(f!=null){childList(f.getEntryPoint().getOffset(),"factory-enc-test");break;}
+      }
     }finally{out.close();}
   }
 }
