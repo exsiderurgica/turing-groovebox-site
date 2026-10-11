@@ -43,11 +43,28 @@ jobs:
           O=/tmp/nds32/usr/bin/nds32le-elf-objdump
           echo '=== PAGE2 EVENT 0x23440..0x23670 ==='
           $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x23440 --stop-address=0x23670 b.bin
-          for R in '52e00 52f20' '539f0 53aa0' '53c20 53d30'; do set -- $R; echo "=== $1..$2 ==="; $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x$1 --stop-address=0x$2 b.bin; done
-          echo '=== EVENT CONSTANT REFERENCES ==='
-          grep -i -n -E '7f36|7f37|7f3[0-9a-f]|7f2[0-9a-f]' stock_b.dis | head -200 || true
+          for R in '52c20 53080' '53940 53d30' '14920 15360' '65980 65c20'; do set -- $R; echo "=== $1..$2 ==="; $O -D -b binary -m nds32 --adjust-vma=0x10000 --start-address=0x$1 --stop-address=0x$2 b.bin; done
+      - name: Dump printable diagnostic strings by runtime address
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('b.bin').read_bytes()
+          ranges=[(0x0df000,0x0df400),(0x140f00,0x141500),(0x144100,0x144500)]
+          for lo,hi in ranges:
+            print(f'=== STRINGS runtime {lo:06x}..{hi:06x} ===')
+            i=max(0,lo-0x10000); end=min(len(b),hi-0x10000)
+            while i<end:
+              j=i
+              while j<end and 32<=b[j]<127: j+=1
+              if j-i>=4:
+                print(f'{i+0x10000:08x}:',b[i:j].decode('ascii','replace'))
+              i=max(j+1,i+1)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: pocket-stock-page-event-analysis
-          path: stock_b.dis
+          path: |
+            stock_b.dis
+            b.bin
           retention-days: 7
