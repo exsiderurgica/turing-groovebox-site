@@ -123,7 +123,7 @@ jobs:
           ASSERT(SIZEOF(.ttg_event) <= 0x22e, "custom event exceeds stock callback slot")
           EOF
 
-          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -fno-merge-constants -Os -Wall -Wextra -mcpu=d1088 -mabi=2 -G0'
+          COMMON='-ffreestanding -fno-builtin -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -fdata-sections -ffunction-sections -fno-pic -fno-common -fno-merge-constants -Os -Wall -Wextra -mcpu=d1088 -mabi=2'
           nds32le-elf-gcc $COMMON -c build/gui_takeover.c -o build/gui_takeover.o
           nds32le-elf-gcc -nostdlib -nodefaultlibs -nostartfiles -mcpu=d1088 -mabi=2 -Wl,--gc-sections -Wl,-T,build/gui_takeover.ld build/gui_takeover.o -o build/gui_takeover.elf
           nds32le-elf-objdump -dr build/gui_takeover.elf > build/gui_takeover.dis
