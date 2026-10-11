@@ -1,0 +1,74 @@
+name: Pocket TTG FX clean RE
+
+on:
+  push:
+    branches: [pocket-ttg-clean]
+    paths:
+      - 'pocket-ttg-clean/re/**'
+      - '.github/workflows/pocket-ttg-clean-re.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ghidra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pocket-ttg-clean
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Download and verify official V1.3.3 only
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 3 -o pocket-fw.zip 'https://cdn.shopify.com/s/files/1/0100/1950/4185/files/Pocket_Master_Firmware_V1.3.3.zip?v=1751507074'
+          python3 - <<'PY'
+          import zipfile, pathlib, hashlib, struct
+          EXPECT='d9112f12a37e3731e540b325d2b9788f005de7f640c129ac30465ea1dc57e7a3'
+          z=zipfile.ZipFile('pocket-fw.zip'); bins=[n for n in z.namelist() if n.lower().endswith('.bin')]
+          if len(bins)!=1: raise SystemExit(bins)
+          raw=z.read(bins[0]); sha=hashlib.sha256(raw).hexdigest(); print(sha)
+          if sha!=EXPECT: raise SystemExit('stock SHA mismatch')
+          count=struct.unpack_from('<H',raw,0x22)[0]; base=0x38+count*16
+          for i in range(count):
+              e=0x38+16*i; rid=chr(raw[e+3]); off,sz=struct.unpack_from('<II',raw,e+8)
+              if rid=='b': pathlib.Path('pocket-b.bin').write_bytes(raw[base+off:base+off+sz]); break
+          else: raise SystemExit('no b')
+          PY
+      - name: Download Ghidra 12.1.4
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl -L --fail --retry 3 -o ghidra.zip 'https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.4_build/ghidra_12.1.4_PUBLIC_20260921.zip'
+          echo 'ddac49f903da9d5bac833e5cc79395098b9c33cfd3279be5f31bd00387d2d4db  ghidra.zip' | sha256sum -c -
+          unzip -q ghidra.zip
+      - name: Analyze stock region b
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p ghproj
+          ./ghidra_12.1.4_PUBLIC/support/analyzeHeadless "$PWD/ghproj" PocketClean \
+            -import "$PWD/pocket-b.bin" \
+            -loader BinaryLoader \
+            -loader-baseAddr 0x10000 \
+            -processor 'NDS32:LE:32:default' \
+            -scriptPath "$PWD/pocket-ttg-clean/re" \
+            -preScript Seed.java \
+            -analysisTimeoutPerFile 900 \
+            -postScript Dump.java "$PWD/pocket_clean_boot_report.txt" \
+            2>&1 | tee "$PWD/ghidra_headless.log"
+          test -s pocket_clean_boot_report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocket-ttg-clean-re-report
+          path: |
+            pocket_clean_boot_report.txt
+            ghidra_headless.log
+          if-no-files-found: error
+          retention-days: 30
