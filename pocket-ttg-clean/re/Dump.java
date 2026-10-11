@@ -2,7 +2,6 @@ import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.*;
-import ghidra.program.model.symbol.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -16,45 +15,52 @@ public class Dump extends GhidraScript {
     long ep=f.getEntryPoint().getOffset(); if(!dumped.add(ep))return;
     p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" body="+f.getBody()+" ---");
     InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true); int n=0;
-    while(ii.hasNext()&&n++<2500){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
+    while(ii.hasNext()&&n++<3000){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
     try{
       DecompInterface d=new DecompInterface(); d.openProgram(currentProgram);
       DecompileResults r=d.decompileFunction(f,480,monitor);
       if(r!=null&&r.decompileCompleted()&&r.getDecompiledFunction()!=null){p("C-BEGIN");p(r.getDecompiledFunction().getC());p("C-END");}
-      else p("C-FAIL "+(r==null?"null":r.getErrorMessage())); d.dispose();
+      else p("C-FAIL "+(r==null?"null":r.getErrorMessage()));d.dispose();
     }catch(Exception e){p("C-EXCEPTION "+e);}
   }
   private void dump(long ep,String why)throws Exception{dumpFn(getFunctionAt(toAddr(ep)),why);}
-  private void callers(long ep,String label,int limit)throws Exception{
-    p("\n=== CALLERS "+label+" target=0x"+Long.toHexString(ep)+" ===");
-    ReferenceIterator it=currentProgram.getReferenceManager().getReferencesTo(toAddr(ep));
-    LinkedHashSet<Long> eps=new LinkedHashSet<>();
-    while(it.hasNext()){
-      Reference r=it.next(); if(!r.getReferenceType().isCall())continue;
-      Function f=getFunctionContaining(r.getFromAddress());
-      p("CALL from="+r.getFromAddress()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));
-      if(f!=null)eps.add(f.getEntryPoint().getOffset());
-    }
-    int n=0; for(long x:eps){if(n++>=limit)break;dump(x,"caller-of:"+label);}
-  }
   @Override public void run()throws Exception{
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_clean_boot_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket TTG FX runtime preset/effect trace v4");
+      p("Pocket TTG FX runtime write-side trace v5");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
 
-      dump(0x22e80L,"page2 preset-root enter");
-      dump(0x23440L,"page2 preset-root event");
-      dump(0x22800L,"page2 updater");
+      LinkedHashSet<Function> writers=new LinkedHashSet<>();
+      p("\n=== GP-RELATIVE STORES IN 0x4d000..0x50000 ===");
+      InstructionIterator ii=currentProgram.getListing().getInstructions(toAddr(0x4d000),true);
+      while(ii.hasNext()){
+        Instruction ins=ii.next(); long a=ins.getAddress().getOffset(); if(a>=0x50000)break;
+        String m=ins.getMnemonicString().toLowerCase(); String s=ins.toString().toLowerCase();
+        boolean store=m.startsWith("sbi")||m.startsWith("shi")||m.startsWith("swi")||m.startsWith("smw")||m.startsWith("sdi");
+        if(store && s.contains(".gp")){
+          Function f=getFunctionContaining(ins.getAddress());
+          p("STOREGP "+ins.getAddress()+" "+ins+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));
+          if(f!=null) writers.add(f);
+        }
+      }
+      p("writers="+writers.size());
+      for(Function f:writers) dumpFn(f,"gp-writer-4d000-50000");
 
-      long[] api={0x4e334L,0x4e490L,0x4e958L,0x4e978L,0x4ea04L,0x4ead4L,0x4ed14L};
-      String[] nm={"4e334 refresh/commit","4e490 preset-ish state","4e958 current preset/id","4e978 selected-effect array ptr","4ea04 effect enable by index","4ead4 effect/global state","4ed14 effect/global state2"};
-      for(int i=0;i<api.length;i++){dump(api[i],nm[i]);callers(api[i],nm[i],40);}
+      /* Getter cluster + exact neighbor function entries found by walking the function table. */
+      FunctionManager fm=currentProgram.getFunctionManager();
+      p("\n=== ALL FUNCTION ENTRIES 0x4df00..0x4ef80 ===");
+      FunctionIterator fi=fm.getFunctions(toAddr(0x4df00),true);
+      int n=0;
+      while(fi.hasNext()){
+        Function f=fi.next(); long e=f.getEntryPoint().getOffset(); if(e>=0x4ef80)break;
+        p("ENTRY "+f.getEntryPoint()+" "+f.getName()+" body="+f.getBody());
+        if(n++<120) dumpFn(f,"runtime-cluster-entry");
+      }
 
-      /* Nearby functions often include the write side of the same state object. */
-      long[] near={0x4e2d0L,0x4e360L,0x4e3b0L,0x4e430L,0x4e4d0L,0x4e8c0L,0x4e900L,0x4e9c0L,0x4ea40L,0x4eaa0L,0x4eb00L,0x4eb80L,0x4ec00L,0x4ec80L,0x4ed50L,0x4ee00L};
-      for(long x:near) dump(x,"near-runtime-state-api");
+      dump(0x4e978L,"selection-array-getter");
+      dump(0x4ea04L,"enable-array-getter");
+      dump(0x4ead4L,"enable-bitmask-getter");
     }finally{out.close();}
   }
 }
