@@ -31,10 +31,10 @@ ttg_raw_event_gate:
 
 .Lpass:
     movi  $r1, #0x7805
-    j     0x00052b04
+    j     STOCK_EVENT_CONT
 
 .Lconsume:
     swi   $r0, [$r1 + #0x34]
     movi  $r0, #0x7b0e
     movi  $r1, #0x7805
-    j     0x00052b04
+    j     STOCK_EVENT_CONT
