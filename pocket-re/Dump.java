@@ -1,55 +1,51 @@
-// Pocket Master page-2 overwrite safety audit (NDS32 LE).
-// Verify whether any code/data outside each callback references an interior address.
+// Pocket Master page-2 LVGL helper ABI trace (NDS32 LE).
+import ghidra.app.decompiler.DecompInterface;
+import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
-import ghidra.program.model.address.*;
 import ghidra.program.model.listing.*;
-import ghidra.program.model.symbol.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class Dump extends GhidraScript {
   private PrintWriter out;
+  private final Set<Long> dumped=new LinkedHashSet<>();
   private void p(String s){out.println(s);println(s);}
-
-  private boolean in(long x,long lo,long hi){return x>=lo&&x<=hi;}
-
-  private void audit(String name,long lo,long hi)throws Exception{
-    p("\n=== AUDIT "+name+" [0x"+Long.toHexString(lo)+",0x"+Long.toHexString(hi)+"] ===");
-    ReferenceManager rm=currentProgram.getReferenceManager();
-    int total=0, externalInterior=0, entryRefs=0;
-    for(long x=lo;x<=hi;x++){
-      Address a=toAddr(x);
-      ReferenceIterator it=rm.getReferencesTo(a);
-      while(it.hasNext()){
-        Reference r=it.next(); total++;
-        long from=r.getFromAddress().getOffset();
-        boolean fromInside=in(from,lo,hi);
-        if(x==lo) entryRefs++;
-        if(x!=lo && !fromInside){
-          externalInterior++;
-          Function f=getFunctionContaining(r.getFromAddress());
-          p("EXTERNAL_INTERIOR target="+a+" from="+r.getFromAddress()+" type="+r.getReferenceType()+" func="+(f==null?"-":f.getName()+"@"+f.getEntryPoint()));
-        }
-      }
-    }
-    p("SUMMARY "+name+" refs="+total+" entryRefs="+entryRefs+" externalInteriorRefs="+externalInterior);
-    Function f=getFunctionAt(toAddr(lo));
-    p("FUNCTION "+(f==null?"-":f.getName()+" body="+f.getBody()));
-    if(f!=null){
-      InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true);int n=0;
-      while(ii.hasNext()&&n++<8){Instruction i=ii.next();p("HEAD "+i.getAddress()+" "+i);}
-    }
+  private void dump(long ep,String why)throws Exception{
+    Function f=getFunctionAt(toAddr(ep));
+    if(f==null){p("NOFUNC 0x"+Long.toHexString(ep)+" "+why);return;}
+    if(!dumped.add(ep))return;
+    p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" body="+f.getBody()+" ---");
+    InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true);int n=0;
+    while(ii.hasNext()&&n++<700){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
+    try{
+      DecompInterface d=new DecompInterface();d.openProgram(currentProgram);
+      DecompileResults r=d.decompileFunction(f,180,monitor);
+      if(r!=null&&r.decompileCompleted()&&r.getDecompiledFunction()!=null){p("C-BEGIN");p(r.getDecompiledFunction().getC());p("C-END");}
+      else p("C-FAIL "+(r==null?"null":r.getErrorMessage()));
+      d.dispose();
+    }catch(Exception e){p("C-EXCEPTION "+e);}
   }
-
   @Override public void run()throws Exception{
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_ui_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket Master page-2 overwrite audit v14");
+      p("Pocket Master page-2 LVGL helper trace v15");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
-      audit("page2-enter",0x22e80L,0x233e7L);
-      audit("page2-leave",0x233e8L,0x2343fL);
-      audit("page2-event",0x23440L,0x2366dL);
+      dump(0x2ca44L,"root/screen object used by page2");
+      dump(0x47880L,"page2 child object creator A");
+      dump(0x4838cL,"page2 child object creator B");
+      dump(0x47998L,"page2 child object creator C/image candidate");
+      dump(0x2f15cL,"page2 position setter candidate");
+      dump(0x2f1dcL,"page2 size setter candidate");
+      dump(0x32810L,"page2 style attach candidate");
+      dump(0x479b8L,"page2 image/source setter candidate");
+      dump(0x334b4L,"page2 style property candidate");
+      dump(0x336e4L,"page2 style property candidate");
+      dump(0x33540L,"page2 style property candidate");
+      dump(0x33524L,"page2 style property candidate");
+      dump(0x33578L,"page2 style property candidate");
+      dump(0x3355cL,"page2 style property candidate");
     }finally{out.close();}
   }
 }
