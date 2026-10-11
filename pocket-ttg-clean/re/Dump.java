@@ -3,6 +3,7 @@ import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.symbol.*;
+import ghidra.program.model.scalar.Scalar;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -16,7 +17,7 @@ public class Dump extends GhidraScript {
     long ep=f.getEntryPoint().getOffset(); if(!dumped.add(ep))return;
     p("\n--- FUNCTION "+f.getName()+" @ "+f.getEntryPoint()+" reason="+why+" body="+f.getBody()+" ---");
     InstructionIterator ii=currentProgram.getListing().getInstructions(f.getBody(),true); int n=0;
-    while(ii.hasNext()&&n++<2600){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
+    while(ii.hasNext()&&n++<3000){Instruction i=ii.next();p("ASM "+i.getAddress()+"  "+i);}
     try{
       DecompInterface d=new DecompInterface(); d.openProgram(currentProgram);
       DecompileResults r=d.decompileFunction(f,480,monitor);
@@ -37,38 +38,65 @@ public class Dump extends GhidraScript {
     }
     int n=0; for(long x:eps){if(n++>=limit)break;dump(x,"caller-of:"+label);}
   }
+  private Map<Long,LinkedHashSet<Function>> scan7fEvents() throws Exception {
+    TreeMap<Long,LinkedHashSet<Function>> map=new TreeMap<>();
+    p("\n=== ALL SCALAR IMMEDIATES 0x7f00..0x7fff ===");
+    InstructionIterator ii=currentProgram.getListing().getInstructions(true);
+    while(ii.hasNext()){
+      Instruction ins=ii.next();
+      for(int oi=0;oi<ins.getNumOperands();oi++){
+        Object[] objs=ins.getOpObjects(oi);
+        for(Object o:objs){
+          if(!(o instanceof Scalar)) continue;
+          long v=((Scalar)o).getUnsignedValue();
+          if(v<0x7f00L || v>0x7fffL) continue;
+          Function f=getFunctionContaining(ins.getAddress());
+          map.computeIfAbsent(v,k->new LinkedHashSet<>()).add(f);
+          p(String.format("EV 0x%04x at %s ins=%s func=%s",v,ins.getAddress(),ins.toString(),f==null?"-":f.getName()+"@"+f.getEntryPoint()));
+        }
+      }
+    }
+    p("\n=== 0x7F EVENT SUMMARY ===");
+    for(Map.Entry<Long,LinkedHashSet<Function>> e:map.entrySet()){
+      StringBuilder sb=new StringBuilder(String.format("0x%04x:",e.getKey()));
+      for(Function f:e.getValue()) if(f!=null) sb.append(" ").append(f.getName()).append("@").append(f.getEntryPoint());
+      p(sb.toString());
+    }
+    return map;
+  }
+  private void dumpEventFunctions(Map<Long,LinkedHashSet<Function>> map,long... vals)throws Exception{
+    for(long v:vals){
+      LinkedHashSet<Function> fs=map.get(v);
+      p(String.format("\n=== FUNCTIONS USING EVENT 0x%04x ===",v));
+      if(fs==null){p("none");continue;}
+      for(Function f:fs) dumpFn(f,String.format("uses-event-0x%04x",v));
+    }
+  }
   @Override public void run()throws Exception{
     String[] args=getScriptArgs();
     out=new PrintWriter(new OutputStreamWriter(new FileOutputStream(args.length>0?args[0]:"pocket_clean_boot_report.txt"),StandardCharsets.UTF_8));
     try{
-      p("Pocket TTG FX clean Effects/input trace v2");
+      p("Pocket TTG FX stock hardware/event trace v3");
       p("language="+currentProgram.getLanguageID()+" functions="+currentProgram.getFunctionManager().getFunctionCount());
+
+      Map<Long,LinkedHashSet<Function>> ev=scan7fEvents();
+      dumpEventFunctions(ev,0x7f33L,0x7f34L,0x7f35L,0x7f36L,0x7f37L,0x7f7eL,0x7f7fL);
+
       dump(0x23c84L,"page0 enter / splash");
       dump(0x23d7cL,"page0 event / splash timeout");
       dump(0x22e80L,"page2 Effects enter");
       dump(0x23440L,"page2 Effects event");
       dump(0x22800L,"page2 common updater");
-      dump(0x22628L,"page2 helper A");
-      dump(0x2267cL,"page2 helper B");
-      dump(0x226ccL,"page2 helper C");
-      dump(0x2294cL,"page2 helper D");
-      dump(0x22b98L,"page2 helper E");
-      dump(0x22bf8L,"page2 helper F");
-      dump(0x22ca8L,"page2 helper G");
       dump(0x22d18L,"page2 state helper");
       dump(0x5219cL,"indexed three-way hardware input accessor");
       dump(0x521bcL,"single hardware input accessor");
-      dump(0x14800L,"Effects selected-block getter candidate");
-      dump(0x14920L,"page/splash phase getter candidate");
-      dump(0x50000L,"page2 byte state accessor");
-      dump(0x5022cL,"page2 16-bit state accessor");
-      dump(0x50280L,"page2 indexed 0..8 accessor");
-      dump(0x502ccL,"page2 32-bit accessor");
-      dump(0x50454L,"page2 final byte accessor");
-      callers(0x5219cL,"indexed-input",20);
-      callers(0x521bcL,"single-input",20);
-      callers(0x14800L,"selected-block-getter",30);
-      callers(0x22800L,"page2-common-updater",20);
+      dump(0x529d0L,"key state helper");
+      dump(0x5299cL,"indexed key state allocator");
+      dump(0x53940L,"system key message handler");
+
+      callers(0x5219cL,"indexed-input",30);
+      callers(0x521bcL,"single-input",30);
+      callers(0x68bdcL,"message-send-68bdc",60);
     }finally{out.close();}
   }
 }
