@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.exsiderurgica.fm1flash'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.exsiderurgica.fm1flash'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '0.1'
+    }
+}
