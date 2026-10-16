@@ -1,13 +1,14 @@
-name: Build FM-1 A2.1 Direct Flasher
+name: Build FM-1 A2.2 Direct Flasher
 
 on:
   workflow_dispatch:
   push:
-    branches: [fm1-backup-readonly-build]
+    branches: [fm1-a22-direct-flasher-build]
     paths:
       - .github/workflows/build-fm1-direct-flasher.yml
       - tools/fm1_android/build_direct.py
       - tools/fm1_android/fix_direct_builder_ui.py
+      - tools/fm1_android/patch_a22_direct.py
 
 permissions:
   contents: read
@@ -37,15 +38,20 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Generate guarded direct flasher project
+      - name: Generate guarded A2.2 direct flasher project
         shell: bash
         run: |
           python3 tools/fm1_android/fix_direct_builder_ui.py
+          python3 tools/fm1_android/patch_a22_direct.py
           if ! python3 tools/fm1_android/build_direct.py; then
-            echo '--- generated MainActivity backupButton context ---'
-            grep -n -C 3 'backupButton' "$RUNNER_TEMP/fm1backup/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java" || true
+            echo '--- generated MainActivity flash context ---'
+            grep -n -C 3 'APP_SHA\|PRE_SHA\|FINAL_SHA\|flashButton' "$RUNNER_TEMP/fm1backup/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java" || true
             exit 1
           fi
+          grep -F 'beb82556d6528d71f733b1d8ca2d7e282932488777f1a8e73fddccab276e5cfe' "$RUNNER_TEMP/fm1backup/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java"
+          grep -F 'af469c9bf4012216d346ce889ff93b1592362bf7b7180956cded3669f291c739' "$RUNNER_TEMP/fm1backup/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java"
+          grep -F 'bffc26679e36a4384ed0a301cd4c9e8de601074ee80ffd8e0a2400ca6477f9f0' "$RUNNER_TEMP/fm1backup/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java"
+          grep -F 'APP_LO=0x4000, APP_HI=0x93000, APP_SIZE=0x8F000' "$RUNNER_TEMP/fm1backup/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java"
       - name: Build APK
         shell: bash
         run: |
@@ -53,12 +59,12 @@ jobs:
           cd "$RUNNER_TEMP/fm1backup"
           gradle --no-daemon :app:assembleDebug
           mkdir -p "$GITHUB_WORKSPACE/out"
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/FM1-A2.1-Direct-Flasher-v0.1-debug.apk"
-          sha256sum "$GITHUB_WORKSPACE/out/FM1-A2.1-Direct-Flasher-v0.1-debug.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/FM1-A2.2-Direct-Flasher-v0.2-debug.apk"
+          sha256sum "$GITHUB_WORKSPACE/out/FM1-A2.2-Direct-Flasher-v0.2-debug.apk"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FM1-A2.1-Direct-Flasher-v0.1
-          path: out/FM1-A2.1-Direct-Flasher-v0.1-debug.apk
+          name: FM1-A2.2-Direct-Flasher-v0.2
+          path: out/FM1-A2.2-Direct-Flasher-v0.2-debug.apk
           if-no-files-found: error
           retention-days: 7
