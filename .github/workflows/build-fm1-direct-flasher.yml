@@ -1,0 +1,14 @@
+name: Build FM-1 A2.1 Direct Flasher
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: echo ready
