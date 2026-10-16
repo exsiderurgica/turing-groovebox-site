@@ -1,4 +1,4 @@
-name: Build FM-1 Backup Read-Only v2
+name: Build FM-1 Backup Read-Only v3
 
 on:
   workflow_dispatch:
@@ -39,11 +39,13 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Run patched project generator from v1 workflow
+      - name: Generate read-only Android project v0.3
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p=Path('.github/workflows/build-fm1-backup-readonly.yml')
           lines=p.read_text().splitlines()
           start=None
@@ -56,25 +58,36 @@ jobs:
                   break
           if start is None:
               raise SystemExit('generator block not found')
+
           out=[]
           for l in lines[start:]:
               if l.startswith('      - name: Upload APK'):
                   break
               out.append(l[10:] if l.startswith('          ') else l)
           script='\n'.join(out)+'\n'
+
+          # Android compile compatibility only.
           script=script.replace('setProgress(', 'setBarProgress(')
           script=script.replace('progress.setBarProgress(', 'progress.setProgress(')
-          old_reset='void resetRecovery(){ try{c.controlTransfer(0x21,0xFF,0,intf.getId(),null,0,1000);}catch(Exception ignored){} try{c.clearHalt(epIn);}catch(Exception ignored){} try{c.clearHalt(epOut);}catch(Exception ignored){} }'
-          new_reset='void resetRecovery(){ try{c.controlTransfer(0x21,0xFF,0,intf.getId(),null,0,1000);}catch(Exception ignored){} try{c.controlTransfer(0x02,0x01,0,epIn.getAddress(),null,0,1000);}catch(Exception ignored){} try{c.controlTransfer(0x02,0x01,0,epOut.getAddress(),null,0,1000);}catch(Exception ignored){} }'
-          script=script.replace(old_reset,new_reset)
-          old='bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG));'
-          new='try { bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG)); log("JUMP ACK ricevuto"); } catch(IOException jumpErr) { log("JUMP senza risposta: "+jumpErr.getMessage()+"; verifico LoaderV2"); }'
-          if old not in script:
-              raise SystemExit('JUMP call not found')
-          script=script.replace(old,new,1)
-          script=script.replace('SystemClock.sleep(300);','SystemClock.sleep(700);',1)
-          script=script.replace("versionName '0.1'", "versionName '0.2'")
-          script=script.replace('FM1-Backup-ReadOnly-v0.1-debug.apk','FM1-Backup-ReadOnly-v0.2-debug.apk')
+          script=script.replace(
+              'void resetRecovery(){ try{c.controlTransfer(0x21,0xFF,0,intf.getId(),null,0,1000);}catch(Exception ignored){} try{c.clearHalt(epIn);}catch(Exception ignored){} try{c.clearHalt(epOut);}catch(Exception ignored){} }',
+              'void resetRecovery(){ try{c.controlTransfer(0x21,0xFF,0,intf.getId(),null,0,1000);}catch(Exception ignored){} try{c.controlTransfer(0x02,0x01,0,epIn.getAddress(),null,0,1000);}catch(Exception ignored){} try{c.controlTransfer(0x02,0x01,0,epOut.getAddress(),null,0,1000);}catch(Exception ignored){} }'
+          )
+
+          # Match the verified fm1_rescue.py flow exactly:
+          # after CMD_JUMP, do NOT sleep and do NOT issue BOT reset/recovery.
+          pat = re.compile(
+              r'bot\.cmd\(CMD_JUMP,beArgs\(LOADER_ADDR,LOADER_ARG\)\);\s*'
+              r'SystemClock\.sleep\(300\);\s*'
+              r'bot\.resetRecovery\(\);'
+          )
+          replacement = 'bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG));\n                          log("JUMP ACK ricevuto; LoaderV2 attivo");'
+          script, n = pat.subn(replacement, script, count=1)
+          if n != 1:
+              raise SystemExit(f'JUMP sequence patch count={n}, expected 1')
+
+          script=script.replace("versionName '0.1'", "versionName '0.3'")
+          script=script.replace('FM1-Backup-ReadOnly-v0.1-debug.apk','FM1-Backup-ReadOnly-v0.3-debug.apk')
           Path('/tmp/fm1gen.sh').write_text(script)
           PY
           bash /tmp/fm1gen.sh
@@ -82,7 +95,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FM1-Backup-ReadOnly-v0.2
-          path: out/FM1-Backup-ReadOnly-v0.2-debug.apk
+          name: FM1-Backup-ReadOnly-v0.3
+          path: out/FM1-Backup-ReadOnly-v0.3-debug.apk
           if-no-files-found: error
           retention-days: 7
