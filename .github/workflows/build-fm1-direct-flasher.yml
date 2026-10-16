@@ -41,7 +41,11 @@ jobs:
         shell: bash
         run: |
           python3 tools/fm1_android/fix_direct_builder_ui.py
-          python3 tools/fm1_android/build_direct.py
+          if ! python3 tools/fm1_android/build_direct.py; then
+            echo '--- generated MainActivity backupButton context ---'
+            grep -n -C 3 'backupButton' "$RUNNER_TEMP/fm1backup/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java" || true
+            exit 1
+          fi
       - name: Build APK
         shell: bash
         run: |
