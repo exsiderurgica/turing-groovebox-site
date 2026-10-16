@@ -1,0 +1,487 @@
+name: Build FM-1 UBOOT Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fm1-uboot-probe-build]
+    paths:
+      - .github/workflows/build-fm1-uboot-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Generate probe project
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/fm1ubootprobe"
+          mkdir -p "$ROOT/app/src/main/java/com/exsiderurgica/fm1ubootprobe"
+
+          cat > "$ROOT/settings.gradle" <<'EOF'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = 'FM1UBOOTProbe'
+          include ':app'
+          EOF
+
+          cat > "$ROOT/build.gradle" <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.13.2' apply false
+          }
+          EOF
+
+          cat > "$ROOT/app/build.gradle" <<'EOF'
+          plugins { id 'com.android.application' }
+
+          android {
+              namespace 'com.exsiderurgica.fm1ubootprobe'
+              compileSdk 36
+
+              defaultConfig {
+                  applicationId 'com.exsiderurgica.fm1ubootprobe'
+                  minSdk 26
+                  targetSdk 36
+                  versionCode 1
+                  versionName '0.1'
+              }
+          }
+          EOF
+
+          cat > "$ROOT/app/src/main/AndroidManifest.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-feature android:name="android.software.midi" android:required="true" />
+              <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+              <application
+                  android:allowBackup="false"
+                  android:label="FM-1 UBOOT Probe"
+                  android:theme="@android:style/Theme.Material.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:screenOrientation="portrait"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > "$ROOT/app/src/main/java/com/exsiderurgica/fm1ubootprobe/MainActivity.java" <<'EOF'
+          package com.exsiderurgica.fm1ubootprobe;
+
+          import android.app.Activity;
+          import android.graphics.Color;
+          import android.hardware.usb.UsbDevice;
+          import android.hardware.usb.UsbManager;
+          import android.media.midi.MidiDevice;
+          import android.media.midi.MidiDeviceInfo;
+          import android.media.midi.MidiInputPort;
+          import android.media.midi.MidiManager;
+          import android.media.midi.MidiOutputPort;
+          import android.media.midi.MidiReceiver;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.os.SystemClock;
+          import android.view.ViewGroup;
+          import android.view.WindowManager;
+          import android.widget.Button;
+          import android.widget.LinearLayout;
+          import android.widget.ScrollView;
+          import android.widget.TextView;
+
+          import java.io.ByteArrayOutputStream;
+          import java.io.IOException;
+          import java.util.ArrayList;
+          import java.util.Collection;
+          import java.util.HashSet;
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.Set;
+          import java.util.concurrent.CountDownLatch;
+          import java.util.concurrent.ExecutorService;
+          import java.util.concurrent.Executors;
+          import java.util.concurrent.TimeUnit;
+          import java.util.concurrent.atomic.AtomicReference;
+
+          public class MainActivity extends Activity {
+              private static final byte[] HS_QUERY = hex("F0003245000000407FF7");
+              private static final byte[] UBOOT = hex("F02224357DF7");
+              private static final int WL80_VID = 0x4C4A;
+              private static final int WL80_PID = 0x8057;
+
+              private final Handler main = new Handler(Looper.getMainLooper());
+              private final ExecutorService worker = Executors.newSingleThreadExecutor();
+              private final Object rxLock = new Object();
+              private final ByteArrayOutputStream rxBuf = new ByteArrayOutputStream();
+              private boolean rxInSysex;
+              private volatile boolean busy;
+
+              private MidiManager midiManager;
+              private UsbManager usbManager;
+              private MidiDevice midiDevice;
+              private MidiInputPort toDevice;
+              private MidiOutputPort fromDevice;
+
+              private TextView status;
+              private TextView devices;
+              private TextView logView;
+              private Button scanButton;
+              private Button ubootButton;
+
+              private final MidiReceiver receiver = new MidiReceiver() {
+                  @Override public void onSend(byte[] msg, int offset, int count, long timestamp) {
+                      synchronized (rxLock) {
+                          for (int i = offset; i < offset + count; i++) {
+                              int b = msg[i] & 0xFF;
+                              if (b >= 0xF8) continue;
+                              if (!rxInSysex) {
+                                  if (b == 0xF0) {
+                                      rxBuf.reset();
+                                      rxBuf.write(b);
+                                      rxInSysex = true;
+                                  }
+                              } else {
+                                  rxBuf.write(b);
+                                  if (b == 0xF7) {
+                                      byte[] frame = rxBuf.toByteArray();
+                                      log("RX SysEx: " + toHex(frame));
+                                      rxBuf.reset();
+                                      rxInSysex = false;
+                                  }
+                              }
+                          }
+                      }
+                  }
+              };
+
+              @Override protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  midiManager = (MidiManager) getSystemService(MIDI_SERVICE);
+                  usbManager = (UsbManager) getSystemService(USB_SERVICE);
+                  buildUi();
+                  setStatus("Collega FM-1 acceso normalmente, poi premi SCANSIONA.", Color.LTGRAY);
+                  refreshDeviceText();
+              }
+
+              private void buildUi() {
+                  int pad = dp(18);
+                  LinearLayout root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setPadding(pad, pad, pad, pad);
+                  root.setBackgroundColor(Color.rgb(7, 7, 7));
+
+                  TextView title = text("FM-1 UBOOT PROBE", 27, Color.WHITE);
+                  title.setTypeface(null, 1);
+                  root.addView(title);
+
+                  TextView sub = text("solo test bootloader • nessuna scrittura flash", 14, Color.rgb(242, 212, 0));
+                  root.addView(sub);
+
+                  TextView warning = text("Invia soltanto il SysEx UBOOT F0 22 24 35 7D F7 e controlla se compare il bootloader USB.", 14, Color.LTGRAY);
+                  warning.setPadding(0, dp(16), 0, dp(14));
+                  root.addView(warning);
+
+                  scanButton = button("SCANSIONA");
+                  scanButton.setOnClickListener(v -> scan());
+                  root.addView(scanButton);
+
+                  ubootButton = button("INVIA UBOOT — NESSUNA SCRITTURA");
+                  LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                  bp.topMargin = dp(10);
+                  root.addView(ubootButton, bp);
+                  ubootButton.setOnClickListener(v -> probeUboot());
+
+                  status = text("", 16, Color.LTGRAY);
+                  status.setPadding(0, dp(16), 0, dp(12));
+                  root.addView(status);
+
+                  TextView dtitle = text("DISPOSITIVI", 12, Color.rgb(242, 212, 0));
+                  root.addView(dtitle);
+                  devices = text("", 12, Color.LTGRAY);
+                  devices.setTypeface(android.graphics.Typeface.MONOSPACE);
+                  devices.setPadding(0, dp(6), 0, dp(14));
+                  root.addView(devices);
+
+                  TextView ltitle = text("LOG TECNICO", 12, Color.rgb(242, 212, 0));
+                  root.addView(ltitle);
+                  logView = text("", 11, Color.LTGRAY);
+                  logView.setTypeface(android.graphics.Typeface.MONOSPACE);
+                  logView.setPadding(dp(10), dp(8), dp(10), dp(8));
+                  ScrollView logs = new ScrollView(this);
+                  logs.setBackgroundColor(Color.rgb(15, 15, 15));
+                  logs.addView(logView);
+                  LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(300));
+                  lp.topMargin = dp(6);
+                  root.addView(logs, lp);
+
+                  ScrollView outer = new ScrollView(this);
+                  outer.addView(root);
+                  setContentView(outer);
+              }
+
+              private TextView text(String s, int sp, int color) {
+                  TextView t = new TextView(this);
+                  t.setText(s);
+                  t.setTextSize(sp);
+                  t.setTextColor(color);
+                  return t;
+              }
+
+              private Button button(String s) {
+                  Button b = new Button(this);
+                  b.setText(s);
+                  b.setTextSize(15);
+                  return b;
+              }
+
+              private int dp(int v) { return (int)(v * getResources().getDisplayMetrics().density + 0.5f); }
+
+              private void scan() {
+                  if (busy) return;
+                  refreshDeviceText();
+                  String midi = midiSummary();
+                  log("SCAN MIDI: " + midi.replace('\n', ' '));
+                  log("SCAN USB: " + usbSummary().replace('\n', ' '));
+                  boolean wl = hasWl80Bootloader();
+                  setStatus(wl ? "BOOTLOADER WL80 GIÀ VISIBILE." : "Scansione completata.", wl ? Color.rgb(75,227,122) : Color.LTGRAY);
+              }
+
+              private void probeUboot() {
+                  if (busy) return;
+                  busy = true;
+                  setButtons(false);
+                  worker.execute(() -> {
+                      try {
+                          Set<String> before = usbIds();
+                          log("=== UBOOT PROBE START ===");
+                          log("USB prima: " + before);
+                          refreshDeviceText();
+
+                          MidiDeviceInfo info = chooseMidiDevice();
+                          if (info == null) throw new IOException("Nessun dispositivo MIDI FM-1/Felucca trovato.");
+                          log("MIDI candidato: " + describeMidi(info));
+                          openMidi(info);
+
+                          if (toDevice == null) throw new IOException("Impossibile aprire MIDI IN verso FM-1.");
+                          if (fromDevice != null) fromDevice.connect(receiver);
+
+                          try {
+                              log("TX handshake: " + toHex(HS_QUERY));
+                              toDevice.send(HS_QUERY, 0, HS_QUERY.length);
+                              SystemClock.sleep(700);
+                          } catch (Exception e) {
+                              log("Handshake non essenziale: " + e.getMessage());
+                          }
+
+                          log("TX UBOOT: " + toHex(UBOOT));
+                          setStatusUi("Comando UBOOT inviato. Attendo enumerazione USB…", Color.YELLOW);
+                          toDevice.send(UBOOT, 0, UBOOT.length);
+                          SystemClock.sleep(300);
+                          closeMidi();
+
+                          boolean success = false;
+                          String newDev = "";
+                          for (int i = 0; i < 24; i++) {
+                              SystemClock.sleep(500);
+                              if (hasWl80Bootloader()) {
+                                  success = true;
+                                  newDev = "WL80 UBOOT " + String.format(Locale.US, "%04X:%04X", WL80_VID, WL80_PID);
+                                  break;
+                              }
+                              Set<String> now = usbIds();
+                              Set<String> diff = new HashSet<>(now);
+                              diff.removeAll(before);
+                              if (!diff.isEmpty()) {
+                                  newDev = diff.toString();
+                                  log("Nuovo USB visto: " + newDev);
+                              }
+                          }
+
+                          refreshDeviceText();
+                          if (success) {
+                              log("SUCCESS: bootloader USB rilevato.");
+                              setStatusUi("UBOOT RAGGIUNTO. Bootloader USB rilevato. NON è stata scritta la flash.", Color.rgb(75,227,122));
+                          } else if (!newDev.isEmpty()) {
+                              log("UBOOT candidate changed USB device, but expected VID/PID not confirmed: " + newDev);
+                              setStatusUi("Il dispositivo USB è cambiato: possibile UBOOT. Mandami il log.", Color.YELLOW);
+                          } else {
+                              log("FAIL: nessuna nuova enumerazione USB entro 12 s.");
+                              setStatusUi("NESSUN UBOOT: il comando è stato inviato ma non è comparso un nuovo bootloader USB.", Color.rgb(255,82,82));
+                          }
+                      } catch (Exception e) {
+                          log("ERROR: " + e);
+                          setStatusUi("ERRORE: " + e.getMessage(), Color.rgb(255,82,82));
+                      } finally {
+                          closeMidi();
+                          busy = false;
+                          setButtons(true);
+                      }
+                  });
+              }
+
+              private MidiDeviceInfo chooseMidiDevice() {
+                  MidiDeviceInfo[] all = midiManager.getDevices();
+                  MidiDeviceInfo fallback = null;
+                  for (MidiDeviceInfo i : all) {
+                      if (i.getInputPortCount() < 1) continue;
+                      String s = describeMidi(i).toLowerCase(Locale.US);
+                      if (s.contains("fm-1") || s.contains("fm1") || s.contains("felucca") || s.contains("sloop") || s.contains("clipper") || s.contains("sinco")) return i;
+                      if (fallback == null && i.getOutputPortCount() > 0) fallback = i;
+                  }
+                  if (all.length == 1 && all[0].getInputPortCount() > 0) return all[0];
+                  return fallback;
+              }
+
+              private void openMidi(MidiDeviceInfo info) throws Exception {
+                  AtomicReference<MidiDevice> ref = new AtomicReference<>();
+                  CountDownLatch latch = new CountDownLatch(1);
+                  midiManager.openDevice(info, dev -> { ref.set(dev); latch.countDown(); }, main);
+                  if (!latch.await(4, TimeUnit.SECONDS) || ref.get() == null) throw new IOException("Timeout apertura dispositivo MIDI.");
+                  midiDevice = ref.get();
+                  toDevice = midiDevice.openInputPort(0);
+                  if (info.getOutputPortCount() > 0) fromDevice = midiDevice.openOutputPort(0);
+              }
+
+              private void closeMidi() {
+                  try { if (fromDevice != null) fromDevice.close(); } catch (Exception ignored) {}
+                  try { if (toDevice != null) toDevice.close(); } catch (Exception ignored) {}
+                  try { if (midiDevice != null) midiDevice.close(); } catch (Exception ignored) {}
+                  fromDevice = null; toDevice = null; midiDevice = null;
+              }
+
+              private String midiSummary() {
+                  MidiDeviceInfo[] all = midiManager.getDevices();
+                  if (all.length == 0) return "MIDI: nessun dispositivo";
+                  StringBuilder sb = new StringBuilder();
+                  for (MidiDeviceInfo i : all) sb.append(describeMidi(i)).append('\n');
+                  return sb.toString().trim();
+              }
+
+              private String describeMidi(MidiDeviceInfo i) {
+                  Bundle p = i.getProperties();
+                  String n = p.getString(MidiDeviceInfo.PROPERTY_NAME, "?");
+                  String prod = p.getString(MidiDeviceInfo.PROPERTY_PRODUCT, "?");
+                  String man = p.getString(MidiDeviceInfo.PROPERTY_MANUFACTURER, "?");
+                  return "MIDI id=" + i.getId() + " in=" + i.getInputPortCount() + " out=" + i.getOutputPortCount() + " name=" + n + " product=" + prod + " maker=" + man;
+              }
+
+              private String usbSummary() {
+                  Collection<UsbDevice> ds = usbManager.getDeviceList().values();
+                  if (ds.isEmpty()) return "USB: nessun device host";
+                  StringBuilder sb = new StringBuilder();
+                  for (UsbDevice d : ds) {
+                      sb.append(String.format(Locale.US, "USB %04X:%04X", d.getVendorId(), d.getProductId()));
+                      String pn = safeProduct(d); if (!pn.isEmpty()) sb.append(" ").append(pn);
+                      sb.append('\n');
+                  }
+                  return sb.toString().trim();
+              }
+
+              private Set<String> usbIds() {
+                  Set<String> s = new HashSet<>();
+                  for (UsbDevice d : usbManager.getDeviceList().values()) {
+                      s.add(String.format(Locale.US, "%04X:%04X:%s", d.getVendorId(), d.getProductId(), safeProduct(d)));
+                  }
+                  return s;
+              }
+
+              private boolean hasWl80Bootloader() {
+                  for (UsbDevice d : usbManager.getDeviceList().values()) {
+                      if (d.getVendorId() == WL80_VID && d.getProductId() == WL80_PID) return true;
+                      String p = safeProduct(d).toLowerCase(Locale.US);
+                      if (p.contains("wl80") && p.contains("uboot")) return true;
+                  }
+                  return false;
+              }
+
+              private String safeProduct(UsbDevice d) {
+                  try { String s = d.getProductName(); return s == null ? "" : s; }
+                  catch (Exception e) { return ""; }
+              }
+
+              private void refreshDeviceText() {
+                  String s = midiSummary() + "\n\n" + usbSummary();
+                  main.post(() -> devices.setText(s));
+              }
+
+              private void setButtons(boolean enabled) {
+                  main.post(() -> { scanButton.setEnabled(enabled); ubootButton.setEnabled(enabled); });
+              }
+
+              private void setStatusUi(String s, int color) { main.post(() -> setStatus(s, color)); }
+              private void setStatus(String s, int color) { status.setText(s); status.setTextColor(color); }
+              private void log(String s) { main.post(() -> { logView.append(s + "\n"); }); }
+
+              @Override protected void onDestroy() {
+                  closeMidi();
+                  worker.shutdownNow();
+                  super.onDestroy();
+              }
+
+              private static byte[] hex(String s) {
+                  s = s.replaceAll("[^0-9A-Fa-f]", "");
+                  byte[] out = new byte[s.length()/2];
+                  for (int i = 0; i < out.length; i++) out[i] = (byte)Integer.parseInt(s.substring(i*2, i*2+2), 16);
+                  return out;
+              }
+
+              private static String toHex(byte[] b) {
+                  StringBuilder sb = new StringBuilder();
+                  for (byte x : b) {
+                      if (sb.length() > 0) sb.append(' ');
+                      sb.append(String.format(Locale.US, "%02X", x & 0xFF));
+                  }
+                  return sb.toString();
+              }
+          }
+          EOF
+
+          cd "$ROOT"
+          gradle --no-daemon :app:assembleDebug
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/FM1-UBOOT-PROBE-v0.1.apk"
+          sha256sum "$GITHUB_WORKSPACE/out/FM1-UBOOT-PROBE-v0.1.apk" | tee "$GITHUB_WORKSPACE/out/SHA256.txt"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FM1-UBOOT-PROBE-v0.1
+          path: out/*
+          if-no-files-found: error
+          retention-days: 7
