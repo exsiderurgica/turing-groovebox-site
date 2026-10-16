@@ -63,6 +63,7 @@ jobs:
               out.append(l[10:] if l.startswith('          ') else l)
           script='\n'.join(out)+'\n'
           script=script.replace('setProgress(', 'setBarProgress(')
+          script=script.replace('progress.setBarProgress(', 'progress.setProgress(')
           script=script.replace(' try{c.clearHalt(epIn);}catch(Exception ignored){}', '')
           script=script.replace(' try{c.clearHalt(epOut);}catch(Exception ignored){}', '')
           Path('/tmp/fm1gen.sh').write_text(script)
