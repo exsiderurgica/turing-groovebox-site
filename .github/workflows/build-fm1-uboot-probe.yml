@@ -13,6 +13,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -23,13 +26,13 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK
+      - name: Install Android SDK packages
+        shell: bash
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platforms;android-36" "build-tools;35.0.0"
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;35.0.0" "platform-tools"
 
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -126,10 +129,8 @@ jobs:
 
           import java.io.ByteArrayOutputStream;
           import java.io.IOException;
-          import java.util.ArrayList;
           import java.util.Collection;
           import java.util.HashSet;
-          import java.util.List;
           import java.util.Locale;
           import java.util.Set;
           import java.util.concurrent.CountDownLatch;
@@ -275,8 +276,7 @@ jobs:
               private void scan() {
                   if (busy) return;
                   refreshDeviceText();
-                  String midi = midiSummary();
-                  log("SCAN MIDI: " + midi.replace('\n', ' '));
+                  log("SCAN MIDI: " + midiSummary().replace('\n', ' '));
                   log("SCAN USB: " + usbSummary().replace('\n', ' '));
                   boolean wl = hasWl80Bootloader();
                   setStatus(wl ? "BOOTLOADER WL80 GIÀ VISIBILE." : "Scansione completata.", wl ? Color.rgb(75,227,122) : Color.LTGRAY);
@@ -407,7 +407,8 @@ jobs:
                   StringBuilder sb = new StringBuilder();
                   for (UsbDevice d : ds) {
                       sb.append(String.format(Locale.US, "USB %04X:%04X", d.getVendorId(), d.getProductId()));
-                      String pn = safeProduct(d); if (!pn.isEmpty()) sb.append(" ").append(pn);
+                      String pn = safeProduct(d);
+                      if (!pn.isEmpty()) sb.append(" ").append(pn);
                       sb.append('\n');
                   }
                   return sb.toString().trim();
@@ -446,7 +447,7 @@ jobs:
 
               private void setStatusUi(String s, int color) { main.post(() -> setStatus(s, color)); }
               private void setStatus(String s, int color) { status.setText(s); status.setTextColor(color); }
-              private void log(String s) { main.post(() -> { logView.append(s + "\n"); }); }
+              private void log(String s) { main.post(() -> logView.append(s + "\n")); }
 
               @Override protected void onDestroy() {
                   closeMidi();
