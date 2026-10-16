@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/build-fm1-direct-flasher.yml
       - tools/fm1_android/build_direct.py
+      - tools/fm1_android/fix_direct_builder_ui.py
 
 permissions:
   contents: read
@@ -37,7 +38,10 @@ jobs:
         with:
           gradle-version: '8.13'
       - name: Generate guarded direct flasher project
-        run: python3 tools/fm1_android/build_direct.py
+        shell: bash
+        run: |
+          python3 tools/fm1_android/fix_direct_builder_ui.py
+          python3 tools/fm1_android/build_direct.py
       - name: Build APK
         shell: bash
         run: |
