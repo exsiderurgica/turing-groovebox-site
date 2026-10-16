@@ -9,4 +9,6 @@ u1=s.index('\n\n        progress =',u0)
 s=s[:u0]+new+s[u1:]
 '''
 s=s[:a]+newblock+s[b:]
+s=s.replace("a=s.index('              private void prepareBackup(){'); b=s.index('              private void startBackup(UsbDevice dev){',a)","a=s.index('    private void prepareBackup(){'); b=s.index('    private void startBackup(UsbDevice dev){',a)")
+s=s.replace("a=s.index('              private void startBackup(UsbDevice dev){'); b=s.index('              private byte[] readAllRaw()',a)","a=s.index('    private void startBackup(UsbDevice dev){'); b=s.index('    private byte[] readAllRaw()',a)")
 p.write_text(s)
