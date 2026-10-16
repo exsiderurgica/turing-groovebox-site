@@ -1,0 +1,436 @@
+name: Build FM-1 Backup Read-Only
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fm1-backup-readonly-build]
+    paths:
+      - .github/workflows/build-fm1-backup-readonly.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Generate backup project
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/fm1backup"
+          mkdir -p "$ROOT/app/src/main/java/com/exsiderurgica/fm1backup" "$ROOT/app/src/main/res/raw"
+
+          cat > "$ROOT/settings.gradle" <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = 'FM1BackupReadonly'
+          include ':app'
+          EOF
+
+          cat > "$ROOT/build.gradle" <<'EOF'
+          plugins { id 'com.android.application' version '8.13.2' apply false }
+          EOF
+
+          cat > "$ROOT/app/build.gradle" <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.exsiderurgica.fm1backup'
+              compileSdk 36
+              defaultConfig {
+                  applicationId 'com.exsiderurgica.fm1backup'
+                  minSdk 26
+                  targetSdk 36
+                  versionCode 1
+                  versionName '0.1'
+              }
+          }
+          EOF
+
+          cat > "$ROOT/app/src/main/AndroidManifest.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-feature android:name="android.software.midi" android:required="true" />
+              <uses-feature android:name="android.hardware.usb.host" android:required="true" />
+              <application android:allowBackup="false" android:label="FM-1 Backup" android:theme="@android:style/Theme.Material.NoActionBar">
+                  <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          curl -L --fail --silent --show-error \
+            https://raw.githubusercontent.com/kagaimiq/jl-uboot-tool/c32b28e7a04f873f526ba929cb1bae9f05442fe9/data/loaderblobs/usb/wl82loader.bin \
+            -o "$ROOT/app/src/main/res/raw/wl82loader.bin"
+          echo "d41da6126760c9d66660bcc0cac8d27d221806c5e369a8036921efe68dca5376  $ROOT/app/src/main/res/raw/wl82loader.bin" | sha256sum -c -
+
+          cat > "$ROOT/app/src/main/java/com/exsiderurgica/fm1backup/MainActivity.java" <<'EOF'
+          package com.exsiderurgica.fm1backup;
+
+          import android.app.Activity;
+          import android.app.PendingIntent;
+          import android.content.BroadcastReceiver;
+          import android.content.ContentValues;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.IntentFilter;
+          import android.graphics.Color;
+          import android.hardware.usb.UsbConstants;
+          import android.hardware.usb.UsbDevice;
+          import android.hardware.usb.UsbDeviceConnection;
+          import android.hardware.usb.UsbEndpoint;
+          import android.hardware.usb.UsbInterface;
+          import android.hardware.usb.UsbManager;
+          import android.media.midi.MidiDevice;
+          import android.media.midi.MidiDeviceInfo;
+          import android.media.midi.MidiInputPort;
+          import android.media.midi.MidiManager;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.os.Environment;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.os.SystemClock;
+          import android.provider.MediaStore;
+          import android.view.ViewGroup;
+          import android.view.WindowManager;
+          import android.widget.Button;
+          import android.widget.LinearLayout;
+          import android.widget.ProgressBar;
+          import android.widget.ScrollView;
+          import android.widget.TextView;
+
+          import java.io.ByteArrayOutputStream;
+          import java.io.IOException;
+          import java.io.InputStream;
+          import java.io.OutputStream;
+          import java.nio.ByteBuffer;
+          import java.nio.ByteOrder;
+          import java.security.MessageDigest;
+          import java.text.SimpleDateFormat;
+          import java.util.ArrayList;
+          import java.util.Date;
+          import java.util.HashMap;
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.Map;
+          import java.util.concurrent.CountDownLatch;
+          import java.util.concurrent.ExecutorService;
+          import java.util.concurrent.Executors;
+          import java.util.concurrent.TimeUnit;
+          import java.util.concurrent.atomic.AtomicReference;
+
+          public class MainActivity extends Activity {
+              private static final String ACTION_USB_PERMISSION = "com.exsiderurgica.fm1backup.USB_PERMISSION";
+              private static final byte[] UBOOT_SYSEX = hex("F02224357DF7");
+              private static final int WL80_VID = 0x4C4A, WL80_PID = 0x8057;
+              private static final int FLASH_SIZE = 0x100000, IO = 512;
+              private static final int CMD_WRITE_MEMORY = 0xFB06, CMD_JUMP = 0xFB08;
+              private static final int CMD_READ_KEY = 0xFC09, CMD_GET_ONLINE_DEVICE = 0xFC0A, CMD_READ_FLASH = 0xFD05;
+              private static final int LOADER_ADDR = 0x01C02000, LOADER_ARG = 0x0001;
+              private static final byte[] MAGIC = new byte[]{(byte)0xC3,(byte)0xCF,(byte)0xC0,(byte)0xE8,(byte)0xCE,(byte)0xD2,(byte)0xB0,(byte)0xAE,(byte)0xC4,(byte)0xE3,(byte)0xA3,(byte)0xAC,(byte)0xD3,(byte)0xF1,(byte)0xC1,(byte)0xD6};
+
+              private final Handler main = new Handler(Looper.getMainLooper());
+              private final ExecutorService worker = Executors.newSingleThreadExecutor();
+              private MidiManager midiManager;
+              private UsbManager usbManager;
+              private TextView status, devices, logView;
+              private ProgressBar progress;
+              private Button enterButton, backupButton, scanButton;
+              private volatile boolean busy;
+
+              private final BroadcastReceiver usbPermissionReceiver = new BroadcastReceiver() {
+                  @Override public void onReceive(Context context, Intent intent) {
+                      if (!ACTION_USB_PERMISSION.equals(intent.getAction())) return;
+                      UsbDevice dev = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                      boolean granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
+                      log("Permesso USB: " + granted);
+                      if (granted && dev != null) startBackup(dev);
+                      else {
+                          setStatus("Permesso USB negato. Nessuna operazione eseguita.", Color.rgb(255,82,82));
+                          setBusy(false);
+                      }
+                  }
+              };
+
+              @Override protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  midiManager = (MidiManager)getSystemService(MIDI_SERVICE);
+                  usbManager = (UsbManager)getSystemService(USB_SERVICE);
+                  buildUi();
+                  IntentFilter f = new IntentFilter(ACTION_USB_PERMISSION);
+                  if (Build.VERSION.SDK_INT >= 33) registerReceiver(usbPermissionReceiver, f, Context.RECEIVER_NOT_EXPORTED);
+                  else registerReceiver(usbPermissionReceiver, f);
+                  scan();
+              }
+
+              @Override protected void onDestroy() {
+                  super.onDestroy();
+                  try { unregisterReceiver(usbPermissionReceiver); } catch (Exception ignored) {}
+                  worker.shutdownNow();
+              }
+
+              private void buildUi() {
+                  int pad = dp(18);
+                  LinearLayout root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setPadding(pad,pad,pad,pad);
+                  root.setBackgroundColor(Color.rgb(7,7,7));
+
+                  TextView title = text("FM-1 BACKUP READ-ONLY", 27, Color.WHITE); title.setTypeface(null,1); root.addView(title);
+                  root.addView(text("Nothing → USB-C → FM-1 • nessuna scrittura flash", 14, Color.rgb(242,212,0)));
+                  TextView info = text("Questa app può entrare in UBOOT, carica soltanto il loader in RAM e legge 1 MiB di flash. Non cancella e non scrive settori flash.",14,Color.LTGRAY);
+                  info.setPadding(0,dp(14),0,dp(14)); root.addView(info);
+
+                  scanButton = button("SCANSIONA"); scanButton.setOnClickListener(v -> scan()); root.addView(scanButton);
+                  enterButton = button("1 · ENTRA UBOOT"); enterButton.setOnClickListener(v -> enterUboot());
+                  LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); bp.topMargin=dp(8); root.addView(enterButton,bp);
+                  backupButton = button("2 · BACKUP FLASH READ-ONLY"); backupButton.setOnClickListener(v -> prepareBackup());
+                  LinearLayout.LayoutParams bp2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); bp2.topMargin=dp(8); root.addView(backupButton,bp2);
+
+                  progress = new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal); progress.setMax(1000);
+                  LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(12)); pp.topMargin=dp(14); root.addView(progress,pp);
+                  status = text("",16,Color.LTGRAY); status.setPadding(0,dp(12),0,dp(12)); root.addView(status);
+                  root.addView(text("DISPOSITIVI",12,Color.rgb(242,212,0)));
+                  devices = text("",12,Color.LTGRAY); devices.setTypeface(android.graphics.Typeface.MONOSPACE); devices.setPadding(0,dp(5),0,dp(12)); root.addView(devices);
+                  root.addView(text("LOG TECNICO",12,Color.rgb(242,212,0)));
+                  logView = text("",11,Color.LTGRAY); logView.setTypeface(android.graphics.Typeface.MONOSPACE); logView.setPadding(dp(10),dp(8),dp(10),dp(8));
+                  ScrollView logs = new ScrollView(this); logs.setBackgroundColor(Color.rgb(15,15,15)); logs.addView(logView);
+                  LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(330)); lp.topMargin=dp(6); root.addView(logs,lp);
+                  ScrollView outer = new ScrollView(this); outer.addView(root); setContentView(outer);
+              }
+
+              private TextView text(String s,int sp,int color){ TextView t=new TextView(this); t.setText(s); t.setTextSize(sp); t.setTextColor(color); return t; }
+              private Button button(String s){ Button b=new Button(this); b.setText(s); b.setTextSize(15); return b; }
+              private int dp(int v){ return (int)(v*getResources().getDisplayMetrics().density+0.5f); }
+
+              private void scan() {
+                  StringBuilder sb = new StringBuilder();
+                  MidiDeviceInfo[] mi = midiManager.getDevices();
+                  if (mi.length==0) sb.append("MIDI: nessun dispositivo\n");
+                  for (MidiDeviceInfo i:mi) {
+                      Bundle p=i.getProperties();
+                      sb.append("MIDI id=").append(i.getId()).append(" in=").append(i.getInputPortCount()).append(" out=").append(i.getOutputPortCount())
+                        .append(" name=").append(p.getString(MidiDeviceInfo.PROPERTY_NAME,"?"))
+                        .append(" product=").append(p.getString(MidiDeviceInfo.PROPERTY_PRODUCT,"?"))
+                        .append(" maker=").append(p.getString(MidiDeviceInfo.PROPERTY_MANUFACTURER,"?")).append('\n');
+                  }
+                  for (UsbDevice d:usbManager.getDeviceList().values()) {
+                      sb.append(String.format(Locale.US,"USB %04X:%04X %s\n",d.getVendorId(),d.getProductId(),d.getProductName()));
+                  }
+                  devices.setText(sb.toString().trim());
+                  boolean boot = findBootloader()!=null;
+                  setStatus(boot?"UBOOT visibile. Puoi fare il BACKUP READ-ONLY.":"FM-1 normale: premi 1 · ENTRA UBOOT.", boot?Color.rgb(75,227,122):Color.LTGRAY);
+              }
+
+              private void enterUboot() {
+                  if (busy) return;
+                  if (findBootloader()!=null) { scan(); return; }
+                  setBusy(true);
+                  worker.execute(() -> {
+                      MidiDevice dev=null; MidiInputPort in=null;
+                      try {
+                          MidiDeviceInfo info=chooseFelucca();
+                          if (info==null) throw new IOException("Felucca/FM-1 MIDI non trovato.");
+                          AtomicReference<MidiDevice> ref=new AtomicReference<>(); CountDownLatch latch=new CountDownLatch(1);
+                          midiManager.openDevice(info,d->{ref.set(d);latch.countDown();},main);
+                          if(!latch.await(4,TimeUnit.SECONDS)||ref.get()==null) throw new IOException("Timeout apertura MIDI.");
+                          dev=ref.get(); in=dev.openInputPort(0); if(in==null) throw new IOException("MIDI IN verso FM-1 non disponibile.");
+                          log("TX UBOOT: "+toHex(UBOOT_SYSEX));
+                          in.send(UBOOT_SYSEX,0,UBOOT_SYSEX.length);
+                          try{in.close();}catch(Exception ignored){} in=null; try{dev.close();}catch(Exception ignored){} dev=null;
+                          setStatusUi("Comando UBOOT inviato. Attendo WL80UBOOT1.00…",Color.YELLOW);
+                          UsbDevice boot=null;
+                          for(int i=0;i<24;i++){ SystemClock.sleep(500); boot=findBootloader(); if(boot!=null) break; }
+                          if(boot==null) throw new IOException("UBOOT non comparso entro 12 s.");
+                          log(String.format(Locale.US,"UBOOT rilevato: %04X:%04X %s",boot.getVendorId(),boot.getProductId(),boot.getProductName()));
+                          setStatusUi("UBOOT RAGGIUNTO. Ora premi 2 · BACKUP FLASH READ-ONLY.",Color.rgb(75,227,122));
+                          main.post(this::scan);
+                      } catch(Exception e){ log("ERROR UBOOT: "+e); setStatusUi("ERRORE: "+e.getMessage(),Color.rgb(255,82,82)); }
+                      finally { try{if(in!=null)in.close();}catch(Exception ignored){} try{if(dev!=null)dev.close();}catch(Exception ignored){} setBusy(false); }
+                  });
+              }
+
+              private MidiDeviceInfo chooseFelucca(){
+                  for(MidiDeviceInfo i:midiManager.getDevices()){
+                      if(i.getInputPortCount()<1) continue;
+                      Bundle p=i.getProperties();
+                      String s=(p.getString(MidiDeviceInfo.PROPERTY_NAME,"")+" "+p.getString(MidiDeviceInfo.PROPERTY_PRODUCT,"")+" "+p.getString(MidiDeviceInfo.PROPERTY_MANUFACTURER,"")).toLowerCase(Locale.US);
+                      if(s.contains("felucca")||s.contains("fm-1")||s.contains("fm1")||s.contains("sloop")) return i;
+                  }
+                  return null;
+              }
+
+              private UsbDevice findBootloader(){
+                  for(UsbDevice d:usbManager.getDeviceList().values()) if(d.getVendorId()==WL80_VID&&d.getProductId()==WL80_PID) return d;
+                  return null;
+              }
+
+              private void prepareBackup(){
+                  if(busy) return;
+                  UsbDevice d=findBootloader();
+                  if(d==null){ setStatus("UBOOT non visibile. Premi prima 1 · ENTRA UBOOT.",Color.rgb(255,82,82)); return; }
+                  setBusy(true);
+                  if(usbManager.hasPermission(d)) { startBackup(d); return; }
+                  log("Richiedo permesso USB per WL80UBOOT1.00…");
+                  PendingIntent pi=PendingIntent.getBroadcast(this,0,new Intent(ACTION_USB_PERMISSION).setPackage(getPackageName()),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_MUTABLE);
+                  usbManager.requestPermission(d,pi);
+              }
+
+              private void startBackup(UsbDevice dev){
+                  worker.execute(() -> {
+                      UsbDeviceConnection conn=null; Bot bot=null;
+                      try {
+                          setStatusUi("Apro il bootloader USB…",Color.YELLOW); setProgress(0);
+                          conn=usbManager.openDevice(dev); if(conn==null) throw new IOException("Impossibile aprire UBOOT USB.");
+                          bot=new Bot(conn,dev); log("Bulk endpoints: OUT="+String.format("0x%02X",bot.epOut.getAddress())+" IN="+String.format("0x%02X",bot.epIn.getAddress()));
+                          byte[] inquiry=bot.xfer(new byte[]{0x12,0,0,0,36,0},null,36,5000);
+                          String vendor=ascii(inquiry,8,8), product=ascii(inquiry,16,16); log("INQUIRY: "+vendor+" / "+product);
+                          if(!"WL82".equals(vendor)) throw new IOException("Device UBOOT inatteso: "+vendor+" "+product);
+
+                          byte[] loader=readAllRaw();
+                          if(loader.length!=24064) throw new IOException("Loader RAM inatteso: "+loader.length+" B");
+                          String lsha=sha256(loader); log("Loader SHA256: "+lsha);
+                          if(!lsha.equals("d41da6126760c9d66660bcc0cac8d27d221806c5e369a8036921efe68dca5376")) throw new IOException("Hash loader non valido.");
+
+                          setStatusUi("Carico il loader in RAM (flash intatta)…",Color.YELLOW);
+                          for(int off=0;off<loader.length;off+=IO){
+                              byte[] block=new byte[Math.min(IO,loader.length-off)]; System.arraycopy(loader,off,block,0,block.length);
+                              bot.writeBlock(CMD_WRITE_MEMORY,LOADER_ADDR+off,block);
+                              setProgress((int)(120.0*(off+block.length)/loader.length));
+                          }
+                          bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG));
+                          SystemClock.sleep(300);
+                          bot.resetRecovery();
+
+                          byte[] p=bot.cmd(CMD_READ_KEY,u32be(0x00AC6900));
+                          byte[] k=new byte[]{p[5],p[4]}; crcCipher(k); int key=(k[0]&255)|((k[1]&255)<<8);
+                          byte[] q=bot.cmd(CMD_GET_ONLINE_DEVICE,new byte[0]);
+                          int typ=q[0]&255; int fid=(q[2]&255)|((q[3]&255)<<8)|((q[4]&255)<<16)|((q[5]&255)<<24);
+                          log(String.format(Locale.US,"CHIP: key=%04X type=%d flash=%06X",key,typ,fid));
+                          if(key!=0x980F||typ!=3||fid!=0x856014) throw new IOException(String.format(Locale.US,"Identità chip/flash inattesa: %04X / %d / %06X",key,typ,fid));
+
+                          setStatusUi("Leggo 1 MiB di flash… NON scollegare USB.",Color.YELLOW);
+                          byte[] flash=new byte[FLASH_SIZE];
+                          for(int off=0;off<FLASH_SIZE;off+=IO){
+                              byte[] b=bot.readFlash(off,Math.min(IO,FLASH_SIZE-off)); System.arraycopy(b,0,flash,off,b.length);
+                              if((off&0x3FFF)==0) setProgress(120+(int)(820.0*(off+IO)/FLASH_SIZE));
+                          }
+                          setProgress(950);
+                          String hash=sha256(flash); log("FLASH SHA256: "+hash);
+
+                          byte[] head2=bot.readFlash(0,4096); byte[] tail2=bot.readFlash(FLASH_SIZE-4096,4096);
+                          if(!regionEquals(flash,0,head2)||!regionEquals(flash,FLASH_SIZE-4096,tail2)) throw new IOException("Verifica read-back non coerente.");
+
+                          String stamp=new SimpleDateFormat("yyyyMMdd-HHmmss",Locale.US).format(new Date());
+                          String binName="fm1-backup-"+stamp+".bin";
+                          Uri binUri=saveDownload(binName,"application/octet-stream",flash);
+                          String report="FM-1 READ-ONLY BACKUP\nfile="+binName+"\nsize="+flash.length+"\nsha256="+hash+"\nchip_key=980F\nflash_id=856014\nusb=4C4A:8057 WL80UBOOT1.00\n";
+                          saveDownload("fm1-backup-"+stamp+"-SHA256.txt","text/plain",report.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                          setProgress(1000);
+                          log("Backup salvato: "+binUri);
+                          setStatusUi("BACKUP COMPLETATO. File salvato in Download/FM1. SHA256: "+hash,Color.rgb(75,227,122));
+                      } catch(Exception e){ log("BACKUP ERROR: "+e); setStatusUi("ERRORE: "+e.getMessage()+" — nessuna scrittura flash eseguita.",Color.rgb(255,82,82)); }
+                      finally { try{if(bot!=null)bot.close();}catch(Exception ignored){} try{if(conn!=null)conn.close();}catch(Exception ignored){} setBusy(false); main.post(this::scan); }
+                  });
+              }
+
+              private byte[] readAllRaw() throws IOException { try(InputStream in=getResources().openRawResource(R.raw.wl82loader)){ ByteArrayOutputStream o=new ByteArrayOutputStream(); byte[] b=new byte[4096]; int n; while((n=in.read(b))>0)o.write(b,0,n); return o.toByteArray(); } }
+
+              private Uri saveDownload(String name,String mime,byte[] data) throws IOException {
+                  ContentValues v=new ContentValues(); v.put(MediaStore.Downloads.DISPLAY_NAME,name); v.put(MediaStore.Downloads.MIME_TYPE,mime); v.put(MediaStore.Downloads.RELATIVE_PATH,Environment.DIRECTORY_DOWNLOADS+"/FM1"); v.put(MediaStore.Downloads.IS_PENDING,1);
+                  Uri u=getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,v); if(u==null) throw new IOException("Impossibile creare file Download.");
+                  try(OutputStream out=getContentResolver().openOutputStream(u)){ if(out==null) throw new IOException("Impossibile aprire output."); out.write(data); out.flush(); }
+                  v.clear(); v.put(MediaStore.Downloads.IS_PENDING,0); getContentResolver().update(u,v,null,null); return u;
+              }
+
+              private static class Bot implements AutoCloseable {
+                  final UsbDeviceConnection c; final UsbInterface intf; final UsbEndpoint epIn,epOut; int tag=1;
+                  Bot(UsbDeviceConnection c,UsbDevice d) throws IOException {
+                      this.c=c; UsbInterface found=null; UsbEndpoint in=null,out=null;
+                      for(int i=0;i<d.getInterfaceCount();i++){
+                          UsbInterface f=d.getInterface(i); UsbEndpoint ti=null,to=null;
+                          for(int e=0;e<f.getEndpointCount();e++){ UsbEndpoint ep=f.getEndpoint(e); if(ep.getType()!=UsbConstants.USB_ENDPOINT_XFER_BULK)continue; if(ep.getDirection()==UsbConstants.USB_DIR_IN)ti=ep; else to=ep; }
+                          if(ti!=null&&to!=null){found=f;in=ti;out=to;break;}
+                      }
+                      if(found==null) throw new IOException("Endpoint bulk UBOOT non trovati.");
+                      intf=found; epIn=in; epOut=out; if(!c.claimInterface(intf,true)) throw new IOException("Impossibile claim interfaccia UBOOT.");
+                  }
+                  byte[] xfer(byte[] cdb,byte[] dataOut,int nIn,int timeout) throws IOException {
+                      int t=tag++; int len=dataOut!=null?dataOut.length:nIn; int flags=nIn>0?0x80:0;
+                      ByteBuffer bb=ByteBuffer.allocate(31).order(ByteOrder.LITTLE_ENDIAN); bb.put((byte)'U').put((byte)'S').put((byte)'B').put((byte)'C'); bb.putInt(t); bb.putInt(len); bb.put((byte)flags).put((byte)0).put((byte)cdb.length); byte[] c16=new byte[16]; System.arraycopy(cdb,0,c16,0,Math.min(16,cdb.length)); bb.put(c16);
+                      writeAll(epOut,bb.array(),timeout);
+                      byte[] got=new byte[0]; if(dataOut!=null&&dataOut.length>0) writeAll(epOut,dataOut,timeout); else if(nIn>0) got=readExact(epIn,nIn,timeout);
+                      byte[] csw=readExact(epIn,13,timeout); ByteBuffer s=ByteBuffer.wrap(csw).order(ByteOrder.LITTLE_ENDIAN); byte a=s.get(),b=s.get(),cc=s.get(),d=s.get(); int rt=s.getInt(); s.getInt(); int st=s.get()&255;
+                      if(a!='U'||b!='S'||cc!='B'||d!='S'||rt!=t||st!=0) throw new IOException("CSW non valido status="+st);
+                      return got;
+                  }
+                  byte[] cmd(int cmd,byte[] args) throws IOException { byte[] r=xfer(cdb(cmd,args),null,16,5000); int echo=((r[0]&255)<<8)|(r[1]&255); if(echo!=cmd) throw new IOException(String.format(Locale.US,"CMD %04X risposta %04X",cmd,echo)); byte[] p=new byte[14]; System.arraycopy(r,2,p,0,14); return p; }
+                  void writeBlock(int cmd,int addr,byte[] data) throws IOException { byte[] a=new byte[9]; put32be(a,0,addr); a[4]=(byte)(data.length>>8); a[5]=(byte)data.length; a[6]=0; int crc=crc16(data,0); a[7]=(byte)crc; a[8]=(byte)(crc>>8); xfer(cdb(cmd,a),data,0,5000); }
+                  byte[] readFlash(int addr,int len) throws IOException { byte[] a=new byte[6]; put32be(a,0,addr); a[4]=(byte)(len>>8); a[5]=(byte)len; return xfer(cdb(CMD_READ_FLASH,a),null,len,5000); }
+                  void resetRecovery(){ try{c.controlTransfer(0x21,0xFF,0,intf.getId(),null,0,1000);}catch(Exception ignored){} try{c.clearHalt(epIn);}catch(Exception ignored){} try{c.clearHalt(epOut);}catch(Exception ignored){} }
+                  void writeAll(UsbEndpoint ep,byte[] data,int timeout) throws IOException { int off=0; while(off<data.length){ byte[] part=data; int count=data.length-off; if(off!=0){part=new byte[count];System.arraycopy(data,off,part,0,count);} int n=c.bulkTransfer(ep,part,count,timeout); if(n<=0) throw new IOException("USB write timeout"); off+=n; } }
+                  byte[] readExact(UsbEndpoint ep,int n,int timeout) throws IOException { byte[] out=new byte[n]; int off=0; while(off<n){ byte[] tmp=new byte[n-off]; int r=c.bulkTransfer(ep,tmp,tmp.length,timeout); if(r<=0) throw new IOException("USB read timeout "+off+"/"+n); System.arraycopy(tmp,0,out,off,r); off+=r; } return out; }
+                  @Override public void close(){ try{c.releaseInterface(intf);}catch(Exception ignored){} }
+              }
+
+              private static byte[] cdb(int cmd,byte[] args){ byte[] c=new byte[16]; java.util.Arrays.fill(c,(byte)0xFF); c[0]=(byte)(cmd>>8); c[1]=(byte)cmd; if(args!=null)System.arraycopy(args,0,c,2,Math.min(args.length,14)); return c; }
+              private static byte[] u32be(int v){ return new byte[]{(byte)(v>>24),(byte)(v>>16),(byte)(v>>8),(byte)v}; }
+              private static byte[] beArgs(int addr,int arg){ return new byte[]{(byte)(addr>>24),(byte)(addr>>16),(byte)(addr>>8),(byte)addr,(byte)(arg>>8),(byte)arg}; }
+              private static void put32be(byte[] b,int o,int v){b[o]=(byte)(v>>24);b[o+1]=(byte)(v>>16);b[o+2]=(byte)(v>>8);b[o+3]=(byte)v;}
+              private static int crc16(byte[] data,int crc){ for(byte xb:data){crc^=(xb&255)<<8;for(int i=0;i<8;i++)crc=((crc&0x8000)!=0)?((crc<<1)^0x1021)&0xFFFF:(crc<<1)&0xFFFF;} return crc; }
+              private static void crcCipher(byte[] buf){ int crc=crc16(new byte[]{(byte)0xFF,(byte)0xFF},0xFFFF); for(int i=0;i<buf.length;i++){crc=crc16(new byte[]{MAGIC[i%MAGIC.length]},crc);buf[i]^=(byte)(crc&255);} }
+              private static String sha256(byte[] d) throws Exception { MessageDigest md=MessageDigest.getInstance("SHA-256"); byte[] h=md.digest(d); StringBuilder s=new StringBuilder(); for(byte b:h)s.append(String.format(Locale.US,"%02x",b&255)); return s.toString(); }
+              private static String ascii(byte[] b,int o,int n){ return new String(b,o,n,java.nio.charset.StandardCharsets.US_ASCII).trim(); }
+              private static boolean regionEquals(byte[] base,int off,byte[] x){ if(off+x.length>base.length)return false; for(int i=0;i<x.length;i++)if(base[off+i]!=x[i])return false; return true; }
+              private static byte[] hex(String s){ s=s.replaceAll("\\s+",""); byte[] b=new byte[s.length()/2]; for(int i=0;i<b.length;i++)b[i]=(byte)Integer.parseInt(s.substring(i*2,i*2+2),16); return b; }
+              private static String toHex(byte[] b){ StringBuilder s=new StringBuilder(); for(byte x:b){if(s.length()>0)s.append(' ');s.append(String.format(Locale.US,"%02X",x&255));} return s.toString(); }
+
+              private void setBusy(boolean b){ busy=b; main.post(()->{scanButton.setEnabled(!b);enterButton.setEnabled(!b);backupButton.setEnabled(!b);}); }
+              private void setStatus(String s,int c){ status.setText(s); status.setTextColor(c); }
+              private void setStatusUi(String s,int c){ main.post(()->setStatus(s,c)); }
+              private void setProgress(int v){ main.post(()->progress.setProgress(Math.max(0,Math.min(1000,v)))); }
+              private void log(String s){ main.post(()->{ logView.append((logView.length()>0?"\n":"")+new SimpleDateFormat("HH:mm:ss",Locale.US).format(new Date())+"  "+s); }); }
+          }
+          EOF
+
+          cd "$ROOT"
+          gradle --no-daemon :app:assembleDebug
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/FM1-Backup-ReadOnly-v0.1-debug.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FM1-Backup-ReadOnly-v0.1
+          path: out/FM1-Backup-ReadOnly-v0.1-debug.apk
+          if-no-files-found: error
+          retention-days: 7
