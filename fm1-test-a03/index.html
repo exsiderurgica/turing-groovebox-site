@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>TTG FM-1 A0.3 Installer</title>
+<style>
+:root{color-scheme:dark;--bg:#070707;--card:#141414;--line:#303030;--fg:#f4f4f4;--dim:#a4a4a4;--ok:#4be37a;--warn:#ffb52b;--bad:#ff5252;--accent:#f2d400}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Roboto,sans-serif}.wrap{max-width:600px;margin:auto;padding:22px 16px 48px}h1{font-size:28px;line-height:1.05;margin:8px 0 6px;letter-spacing:-.03em}.sub{color:var(--dim);margin:0 0 20px}.badge{display:inline-block;padding:5px 9px;border:1px solid #5a5100;border-radius:999px;color:var(--accent);font-size:12px;font-weight:700}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}.step{font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:8px}.big{font-size:19px;font-weight:750;margin-bottom:7px}.small{color:var(--dim);font-size:13px}.mono{font:12px/1.35 ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all}input[type=file]{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#0c0c0c;color:var(--fg)}label.check{display:flex;gap:10px;align-items:flex-start;margin-top:12px;color:#ddd}.status{padding:12px;border-radius:10px;background:#0c0c0c;border:1px solid var(--line);min-height:48px}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}button{width:100%;padding:16px;border:0;border-radius:12px;background:var(--accent);color:#090909;font-size:16px;font-weight:900;letter-spacing:.04em}button:disabled{background:#2b2b2b;color:#777}.bar{height:8px;background:#222;border-radius:99px;overflow:hidden;margin-top:12px}.bar>i{display:block;width:0;height:100%;background:var(--accent);transition:width .2s}.log{white-space:pre-wrap;max-height:180px;overflow:auto;font:11px/1.4 ui-monospace,monospace;color:#a7a7a7;background:#050505;border:1px solid #222;border-radius:10px;padding:10px;margin-top:10px}.danger{border-color:#553616}.danger b{color:var(--warn)}a{color:#ddd}hr{border:0;border-top:1px solid var(--line);margin:24px 0}
+</style>
+</head>
+<body><main class="wrap">
+<span class="badge">HARDWARE TEST • A0.3</span>
+<h1>TTG → FM-1</h1>
+<p class="sub">A0.3 corregge il problema visto nel test reale: i knob mantengono la regolazione fine quando li muovi piano, ma una rotazione continua non è più limitata dal range del parametro.</p>
+
+<section class="card">
+<div class="step">1 · Firmware</div>
+<div class="big">Seleziona TTG-FM1-A0.3 dal Nothing</div>
+<input id="file" type="file" accept=".fwsc,application/octet-stream">
+<p id="fileInfo" class="small">Atteso: <b>TTG-FM1-A0.3-HW-BRINGUP.fwsc</b>, 610035 byte, identità FM-1_972.</p>
+<div id="hash" class="mono small"></div>
+</section>
+
+<section class="card">
+<div class="step">2 · Collega</div>
+<div class="big">Nothing ↔ FM-1 via USB-C dati</div>
+<p class="small">Apri questa pagina in Chrome, collega direttamente l'FM-1 acceso e consenti l'accesso MIDI/SysEx quando Android lo chiede.</p>
+<label class="check"><input id="ready" type="checkbox"> <span>FM-1 acceso, cavo dati collegato. Non scollegherò USB durante la scrittura.</span></label>
+</section>
+
+<section class="card">
+<div class="step">3 · Installa</div>
+<button id="go" disabled>INSTALLA TTG A0.3</button>
+<div class="bar"><i id="bar"></i></div>
+<p id="status" class="status small">Seleziona prima il firmware.</p>
+<details><summary class="small">Log tecnico</summary><div id="log" class="log"></div></details>
+</section>
+
+<section class="card danger">
+<div class="step">Recovery</div>
+<p class="small"><b>Se una scrittura si interrompe:</b> lascia il file selezionato, ricollega USB e ripremi INSTALLA. Se l'FM-1 è già nel loader TTG/Felucca, la pagina tenta prima di riprendere la scrittura. <b>OCT−</b> tenuto durante l'accensione resta la USB rescue.</p>
+</section>
+
+<hr>
+<p class="small">Questa pagina accetta <b>solo</b> TTG A0.3 con SHA-256 previsto. Protocollo WebMIDI basato sul codice GPL-3.0 di SLOOP/Felucca. <a href="https://github.com/isod89/sloop-fm1" target="_blank" rel="noopener">Sorgente upstream</a>.</p>
+</main>
+
+<script type="module">
+import { productOf, logicalImage, sha256hex } from './fm1pkg.js';
+import { Updater } from './fm1ota.js';
+
+const EXPECTED_NAME = 'TTG-FM1-A0.3-HW-BRINGUP.fwsc';
+const EXPECTED_SIZE = 610035;
+const EXPECTED_PRODUCT = 'FM-1_972';
+const EXPECTED_SHA = '8d19191b8497cc9eda493620d1906d17e935468108bc5a7b3d6c0d9bda77d59a';
+const $ = (id) => document.getElementById(id);
+let bytes = null, valid = false, busy = false;
+
+function log(s){ const t = new Date().toLocaleTimeString(); $('log').textContent += `[${t}] ${s}\n`; $('log').scrollTop = $('log').scrollHeight; }
+function setStatus(text, cls=''){ $('status').className = 'status small ' + cls; $('status').textContent = text; }
+function enable(){ $('go').disabled = busy || !valid || !$('ready').checked; }
+function pct(v){ $('bar').style.width = Math.max(0, Math.min(100, v)) + '%'; }
+function step(stage, detail){
+  const map = {start:'FM-1 trovato. Preparazione aggiornamento…',verify:'Verifica / trasferimento loader…',loader:'Loader avviato. Attendo la porta OTA…',write:'Scrittura firmware in corso — NON scollegare USB.',reboot:'Scrittura completata. Riavvio FM-1…',done:'Installazione completata.'};
+  setStatus(map[stage] || stage, stage==='done' ? 'ok' : 'warn');
+  if(stage==='start') pct(8); if(stage==='verify') pct(Math.min(32,8+Number(detail||0)/6)); if(stage==='loader') pct(35); if(stage==='write') pct(Math.min(88,38+Number(detail||0)/8)); if(stage==='reboot') pct(94); if(stage==='done') pct(100);
+  log(`${stage}${detail!==undefined ? ': '+detail : ''}`);
+}
+
+$('file').addEventListener('change', async () => {
+  valid=false; bytes=null; pct(0); enable();
+  const f=$('file').files?.[0]; if(!f){setStatus('Nessun file selezionato.');return;}
+  try{
+    setStatus('Controllo firmware…','warn'); bytes=new Uint8Array(await f.arrayBuffer());
+    const product=productOf(bytes), hash=await sha256hex(bytes);
+    $('hash').textContent=`nome: ${f.name}\nsize: ${bytes.length}\nproduct: ${product}\nsha256: ${hash}`;
+    const errors=[]; if(bytes.length!==EXPECTED_SIZE)errors.push('dimensione errata'); if(product!==EXPECTED_PRODUCT)errors.push(`identità ${product} invece di ${EXPECTED_PRODUCT}`); if(hash!==EXPECTED_SHA)errors.push('SHA-256 non corrisponde'); if(errors.length)throw new Error(errors.join(', '));
+    valid=true; $('fileInfo').innerHTML=`<span class="ok"><b>Firmware verificato.</b></span> ${EXPECTED_NAME}`; setStatus('Firmware A0.3 verificato. Collega l’FM-1 e abilita la casella.','ok'); log('Firmware verified: '+EXPECTED_PRODUCT+' '+EXPECTED_SHA);
+  }catch(e){bytes=null;valid=false;$('fileInfo').innerHTML=`<span class="bad"><b>FILE NON ACCETTATO:</b> ${e.message}</span>`;setStatus('Seleziona esattamente il file A0.3 fornito in chat.','bad');log('File rejected: '+e.message);}
+  enable();
+});
+$('ready').addEventListener('change',enable);
+
+$('go').addEventListener('click',async()=>{
+  if(!valid||!bytes||busy)return; busy=true;enable();$('go').textContent='INSTALLAZIONE IN CORSO…';pct(2);
+  try{
+    if(!navigator.requestMIDIAccess)throw new Error('WebMIDI non disponibile: apri questa pagina in Chrome o Edge, non nel browser interno di un’app.');
+    setStatus('Richiedo accesso MIDI/SysEx a Chrome…','warn');log('Requesting WebMIDI sysex permission');
+    const access=await navigator.requestMIDIAccess({sysex:true}); const updater=new Updater(access,(m)=>log(String(m))); const image=logicalImage(bytes);
+    setStatus('Cerco FM-1 / eventuale loader OTA…','warn');log('Looking for resumable TTG/Felucca OTA loader');
+    const resumed=await updater.resume(image,step);
+    if(resumed){pct(94);setStatus('Scrittura ripresa e completata. Attendo il ritorno dell’FM-1…','warn');await new Promise(r=>setTimeout(r,3000));const back=await updater.waitFor((id)=>!/^ota-/i.test(id.model),40000);if(back){const id=back.id.text;back.link.close();if(id!==EXPECTED_PRODUCT)throw new Error(`Il dispositivo è tornato come ${id}, atteso ${EXPECTED_PRODUCT}`);step('done',id);}else setStatus('Scrittura completata ma l’FM-1 non è tornato visibile. Spegnilo/riaccendilo e verifica il boot.','warn');}
+    else await updater.install(image,EXPECTED_PRODUCT,step);
+  }catch(e){pct(0);const extra=e?.detail?` (${e.detail})`:'';setStatus(`ERRORE: ${e?.message||e}${extra}`,'bad');log(`ERROR ${e?.code||''}: ${e?.message||e}${extra}`);}
+  finally{busy=false;enable();$('go').textContent='INSTALLA TTG A0.3';}
+});
+
+if(!window.isSecureContext)setStatus('Questa pagina deve essere aperta via HTTPS.','bad');
+</script>
+</body></html>
