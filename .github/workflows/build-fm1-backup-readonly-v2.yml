@@ -1,0 +1,74 @@
+name: Build FM-1 Backup Read-Only v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fm1-backup-readonly-build]
+    paths:
+      - .github/workflows/build-fm1-backup-readonly-v2.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;35.0.0" "platform-tools"
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Run project generator from v1 workflow
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/build-fm1-backup-readonly.yml')
+          lines=p.read_text().splitlines()
+          start=None
+          for i,l in enumerate(lines):
+              if l.strip()=='- name: Generate backup project':
+                  for j in range(i+1,len(lines)):
+                      if lines[j].strip()=='run: |':
+                          start=j+1
+                          break
+                  break
+          if start is None:
+              raise SystemExit('generator block not found')
+          out=[]
+          for l in lines[start:]:
+              if l.startswith('      - name: Upload APK'):
+                  break
+              out.append(l[10:] if l.startswith('          ') else l)
+          Path('/tmp/fm1gen.sh').write_text('\n'.join(out)+'\n')
+          PY
+          bash /tmp/fm1gen.sh
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FM1-Backup-ReadOnly-v0.1
+          path: out/FM1-Backup-ReadOnly-v0.1-debug.apk
+          if-no-files-found: error
+          retention-days: 7
