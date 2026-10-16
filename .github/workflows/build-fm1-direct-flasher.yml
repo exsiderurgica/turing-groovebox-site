@@ -6,6 +6,7 @@ on:
     branches: [fm1-backup-readonly-build]
     paths:
       - .github/workflows/build-fm1-direct-flasher.yml
+      - tools/fm1_android/build_direct.py
 
 permissions:
   contents: read
@@ -13,8 +14,43 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Validate branch source
-        run: echo direct-flasher-workflow-valid
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;35.0.0" "platform-tools"
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Generate guarded direct flasher project
+        run: python3 tools/fm1_android/build_direct.py
+      - name: Build APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/fm1backup"
+          gradle --no-daemon :app:assembleDebug
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/FM1-A2.1-Direct-Flasher-v0.1-debug.apk"
+          sha256sum "$GITHUB_WORKSPACE/out/FM1-A2.1-Direct-Flasher-v0.1-debug.apk"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FM1-A2.1-Direct-Flasher-v0.1
+          path: out/FM1-A2.1-Direct-Flasher-v0.1-debug.apk
+          if-no-files-found: error
+          retention-days: 7
