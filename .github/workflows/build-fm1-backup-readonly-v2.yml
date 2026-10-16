@@ -62,20 +62,17 @@ jobs:
                   break
               out.append(l[10:] if l.startswith('          ') else l)
           script='\n'.join(out)+'\n'
-          # Android compile compatibility.
           script=script.replace('setProgress(', 'setBarProgress(')
           script=script.replace('progress.setBarProgress(', 'progress.setProgress(')
-          # Proper BOT recovery without the libusb-only clearHalt API.
           old_reset='void resetRecovery(){ try{c.controlTransfer(0x21,0xFF,0,intf.getId(),null,0,1000);}catch(Exception ignored){} try{c.clearHalt(epIn);}catch(Exception ignored){} try{c.clearHalt(epOut);}catch(Exception ignored){} }'
           new_reset='void resetRecovery(){ try{c.controlTransfer(0x21,0xFF,0,intf.getId(),null,0,1000);}catch(Exception ignored){} try{c.controlTransfer(0x02,0x01,0,epIn.getAddress(),null,0,1000);}catch(Exception ignored){} try{c.controlTransfer(0x02,0x01,0,epOut.getAddress(),null,0,1000);}catch(Exception ignored){} }'
           script=script.replace(old_reset,new_reset)
-          # On WL82 the RAM loader may take over USB before the ROM JUMP command's 16-byte reply
-          # reaches Android. Accept that specific transport timeout and immediately probe LoaderV2.
-          old_jump='bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG));\n                          SystemClock.sleep(300);\n                          bot.resetRecovery();'
-          new_jump='try { bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG)); log("JUMP ACK ricevuto"); } catch(IOException jumpErr) { log("JUMP senza risposta: "+jumpErr.getMessage()+"; verifico LoaderV2"); }\n                          SystemClock.sleep(700);\n                          bot.resetRecovery();\n                          SystemClock.sleep(150);'
-          if old_jump not in script:
-              raise SystemExit('JUMP patch target not found')
-          script=script.replace(old_jump,new_jump)
+          old='bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG));'
+          new='try { bot.cmd(CMD_JUMP,beArgs(LOADER_ADDR,LOADER_ARG)); log("JUMP ACK ricevuto"); } catch(IOException jumpErr) { log("JUMP senza risposta: "+jumpErr.getMessage()+"; verifico LoaderV2"); }'
+          if old not in script:
+              raise SystemExit('JUMP call not found')
+          script=script.replace(old,new,1)
+          script=script.replace('SystemClock.sleep(300);','SystemClock.sleep(700);',1)
           script=script.replace("versionName '0.1'", "versionName '0.2'")
           script=script.replace('FM1-Backup-ReadOnly-v0.1-debug.apk','FM1-Backup-ReadOnly-v0.2-debug.apk')
           Path('/tmp/fm1gen.sh').write_text(script)
