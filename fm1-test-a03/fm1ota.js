@@ -105,7 +105,8 @@ export class Updater {
     for (const input of this.access.inputs.values()) {
       if (input.state === "disconnected") continue;
       if (!FM1_PORT.test(input.name || "")) continue;
-      const output = outs.find((o) => o.name === input.name) || (outs.length === 1 ? outs[0] : null);
+      const output = outs.find((o) => o.state !== "disconnected" && o.name === input.name) ||
+        (outs.filter((o) => o.state !== "disconnected").length === 1 ? outs.find((o) => o.state !== "disconnected") : null);
       if (!output) continue;
       try { await input.open(); await output.open(); } catch (_) { continue; }
       const link = new Link(input, output);
@@ -115,9 +116,21 @@ export class Updater {
     }
     return null;
   }
+  async openFeluccaDirect() {
+    const ins = [...this.access.inputs.values()].filter((p) => p.state !== "disconnected" && /felucca/i.test(p.name || ""));
+    const outs = [...this.access.outputs.values()].filter((p) => p.state !== "disconnected");
+    if (ins.length !== 1) return null;
+    const input = ins[0];
+    const output = outs.find((o) => o.name === input.name) || outs.find((o) => /felucca/i.test(o.name || "")) || (outs.length === 1 ? outs[0] : null);
+    if (!output) return null;
+    try { await input.open(); await output.open(); } catch (_) { return null; }
+    return { link: new Link(input, output), id: null, name: input.name };
+  }
   seen() {
-    const names = [...this.access.inputs.values()].filter((p) => p.state !== "disconnected").map((p) => p.name || "?");
-    return names.length ? ` (MIDI: ${names.join(", ")})` : " (MIDI: none)";
+    const ins = [...this.access.inputs.values()].filter((p) => p.state !== "disconnected").map((p) => p.name || "?");
+    const outs = [...this.access.outputs.values()].filter((p) => p.state !== "disconnected").map((p) => p.name || "?");
+    if (!ins.length && !outs.length) return " (MIDI: none)";
+    return ` (MIDI IN: ${ins.join(", ") || "none"}; OUT: ${outs.join(", ") || "none"})`;
   }
   async waitFor(filter, ms) {
     const end = Date.now() + ms;
@@ -152,28 +165,36 @@ export class Updater {
       if (onProgress) onProgress(served, r.addr);
     }
   }
-  async install(image, product, onStep) {
+  async install(image, product, onStep, opts = {}) {
     const step = onStep || (() => {});
-    const dev = await this.find((id) => !IS_OTA(id));
+    let dev = await this.find((id) => !IS_OTA(id));
+    let verified = true;
+    if (!dev && opts.allowUnverifiedFelucca) {
+      dev = await this.openFeluccaDirect();
+      if (dev) {
+        verified = false;
+        this.log(`Identity handshake unavailable; using direct OTA bootstrap on ${dev.name}`);
+      }
+    }
     if (!dev) throw fail("notfound", "FM-1 not found (USB cable, and no other app using it?)", this.seen());
     const [model] = product.split("_");
-    if (dev.id.model !== model) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`); }
-    step("start", dev.id.text);
-    dev.link.send(UPGRADE);
-    await sleep(2000);
-    const s1 = await this.serve(dev.link, image, 0xE0000000, 8000, (n) => step("verify", n));
+    if (verified && dev.id.model !== model) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`); }
+    step("start", verified ? dev.id.text : `${dev.name} · direct OTA`);
+    if (!dev.link.send(UPGRADE)) { dev.link.close(); throw fail("send", "Could not send the FM-1 upgrade command", this.seen()); }
+    await sleep(300);
+    const s1 = await this.serve(dev.link, image, 0xE0000000, verified ? 8000 : 12000, (n) => step("verify", n));
     dev.link.close();
-    if (!s1.finished) throw fail(s1.lost ? "lost" : "stopped", `the device ${s1.lost ? "was disconnected" : "stopped"} after ${s1.served} requests: nothing was written`);
+    if (!s1.finished) throw fail(s1.lost ? "lost" : "stopped", `the device ${s1.lost ? "was disconnected" : "stopped"} after ${s1.served} requests: nothing was written`, this.seen());
     step("loader");
     await sleep(3000);
     const ota = await this.waitFor(IS_OTA, 30000);
-    if (!ota) throw fail("noloader", "the update loader did not appear. Replug the USB cable and press Install again: the device stays in update mode until it is finished.");
+    if (!ota) throw fail("noloader", "the update loader did not appear. Replug the USB cable and press Install again: the device stays in update mode until it is finished.", this.seen());
     const s2 = await this.write(ota, image, step);
     if (!s2.finished) throw fail(s2.lost ? "lost" : "stopped", `the loader ${s2.lost ? "was disconnected" : "stopped"} after ${s2.served} requests. Replug and press Install again to resume.`);
     step("reboot");
     await sleep(3000);
     const back = await this.waitFor((id) => !IS_OTA(id), 40000);
-    if (!back) throw fail("noreturn", "the device did not come back: power-cycle it");
+    if (!back) throw fail("noreturn", "the device did not come back: power-cycle it", this.seen());
     back.link.close();
     if (back.id.text !== product) throw fail("mismatch", `installed, but the device reports ${back.id.text}`, back.id.text);
     step("done", back.id.text);
@@ -199,7 +220,7 @@ export class Updater {
       step("reboot");
       await sleep(3000);
       const back = await this.waitFor((id) => !IS_OTA(id), 40000);
-      if (!back) throw fail("noreturn", "the FM-1 did not come back after the write: power-cycle it");
+      if (!back) throw fail("noreturn", "the FM-1 did not come back after the write: power-cycle it", this.seen());
       back.link.close();
       if (back.id.text !== opts.product) throw fail("mismatch", `written, but the FM-1 reports ${back.id.text}`, back.id.text);
       step("done", back.id.text);
