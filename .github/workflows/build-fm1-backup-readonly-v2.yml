@@ -39,7 +39,7 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Run project generator from v1 workflow
+      - name: Run patched project generator from v1 workflow
         shell: bash
         run: |
           python3 - <<'PY'
@@ -61,7 +61,11 @@ jobs:
               if l.startswith('      - name: Upload APK'):
                   break
               out.append(l[10:] if l.startswith('          ') else l)
-          Path('/tmp/fm1gen.sh').write_text('\n'.join(out)+'\n')
+          script='\n'.join(out)+'\n'
+          script=script.replace('setProgress(', 'setBarProgress(')
+          script=script.replace(' try{c.clearHalt(epIn);}catch(Exception ignored){}', '')
+          script=script.replace(' try{c.clearHalt(epOut);}catch(Exception ignored){}', '')
+          Path('/tmp/fm1gen.sh').write_text(script)
           PY
           bash /tmp/fm1gen.sh
 
