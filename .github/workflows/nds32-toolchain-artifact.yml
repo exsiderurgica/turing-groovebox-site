@@ -1,9 +1,6 @@
 name: Build NDS32 analysis tool
 
 on:
-  push:
-    paths:
-      - '.github/workflows/nds32-toolchain-artifact.yml'
   workflow_dispatch:
 
 jobs:
