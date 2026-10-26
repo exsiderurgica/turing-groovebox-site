@@ -18,8 +18,8 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
 <h1>EXS MT4<br>Browser Flasher</h1>
 <p class="muted">Aggiornamento FM-1 da Chrome sul Nothing, tramite USB-MIDI SysEx. Modalità di diagnosi disponibile senza scrivere nulla.</p>
 <div class="card warning">
-  <strong>Importante: la P3/P4 compilata con FELUCCA_OTA=0 non può avviare questo aggiornamento.</strong>
-  <p class="note">Per il primo passaggio a una versione OTA occorre verificare la necessità del ThinkPad/Mac in UBOOT. Il solo collegamento USB non abilita OTA. Nessuna scrittura partirà senza firmware rilasciato, SHA-256 corretto e consenso esplicito.</p>
+  <strong>P5 GOLD include OTA=1: verifica qui la risposta OTA della macchina prima del prossimo flash.</strong>
+  <p class="note">Con P3/P4 OTA era disabilitato, ma P5 GOLD è stata compilata con OTA=1. Se il test mostra solo USB-MIDI e nessuna identità OTA, non procedere: il servizio SysEx va verificato. Il prossimo firmware sarà installabile da Chrome solo dopo questo test e la pubblicazione di una release verificata.</p>
 </div>
 <div class="steps">
 <section class="card">
@@ -52,4 +52,4 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
  <p class="note">Se Chrome non vede la porta dopo il riavvio, ricollega il cavo e ripeti il riconoscimento. Se l'FM-1 finisce nella modalità WL82/JieLi UBOOT, <strong>questa pagina NON può scrivere con quel protocollo</strong>. Mantieni a disposizione il kit di recupero via ThinkPad/Mac.</p>
 </div>
 <p class="footer">WebMIDI/SysEx su HTTPS, locale al browser. Basato sul codice del precedente installer TTG A0.3 / Felucca / SLOOP, GPL-3.0-only. Nessun firmware caricato sul server durante la selezione file. <a href="https://github.com/exsiderurgica/turing-groovebox-site/tree/main/mt4-flasher">Sorgenti</a>.</p>
-</main><script type="module" src="./app.mjs?v=2"></script></body></html>
+</main><script type="module" src="./app.mjs?v=3"></script></body></html>
