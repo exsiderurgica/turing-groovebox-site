@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "flash_enabled": false,
+  "ota_enabled": false,
+  "release": null,
+  "product": null,
+  "size": null,
+  "sha256": null,
+  "firmware_url": null,
+  "notes": "P5 not yet built. Chrome Android USB-MIDI diagnostic only. Publish only after OTA enabled and cross-build/hardware review."
+}
