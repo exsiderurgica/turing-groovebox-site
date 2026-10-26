@@ -37,7 +37,7 @@ async function loadRelease(){
   if(!validRelease(data)){
    release=null;
    status('releaseStatus','Nessuna release MT4 OTA abilitata. Diagnostica USB disponibile; scrittura bloccata.','warn');
-   $('manifestData').textContent='P5 in sviluppo · FELUCCA_OTA=1 da compilare e testare · SHA-256 non pubblicato.';
+   $('manifestData').textContent='P5 GOLD compilata con OTA=1; handshake da verificare su FM-1 reale · Nessuna release successiva ancora pubblicata.';
   }else{
    release=data;
    status('releaseStatus',data.release+' disponibile. È obbligatorio verificare il firmware SHA-256 prima di scrivere.','ok');
@@ -112,10 +112,10 @@ $('probeBtn').addEventListener('click',async()=>{
   const found=await u.find();
   if(!found){
    // USB-MIDI enumeration is successful, but no OTA identity reply exists.
-   // This is EXPECTED with current EXS P3/P4 (compiled FELUCCA_OTA=0).
+   // P3/P4 OTA=0 cannot answer. P5 GOLD built OTA=1; if no reply, diagnose physical SysEx or firmware path.
    // Do not mistake "port visible" for OTA readiness. Flash remains gated.
    probeIdentity=null;
-   status('probeStatus','USB-MIDI RICONOSCIUTO ✓ · Porta Felucca disponibile sul Nothing. Identità OTA: nessuna risposta (attesa con P3/P4, compilata con FELUCCA_OTA=0). Modalità diagnosi completata, aggiornamento via browser non ancora abilitato. Nessuna scrittura eseguita. '+seen,'warn');
+   status('probeStatus','USB-MIDI RICONOSCIUTO ✓ · Porta Felucca disponibile. Handshake OTA: NESSUNA RISPOSTA. Se hai installato la P5 GOLD con OTA=1, non considerare ancora pronto il flash da Chrome: va diagnosticata la mancata risposta SysEx. Nessuna scrittura eseguita. '+seen,'warn');
    log('USB-MIDI enumeration PASS; OTA handshake unavailable; NO FLASH. '+seen);
    return;
   }
@@ -150,7 +150,7 @@ $('flashBtn').addEventListener('click',async()=>{
   if(productOf(bytes)!==release.product || await sha256hex(bytes)!==release.sha256)throw new Error('Controllo finale del pacchetto non riuscito.');
   const access=await getMidi(),u=new Updater(access,log),image=logicalImage(bytes);
   const current=await u.find();
-  if(!current)throw new Error('Il FM-1 non risponde all’identità OTA. Nessun comando upgrade inviato. La versione P3/P4 con OTA disabilitato necessita prima del passaggio UBOOT.');
+  if(!current)throw new Error('Il FM-1 non risponde all’identità OTA. Nessun comando di scrittura inviato. Con P5 GOLD compilata OTA=1 occorre diagnosticare la risposta SysEx prima di tentare il flash.');
   if(current.id.text!==probeIdentity){current.link.close();throw new Error('Identità FM-1 cambiata dopo la diagnosi. Riconnetti e ripeti il controllo.')}
   const booting=isOta(current.id);const safeBoot=booting&&OUR_LOADER(current.id);
   current.link.close();
