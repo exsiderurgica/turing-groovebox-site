@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "flash_enabled": false,
-  "ota_enabled": false,
-  "release": null,
-  "product": null,
-  "size": null,
-  "sha256": null,
+  "flash_enabled": true,
+  "ota_enabled": true,
+  "release": "MT4 v0.30 P5.1",
+  "product": "FM-1_986",
+  "size": 609912,
+  "sha256": "9cba756d32b8a679d867ac643519a4a5a344553a5aa81f0d6d4f06ba2bbc502e",
   "firmware_url": null,
-  "notes": "P5 not yet built. Chrome Android USB-MIDI diagnostic only. Publish only after OTA enabled and cross-build/hardware review."
+  "notes": "TEST HARDWARE SPERIMENTALE. USB Audio solo 44.1 kHz, fix REGEN/CLEAR step, batteria allineata al BPM. FM1 P5 GOLD OTA handshake verificato ma SCRITTURA/loader Chrome non ancora verificata: backup e M-Flasher Mac pronti; file .fwsc fornito a parte."
 }
