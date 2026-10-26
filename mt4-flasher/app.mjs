@@ -22,7 +22,7 @@ function updateButtons(){
 }
 function validRelease(r){
  if(!r||r.schema!==1||r.flash_enabled!==true||r.ota_enabled!==true)return false;
- if(typeof r.release!=='string'||!/^MT4 v0\.[0-9]+ P[0-9]+$/.test(r.release))return false;
+ if(typeof r.release!=='string'||!/^MT4 v0\.[0-9]+ P[0-9]+(?:\.[0-9]+)?$/.test(r.release))return false;
  if(typeof r.product!=='string'||!/^FM-1_[0-9]{3}$/.test(r.product))return false;
  if(!Number.isSafeInteger(r.size)||r.size<300000||r.size>1200000)return false;
  if(typeof r.sha256!=='string'||!/^[0-9a-f]{64}$/.test(r.sha256))return false;
