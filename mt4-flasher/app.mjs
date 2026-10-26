@@ -110,7 +110,15 @@ $('probeBtn').addEventListener('click',async()=>{
   status('probeStatus','Porta USB-MIDI riconosciuta: interrogo l’identità (nessun flash)…','warn');
   const u=new Updater(access,log);
   const found=await u.find();
-  if(!found)throw new Error('Porta FM-1 visibile, ma nessuna risposta OTA all’handshake. P3/P4 FELUCCA_OTA=0 è una causa possibile. Nessuna scrittura eseguita. '+seen);
+  if(!found){
+   // USB-MIDI enumeration is successful, but no OTA identity reply exists.
+   // This is EXPECTED with current EXS P3/P4 (compiled FELUCCA_OTA=0).
+   // Do not mistake "port visible" for OTA readiness. Flash remains gated.
+   probeIdentity=null;
+   status('probeStatus','USB-MIDI RICONOSCIUTO ✓ · Porta Felucca disponibile sul Nothing. Identità OTA: nessuna risposta (attesa con P3/P4, compilata con FELUCCA_OTA=0). Modalità diagnosi completata, aggiornamento via browser non ancora abilitato. Nessuna scrittura eseguita. '+seen,'warn');
+   log('USB-MIDI enumeration PASS; OTA handshake unavailable; NO FLASH. '+seen);
+   return;
+  }
   if(isOta(found.id)&&!OUR_LOADER(found.id)){
    const name=found.id.text;found.link.close();
    throw new Error('Loader estraneo '+name+': utilizzare il suo updater originale, non MT4.');
