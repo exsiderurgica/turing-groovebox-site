@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "flash_enabled": true,
+  "ota_enabled": true,
+  "release": "MT4 v0.30 P5.6",
+  "product": "FM-1_986",
+  "size": 609912,
+  "sha256": "5d7652f705f8e5269f00c90d0a1ac474ecd63a6f5831435d6e2a7bb4088a5314",
+  "firmware_url": "./EXS_MT4_v030_P56_AMBIENT_CLOUDS_GOLD_KNOBS_EXPERIMENTAL.fwsc",
+  "notes": "Experimental P5.6 from P5.2 GOLD; original knob/encoder handling RESTORED (no automatic speed-dependent acceleration), SEL x8 hold and Plaits model x1. 4-Macro AMBIENT ON/OFF fixes, independent DRONE and original Mutable Clouds reverb 16 kHz extended decay. Native AC791N compile and host regressions PASS; physical boot and CPU/audio performance NOT independently tested. P5.2 GOLD unchanged."
+}
