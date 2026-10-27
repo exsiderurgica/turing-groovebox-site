@@ -1,0 +1,46 @@
+name: MT4 Chrome universal flasher checks
+on:
+  push:
+    paths:
+      - 'mt4-flasher/**'
+      - 'fm1-test-a03/fm1pkg.js'
+      - 'fm1-test-a03/fm1ota.js'
+      - '.github/workflows/mt4-universal-flasher-check.yml'
+  pull_request:
+    paths:
+      - 'mt4-flasher/**'
+      - 'fm1-test-a03/fm1pkg.js'
+      - 'fm1-test-a03/fm1ota.js'
+      - '.github/workflows/mt4-universal-flasher-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  universal-flasher:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check mt4-flasher/app.mjs
+          node --check mt4-flasher/fwsc-check.mjs
+          node --check mt4-flasher/fwsc-check.test.mjs
+      - name: Firmware-independent local package checks
+        run: node --experimental-default-type=module --test mt4-flasher/fwsc-check.test.mjs
+      - name: Assert generic Chrome workflow stays generic
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          app=Path('mt4-flasher/app.mjs').read_text()
+          html=Path('mt4-flasher/index.html').read_text()
+          assert 'release.json' not in app and 'loadRelease' not in app
+          assert '9cba756d32b8a679' not in app
+          assert "accept=\".fwsc" in html
+          assert 'allowUnverifiedFelucca:false' in app
+          assert 'OUR_LOADER' in app
+          assert 'compatibleDevice' in app
+          print('PASS generic .fwsc MT4 Chrome selector, identity gate and backup warnings')
+          PY
