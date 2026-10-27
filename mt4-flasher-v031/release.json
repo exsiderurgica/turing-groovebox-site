@@ -5,7 +5,7 @@
   "release": "MT4 v0.31 P5.1",
   "product": "FM-1_986",
   "size": 609912,
-  "sha256": "5866f65e688022df990536b448bd0e366f1d81bf9897b853ad62855b455dc5f1",
+  "sha256": "55b3f97af0630b6fc42b3cc8530f5f6f5aff3e2665420e49c7b443c7be4b3c4e",
   "firmware_url": null,
-  "notes": "v0.31 experimental: authentic TTG Beta6 909 samples K3+K4, unchanged 4 Macro Plaits/FDN/Tape/USB44. Native JieLi compile and host tests passed. Physical FM-1 startup/CPU not yet tested. Manually select local .fwsc; OTA handshake required."
+  "notes": "Build JieLi sperimentale 2026-10-27: quattro sample Kick/Tom/Hat/Ride indipendenti; HOME sample Pitch/Decay/Volume/Pan/FX sends, ENV filtro LP/HP Cutoff/Resonance/Drive/Bypass/Env/Mix; LFO e Turing dedicati per ognuno, Macro e FX preservati. Build+host test PASS, avvio FM1 hardware non verificato; la pagina richiede SHA esatto, conferme e risposta USB-MIDI OTA."
 }
