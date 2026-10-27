@@ -5,7 +5,7 @@
   "release": "MT4 v0.31 P5.1",
   "product": "FM-1_986",
   "size": 609912,
-  "sha256": "55b3f97af0630b6fc42b3cc8530f5f6f5aff3e2665420e49c7b443c7be4b3c4e",
+  "sha256": "de83df04c8a16176924bbac4de34fc02bdf6ea3ce281a74e806e3fcc1c229a87",
   "firmware_url": null,
-  "notes": "Build JieLi sperimentale 2026-10-27: quattro sample Kick/Tom/Hat/Ride indipendenti; HOME sample Pitch/Decay/Volume/Pan/FX sends, ENV filtro LP/HP Cutoff/Resonance/Drive/Bypass/Env/Mix; LFO e Turing dedicati per ognuno, Macro e FX preservati. Build+host test PASS, avvio FM1 hardware non verificato; la pagina richiede SHA esatto, conferme e risposta USB-MIDI OTA."
+  "notes": "EXS MT4 v0.31 P6 JieLi completo: HOME selezione Kick/Tom/Hat/Ride e parametri sample, ENV filtri dedicati LP/HP+Drive+Cutoff+Resonance+Bypass, LFO+Turing separate per 4 campioni con 10 target, reset transport step1. Macro Plaits/FX originali conservati. Test host e cross build PASS, avvio su FM1 fisico non verificato. Richiesti SHA-256, handshake OTA e recupero UBOOT."
 }
