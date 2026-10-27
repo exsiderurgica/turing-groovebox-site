@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // EXS MT4 universal Chrome / Android flasher. The user selects a trusted .fwsc.
-// NO pinned version, release.json dependency or hardcoded SHA-256.
+// NO pinned version, external release manifest dependency or hardcoded SHA-256.
 // OTA remains fail-closed on device identity / model / foreign loader mismatch.
 // Uses TTG A0.3 transport, derived from Felucca / SLOOP (GPL-3.0-only).
 import {logicalImage,sha256hex} from '../fm1-test-a03/fm1pkg.js';
