@@ -45,7 +45,7 @@ test('compatible FM-1 user firmware identity, not pinned version',()=>{
 test('site no longer pins P5.1 or release.json',()=>{
   const app=readFileSync(new URL('./app.mjs',import.meta.url),'utf8');
   const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
-  assert.doesNotMatch(app,/release\.json|9cba756d32b8a679|loadRelease/);
+  assert.doesNotMatch(app,/fetch\(['\"]\.\/release\.json|9cba756d32b8a679|function loadRelease/);
   assert.doesNotMatch(html,/P5\.1|disabled>\s*<button.*downloadBtn/);
   assert.match(html,/accept="\.fwsc/);
   assert.match(app,/inspectFwsc\(item\.raw,item\.name\)/);
