@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
 <meta name="robots" content="noindex,nofollow">
-<title>EXS MT4 v0.31 • Flasher sperimentale</title>
+<title>EXS MT4 v0.31 P9 • Flasher Chrome USB-C</title>
 <style>
 :root{color-scheme:dark;--bg:#080808;--panel:#151515;--fg:#f7f7f7;--muted:#a5a5a5;--line:#343434;--yellow:#f1d000;--red:#f37a76;--green:#80d39b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Roboto,sans-serif}
@@ -15,11 +15,11 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
 </head>
 <body><main>
 <p class="eyebrow">EXSIDERURGICA INSTRUMENTS · USB-C / ANDROID</p>
-<h1>EXS MT4 v0.31<br>Browser Flasher</h1>
+<h1>EXS MT4 v0.31 P9<br>Browser Flasher</h1>
 <p class="muted">Aggiornamento FM-1 da Chrome sul Nothing, tramite USB-MIDI SysEx. Modalità di diagnosi disponibile senza scrivere nulla.</p>
 <div class="card warning">
-  <strong>MT4 v0.31 K3/K4 è sperimentale: non ancora verificato sull'FM-1 fisico.</strong>
-  <p class="note">Questa pagina accetta soltanto il firmware EXS MT4 v0.31 K3/K4 con SHA-256 esatto. Compilazione JieLi e test host superati; avvio hardware non testato. Esegui prima la diagnosi USB-MIDI e verifica il recupero via ThinkPad/Mac. Se non compare l'identità OTA, non procedere.</p>
+  <strong>MT4 v0.31 P9: build nativa e test software superati, avvio FM-1 fisico ancora da verificare.</strong>
+  <p class="note">Questa pagina accetta soltanto EXS MT4 v0.31 P9 con SHA-256 esatto. Compilazione JieLi e test host superati; avvio hardware non testato. Esegui prima la diagnosi USB-MIDI e verifica il recupero via ThinkPad/Mac. Se non compare l'identità OTA, non procedere.</p>
 </div>
 <div class="steps">
 <section class="card">
@@ -32,7 +32,7 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
  <h2>Firmware MT4</h2>
  <p id="releaseStatus" class="status warn">Controllo disponibilità della release…</p>
  <div id="manifestData" class="mono muted"></div>
- <p class="note">Seleziona il file <code>EXS_MT4_v031_K3_K4_909_CHROME_NOTHING_EXPERIMENTAL.fwsc</code> scaricato da ChatGPT. Lo ZIP del kit Windows/Mac non è un firmware.</p>
+ <p class="note">Seleziona il file <code>EXS_MT4_v031_P9_4SAMPLES_6MUTE_PLOCK_CHROME.fwsc</code> scaricato da ChatGPT. Lo ZIP del kit Windows/Mac non è un firmware.</p>
  <input type="file" id="firmware" accept=".fwsc,application/octet-stream" disabled>
  <button class="secondary" id="downloadBtn" type="button" disabled>Scarica e verifica firmware pubblicato</button>
  <div id="fileStatus" role="status" class="status">Nessun firmware verificato.</div>
@@ -41,7 +41,7 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
  <h2>Installa</h2>
  <label class="check"><input type="checkbox" id="ack1" disabled><span>FM-1 carico, cavo USB-C dati affidabile; non chiuderò Chrome e non scollegherò USB durante l'aggiornamento.</span></label>
  <label class="check"><input type="checkbox" id="ack2" disabled><span>Ho verificato che il firmware installato attualmente supporti OTA e che il pacchetto sia quello MT4 autorizzato.</span></label>
- <button id="flashBtn" type="button" disabled>INSTALLA MT4</button>
+ <button id="flashBtn" type="button" disabled>INSTALLA MT4 P9</button>
  <div class="bar"><div id="progressBar"></div></div>
  <div class="status" role="status" id="flashStatus">Sperimentale: avvio fisico non verificato. Nessuna scrittura senza verifica SHA-256 e identità OTA.</div>
 </section>
@@ -52,4 +52,4 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
  <p class="note">Se Chrome non vede la porta dopo il riavvio, ricollega il cavo e ripeti il riconoscimento. Se l'FM-1 finisce nella modalità WL82/JieLi UBOOT, <strong>questa pagina NON può scrivere con quel protocollo</strong>. Mantieni a disposizione il kit di recupero via ThinkPad/Mac.</p>
 </div>
 <p class="footer">WebMIDI/SysEx su HTTPS, locale al browser. Basato sul codice del precedente installer TTG A0.3 / Felucca / SLOOP, GPL-3.0-only. Nessun firmware caricato sul server durante la selezione file. <a href="https://github.com/exsiderurgica/turing-groovebox-site/tree/main/mt4-flasher-v031">Sorgenti</a>.</p>
-</main><script type="module" src="./app.mjs?v=3"></script></body></html>
+</main><script type="module" src="./app.mjs?v=4"></script></body></html>
