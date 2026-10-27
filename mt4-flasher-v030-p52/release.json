@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "flash_enabled": true,
+  "ota_enabled": true,
+  "release": "MT4 v0.30 P5.2",
+  "product": "FM-1_986",
+  "size": 609912,
+  "sha256": "ae72b9227bb084f789cbe379fda9c90677620edfe837ae481242f220296275c7",
+  "firmware_url": null,
+  "notes": "P5.2 = P5.1 GOLD + two fixes only: MIXER PRE Master Drive / ALG Decay All, SEL x8 for param editing except Plaits Macro algorithm x1. No sample engines or new DSP. JieLi native and host tests PASS. FM1 physical boot and OTA handshake need checking."
+}
