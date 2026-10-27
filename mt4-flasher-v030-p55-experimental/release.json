@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "flash_enabled": true,
-  "ota_enabled": true,
+  "flash_enabled": false,
+  "ota_enabled": false,
   "release": "MT4 v0.30 P5.5",
   "product": "FM-1_986",
   "size": 609912,
   "sha256": "e380602791b9c934045e52eae3163a26c024c66dec3d8093b6ff9306f02b6ab1",
   "firmware_url": "./EXS_MT4_v030_P55_CLOUDS_AMBIENT_OFF_KNOB_AUTO_EXPERIMENTAL.fwsc",
-  "notes": "EXPERIMENTAL P5.5 based on untouched P5.2 GOLD: original Mutable Clouds reverb 16k CPU-gated with extended decay; Liquid Tape delay; 4 Plaits DRONE and independent 4-voice generative AMBIENT. Fix EDIT+GLO toggle both directions, stop automation on OFF with short release, no forced Clouds ON, GLO header reflects AMBIENT ON/OFF; 7 encoder velocity-sensitive edits (slow x1, fast x2/4/8, SEL override x8, discrete/macro algorithms x1). CI native AC791N and host panel/display/audio tests PASS. Hardware boot, CPU performance and Chrome OTA write not independently verified. Retain P5.2 GOLD recovery."
+  "notes": "P5.5 WITHDRAWN after physical FM-1 knob behavior regression. Do not flash; experimental velocity-sensitive encoders caused malfunctions. For corrected controls use MT4 P5.6 flasher at ../mt4-flasher-v030-p56-gold-knobs/. P5.2 GOLD untouched."
 }
