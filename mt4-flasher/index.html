@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
 <meta name="robots" content="noindex,nofollow">
-<title>EXS MT4 • FM-1 Flasher</title>
+<title>EXS MT4 • Flasher universale Chrome</title>
 <style>
 :root{color-scheme:dark;--bg:#080808;--panel:#151515;--fg:#f7f7f7;--muted:#a5a5a5;--line:#343434;--yellow:#f1d000;--red:#f37a76;--green:#80d39b}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Roboto,sans-serif}
@@ -16,10 +16,10 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
 <body><main>
 <p class="eyebrow">EXSIDERURGICA INSTRUMENTS · USB-C / ANDROID</p>
 <h1>EXS MT4<br>Browser Flasher</h1>
-<p class="muted">Aggiornamento FM-1 da Chrome sul Nothing, tramite USB-MIDI SysEx. Modalità di diagnosi disponibile senza scrivere nulla.</p>
+<p class="muted">Flasher universale per EXS MT4 sul M-VAVE FM1: seleziona il file .fwsc scaricato, verifica il dispositivo e aggiorna da Chrome via USB-C / WebMIDI.</p>
 <div class="card warning">
-  <strong>P5 GOLD include OTA=1: verifica qui la risposta OTA della macchina prima del prossimo flash.</strong>
-  <p class="note">Con P3/P4 OTA era disabilitato, ma P5 GOLD è stata compilata con OTA=1. Se il test mostra solo USB-MIDI e nessuna identità OTA, non procedere: il servizio SysEx va verificato. Il prossimo firmware sarà installabile da Chrome solo dopo questo test e la pubblicazione di una release verificata.</p>
+  <strong>Un solo flasher per tutte le versioni MT4: P5.8, P5.9 e successive.</strong>
+  <p class="note">Non serve più aggiornare release.json o l'SHA del sito a ogni build. Usa solo file .fwsc provenienti da una fonte fidata. L'hash locale rileva cambiamenti del file ma non ne certifica la provenienza. OTA richiede una risposta SysEx reale: se manca, la scrittura resta bloccata.</p>
 </div>
 <div class="steps">
 <section class="card">
@@ -29,21 +29,20 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
  <div id="probeStatus" role="status" class="status">Non verificato.</div>
 </section>
 <section class="card">
- <h2>Firmware MT4</h2>
- <p id="releaseStatus" class="status warn">Controllo disponibilità della release…</p>
+ <h2>Firmware MT4 (qualsiasi versione)</h2>
+ <p id="releaseStatus" class="status ok">Seleziona il firmware .fwsc scaricato sul telefono. Nessuna versione preimpostata.</p>
+ <p class="note">Accetta P5.8 e le versioni future senza ripubblicare il flasher. Analisi eseguita localmente: il file non viene caricato sui nostri server.</p>
+ <input type="file" id="firmware" accept=".fwsc,application/octet-stream">
+ <div id="fileStatus" role="status" class="status">Seleziona un firmware FM-1 .fwsc.</div>
  <div id="manifestData" class="mono muted"></div>
- <p class="note">Seleziona soltanto un file <code>.fwsc</code> rilasciato per MT4. Lo ZIP del kit Windows/Mac non è un firmware.</p>
- <input type="file" id="firmware" accept=".fwsc,application/octet-stream" disabled>
- <button class="secondary" id="downloadBtn" type="button" disabled>Scarica e verifica firmware pubblicato</button>
- <div id="fileStatus" role="status" class="status">Nessun firmware verificato.</div>
 </section>
 <section class="card">
  <h2>Installa</h2>
  <label class="check"><input type="checkbox" id="ack1" disabled><span>FM-1 carico, cavo USB-C dati affidabile; non chiuderò Chrome e non scollegherò USB durante l'aggiornamento.</span></label>
- <label class="check"><input type="checkbox" id="ack2" disabled><span>Ho verificato che il firmware installato attualmente supporti OTA e che il pacchetto sia quello MT4 autorizzato.</span></label>
+ <label class="check"><input type="checkbox" id="ack2" disabled><span>Il file .fwsc proviene da una build EXS MT4 fidata; so che la verifica dell'impronta SHA-256 non equivale al collaudo su hardware.</span></label>
  <button id="flashBtn" type="button" disabled>INSTALLA MT4</button>
  <div class="bar"><div id="progressBar"></div></div>
- <div class="status" role="status" id="flashStatus">In attesa di una release OTA verificata.</div>
+ <div class="status" role="status" id="flashStatus">Scegli il file, verifica l'identità del FM-1 e conferma i controlli. Non avviare la scrittura se non hai un backup.</div>
 </section>
 </div>
 <details><summary>Registro tecnico e diagnostica</summary><pre class="log mono" id="log"></pre></details>
@@ -51,5 +50,5 @@ h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin
  <h2>Ripristino</h2>
  <p class="note">Se Chrome non vede la porta dopo il riavvio, ricollega il cavo e ripeti il riconoscimento. Se l'FM-1 finisce nella modalità WL82/JieLi UBOOT, <strong>questa pagina NON può scrivere con quel protocollo</strong>. Mantieni a disposizione il kit di recupero via ThinkPad/Mac.</p>
 </div>
-<p class="footer">WebMIDI/SysEx su HTTPS, locale al browser. Basato sul codice del precedente installer TTG A0.3 / Felucca / SLOOP, GPL-3.0-only. Nessun firmware caricato sul server durante la selezione file. <a href="https://github.com/exsiderurgica/turing-groovebox-site/tree/main/mt4-flasher">Sorgenti</a>.</p>
-</main><script type="module" src="./app.mjs?v=3"></script></body></html>
+<p class="footer">WebMIDI/SysEx su HTTPS, analisi .fwsc locale. Trasporto da TTG A0.3 / Felucca / SLOOP, GPL-3.0-only. Non può utilizzare il protocollo UBOOT per riparare un dispositivo non avviabile. <a href="https://github.com/exsiderurgica/turing-groovebox-site/tree/main/mt4-flasher">Sorgenti</a>.</p>
+</main><script type="module" src="./app.mjs?v=universal-1"></script></body></html>
