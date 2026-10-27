@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "flash_enabled": true,
+  "ota_enabled": true,
+  "release": "MT4 v0.30 P5.3",
+  "product": "FM-1_986",
+  "size": 609912,
+  "sha256": "8e4599211849a04dc9478b248b70fddb79f1f23f650ba71c8f096c49cf82b16b",
+  "firmware_url": null,
+  "notes": "EXPERIMENTAL P5.3 from P5.2 GOLD. Original Clouds Reverb running at 16 kHz, extended decay max 0.990 (24 s process cap), idle-gated CPU, original Liquid Tape Delay retained. Global DRONE all four Macros; AMBIENT generative on all four independent Plaits without PLAY, original Macro 2-4 drum models with sparse triggers. No new sample engines. Cross-build and host 4-Macro/Clouds tests PASS; FM1 physical boot and CPU are NOT verified. Keep P5.2 GOLD recovery."
+}
