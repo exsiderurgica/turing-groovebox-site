@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "flash_enabled": true,
+  "ota_enabled": true,
+  "release": "MT4 v0.31 P5.1",
+  "product": "FM-1_986",
+  "size": 609912,
+  "sha256": "5866f65e688022df990536b448bd0e366f1d81bf9897b853ad62855b455dc5f1",
+  "firmware_url": null,
+  "notes": "v0.31 experimental: authentic TTG Beta6 909 samples K3+K4, unchanged 4 Macro Plaits/FDN/Tape/USB44. Native JieLi compile and host tests passed. Physical FM-1 startup/CPU not yet tested. Manually select local .fwsc; OTA handshake required."
+}
