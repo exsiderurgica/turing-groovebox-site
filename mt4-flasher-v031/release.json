@@ -2,10 +2,10 @@
   "schema": 1,
   "flash_enabled": true,
   "ota_enabled": true,
-  "release": "MT4 v0.31 P5.1",
+  "release": "MT4 v0.31 P9",
   "product": "FM-1_986",
   "size": 609912,
-  "sha256": "de83df04c8a16176924bbac4de34fc02bdf6ea3ce281a74e806e3fcc1c229a87",
+  "sha256": "3c3368b58a1a4513a93b974563dbdd0da20994a0f5e8f59f942ca5714c0d0847",
   "firmware_url": null,
-  "notes": "EXS MT4 v0.31 P6 JieLi completo: HOME selezione Kick/Tom/Hat/Ride e parametri sample, ENV filtri dedicati LP/HP+Drive+Cutoff+Resonance+Bypass, LFO+Turing separate per 4 campioni con 10 target, reset transport step1. Macro Plaits/FX originali conservati. Test host e cross build PASS, avvio su FM1 fisico non verificato. Richiesti SHA-256, handshake OTA e recupero UBOOT."
+  "notes": "EXS MT4 v0.31 P9 native CI PASS. 4 Plaits + 4 sample PCM TTG BETA6 (Kick, Low Tom, Open Hat, Ride), HOME 8, due gruppi sample in GLO EDIT+K3/K4, sei mute da Mixer o ultimo semitono, Master globale post FX, 4 sample SEQ/PLOCK (pitch +/- ottava, decay, level), REGEN 5+5, 4 sample LFO/Turing. Campioni PCM APK TTG, non i WAV lunghi caricati separatamente. Boot, CPU e OTA da verificare su FM1 fisico. Handshake identita OTA obbligatorio; salvare recupero UBOOT."
 }
