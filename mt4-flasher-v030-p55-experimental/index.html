@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<meta name="robots" content="noindex,nofollow">
+<title>EXS MT4 v0.30 P5.5 • Flasher Chrome USB-C</title>
+<style>
+:root{color-scheme:dark;--bg:#080808;--panel:#151515;--fg:#f7f7f7;--muted:#a5a5a5;--line:#343434;--yellow:#f1d000;--red:#f37a76;--green:#80d39b}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Roboto,sans-serif}
+main{max-width:680px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:clamp(28px,8vw,42px);letter-spacing:-.045em;line-height:1.05;margin:.35rem 0}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--yellow)}p{margin:.5rem 0 1rem}.muted{color:var(--muted)}.card{border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:16px;margin-top:14px}.card h2{font-size:17px;margin:0 0 8px}.card p{margin:.35rem 0 .8rem}.mono{font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}button,input[type=file]{font:inherit}button{background:var(--yellow);color:#0c0c0c;border:0;border-radius:9px;padding:13px 14px;font-weight:800;min-height:46px;width:100%;cursor:pointer}button:disabled{color:#777;background:#303030;cursor:not-allowed}.secondary{background:#252525;color:#f5f5f5;border:1px solid #454545}input[type=file]{color:var(--fg);width:100%;border:1px solid #454545;background:#0e0e0e;border-radius:8px;padding:10px}.status{border:1px solid #343434;border-radius:9px;padding:10px;background:#0a0a0a;margin-top:12px;overflow-wrap:anywhere}.ok{color:var(--green)}.err{color:var(--red)}.warn{color:var(--yellow)}.note{font-size:13px;color:var(--muted)}.check{display:flex;align-items:start;gap:9px;margin:10px 0}.check input{width:20px;height:20px;flex-shrink:0;accent-color:var(--yellow)}.bar{height:8px;background:#333;border-radius:100px;overflow:hidden;margin:12px 0}.bar>div{background:var(--yellow);height:100%;width:0;transition:width .12s}.log{max-height:160px;overflow:auto;padding:12px;background:#070707;border-radius:9px;border:1px solid #242424}.steps{counter-reset:steps}.steps h2:before{counter-increment:steps;content:counter(steps) " · ";color:var(--yellow)}a{color:var(--fg)}.warning{border-color:#765d22}.warning strong{color:var(--yellow)}.footer{margin:22px 0;color:#8e8e8e;font-size:12px}#manifestData{margin-top:9px}details{margin-top:12px}summary{cursor:pointer}
+</style>
+</head>
+<body><main>
+<p class="eyebrow">EXSIDERURGICA INSTRUMENTS · USB-C / ANDROID</p>
+<h1>EXS MT4 v0.30 P5.5<br>Browser Flasher</h1>
+<p class="muted">Aggiornamento FM-1 da Chrome sul Nothing, tramite USB-MIDI SysEx. Modalità di diagnosi disponibile senza scrivere nulla.</p>
+<div class="card warning">
+  <strong>MT4 v0.30 P5.5: SPERIMENTALE dalla P5.2 GOLD: Clouds originale 16 kHz con Decay lungo, DRONE indipendente, AMBIENT 4 Macro con OFF realmente funzionante e velocità automatica dei 7 encoder. Build nativa e test software superati; CPU e audio reali da verificare sull’FM-1.</strong>
+  <p class="note">Questa pagina accetta soltanto EXS MT4 v0.30 P5.5 con SHA-256 esatto. L'esperimento Clouds+4 Macro AMBIENT può comunque sovraccaricare la CPU: conservare la P5.2 GOLD e verificare subito il meter CPU. Compilazione JieLi e test host superati; avvio hardware non testato. Esegui prima la diagnosi USB-MIDI e verifica il recupero via ThinkPad/Mac. Se non compare l'identità OTA, non procedere.</p>
+</div>
+<div class="steps">
+<section class="card">
+ <h2>Browser e FM-1</h2>
+ <p class="note">Apri questa pagina direttamente in Chrome sul Nothing. Collega l'FM-1 acceso via cavo USB-C dati e autorizza MIDI/SysEx. La diagnosi manda solo una richiesta d'identità: <strong>non scrive memoria</strong>.</p>
+ <button class="secondary" id="probeBtn">Verifica connessione USB-MIDI</button>
+ <div id="probeStatus" role="status" class="status">Non verificato.</div>
+</section>
+<section class="card">
+ <h2>Firmware MT4</h2>
+ <p id="releaseStatus" class="status warn">Controllo disponibilità della release…</p>
+ <div id="manifestData" class="mono muted"></div>
+ <p class="note">Seleziona il file <code>EXS_MT4_v030_P55_CLOUDS_AMBIENT_OFF_KNOB_AUTO_EXPERIMENTAL.fwsc</code> scaricato col pulsante qui sotto. Lo ZIP del kit Windows/Mac non è un firmware.</p>
+ <input type="file" id="firmware" accept=".fwsc,application/octet-stream" disabled>
+ <button class="secondary" id="downloadBtn" type="button" disabled>Scarica e verifica firmware pubblicato</button>
+ <div id="fileStatus" role="status" class="status">Nessun firmware verificato.</div>
+</section>
+<section class="card">
+ <h2>Installa</h2>
+ <label class="check"><input type="checkbox" id="ack1" disabled><span>FM-1 carico, cavo USB-C dati affidabile; non chiuderò Chrome e non scollegherò USB durante l'aggiornamento.</span></label>
+ <label class="check"><input type="checkbox" id="ack2" disabled><span>Ho verificato che il firmware installato attualmente supporti OTA e che il pacchetto sia quello MT4 autorizzato.</span></label>
+ <button id="flashBtn" type="button" disabled>INSTALLA MT4 P5.5</button>
+ <div class="bar"><div id="progressBar"></div></div>
+ <div class="status" role="status" id="flashStatus">Sperimentale: avvio fisico non verificato. Nessuna scrittura senza verifica SHA-256 e identità OTA.</div>
+</section>
+</div>
+<details><summary>Registro tecnico e diagnostica</summary><pre class="log mono" id="log"></pre></details>
+<div class="card">
+ <h2>Ripristino</h2>
+ <p class="note">Se Chrome non vede la porta dopo il riavvio, ricollega il cavo e ripeti il riconoscimento. Se l'FM-1 finisce nella modalità WL82/JieLi UBOOT, <strong>questa pagina NON può scrivere con quel protocollo</strong>. Mantieni a disposizione il kit di recupero via ThinkPad/Mac.</p>
+</div>
+<p class="footer">WebMIDI/SysEx su HTTPS, locale al browser. Basato sul codice del precedente installer TTG A0.3 / Felucca / SLOOP, GPL-3.0-only. Nessun firmware caricato sul server durante la selezione file. <a href="https://github.com/exsiderurgica/turing-groovebox-site/tree/main/mt4-flasher-v030-p55-experimental">Sorgenti</a>.</p>
+</main><script type="module" src="./app.mjs?v=55"></script></body></html>
