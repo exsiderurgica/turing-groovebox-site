@@ -1,0 +1,57 @@
+name: Publish verified EXS MT4 P7.4.7 GOLD binary
+
+on:
+  push:
+    paths:
+      - .github/workflows/mt4-gold-p747-mirror.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retrieve public immutable P7.4.7 build artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --retry-delay 2 --max-time 100 \
+            -o "$RUNNER_TEMP/p747.zip" \
+            "https://nightly.link/exsiderurgica/EXS-FM1/actions/artifacts/12895474097.zip"
+          unzip -t "$RUNNER_TEMP/p747.zip"
+          unzip -Z -1 "$RUNNER_TEMP/p747.zip" | grep '\.fwsc$'
+          mkdir -p mt4/firmware
+          python3 - "$RUNNER_TEMP/p747.zip" <<'PY'
+          import hashlib, pathlib, sys, zipfile
+          expected = "986585ed3b980b799577fc11c23a50c48c9e302446f96b9aacdebacaf659f566"
+          dest = pathlib.Path("mt4/firmware/EXS_MT4_v030_P747_REAL_AMBIENT_PATTERNS_GOLD.fwsc")
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              names = [n for n in z.namelist() if n.endswith(".fwsc")]
+              if len(names) != 1:
+                  raise SystemExit("FAIL: expected exactly one .fwsc firmware")
+              data = z.read(names[0])
+          digest = hashlib.sha256(data).hexdigest()
+          if len(data) != 609912 or digest != expected:
+              raise SystemExit(f"FAIL CLOSED: unexpected firmware size/hash: {len(data)} {digest}")
+          dest.write_bytes(data)
+          print(f"VERIFIED {dest}: {len(data)} bytes {digest}")
+          PY
+      - name: Commit firmware to this Pages repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- mt4/firmware/EXS_MT4_v030_P747_REAL_AMBIENT_PATTERNS_GOLD.fwsc
+          if git diff --cached --quiet; then
+            echo "Firmware already published and verified."
+          else
+            git commit -m "Publish SHA-256 verified P7.4.7 GOLD firmware for MT4"
+            git push origin HEAD:main
+          fi
