@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="it">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000000">
+<meta name="description" content="Manuale online EXS MT4 v0.30 P7.4.7 GOLD per M-VAVE FM1. Controlli, generazione, sequencer e flash.">
+<title>Manuale EXS / MT4 — Exsiderurgica Instruments</title><link rel="stylesheet" href="../style.css"></head>
+<body><div class="wrap manual">
+  <div class="topbar"><a class="brand" href="../">EXS / MT4</a><nav class="nav" aria-label="Navigazione manuale"><a href="#controls">CONTROLLI</a><a href="#pages">PAGINE</a><a href="#ambient">AMBIENT</a><a href="#flash-help">FLASH</a><a href="../">HOME</a></nav></div>
+  <header class="hero">
+    <p class="eyebrow">EXSIDERURGICA / DOCUMENTAZIONE</p>
+    <h1>MANUALE<br>MT4 / GOLD</h1>
+    <p class="lead">Guida operativa al firmware EXS MT4 v0.30 P7.4.7 per M-VAVE FM1. Dalla prima nota alla generazione autonoma.</p>
+    <div class="meta"><div class="stat"><strong>REV.</strong><span>29.10.2026</span></div><div class="stat"><strong>BUILD</strong><span>P7.4.7 GOLD</span></div><div class="stat"><strong>LINGUA</strong><span>ITALIANO</span></div></div>
+  </header>
+  <section id="start">
+    <p class="tag">00 / INIZIO RAPIDO</p><h2>PRIMI PASSI</h2>
+    <ol>
+      <li>Accendi l'FM1 con alimentazione stabile. La schermata HOME mostra Macro selezionata, algoritmo e controlli principali.</li>
+      <li>Con <kbd>HOME</kbd> apri o richiami la sezione Macro. Usa <kbd>OCT−</kbd> / <kbd>OCT+</kbd> per selezionare la voce nella stessa sezione.</li>
+      <li>Muovi i quattro encoder superiori <kbd>K1</kbd>–<kbd>K4</kbd> per modellare il suono: FREQUENCY, HARMONICS, TIMBRE e MORPH.</li>
+      <li>Premi <kbd>PLAY/STOP</kbd> per avviare o fermare il trasporto. Apri <kbd>SEQ</kbd> per intervenire sui trigger degli step.</li>
+      <li>Apri <kbd>ARP</kbd> per il generatore TURING e <kbd>GLO</kbd> per le modalità globali.</li>
+    </ol>
+    <p>Nel display, un asterisco <kbd>*</kbd> indica un controllo con funzione alternativa o modificabile mediante <kbd>EDIT</kbd>. La schermata è il riferimento più affidabile per sapere cosa fa un encoder in quel momento.</p>
+  </section>
+  <section id="controls">
+    <p class="tag">01 / CONTROLLO FISICO</p><h2>TASTI ED ENCODER</h2>
+    <table>
+      <thead><tr><th>TASTO</th><th>FUNZIONE</th></tr></thead>
+      <tbody>
+        <tr><td>HOME</td><td>Voce Macro e parametri sonori; sulla schermata HOME richiama o cambia il focus della Macro.</td></tr>
+        <tr><td>ARP</td><td>Pagina TURING della Macro selezionata, con generazione, FREEZE e destinazioni.</td></tr>
+        <tr><td>SEQ</td><td>Sequencer indipendente della Macro selezionata: note, trigger e blocchi per step.</td></tr>
+        <tr><td>ENV</td><td>Alterna le pagine FILTER e ADSR della Macro corrente.</td></tr>
+        <tr><td>LFO</td><td>Modulazioni LFO, forma d'onda, velocità, profondità e destinazione.</td></tr>
+        <tr><td>FX</td><td>Naviga tra MIXER, REVERB e DELAY nella sezione effetti.</td></tr>
+        <tr><td>GLO</td><td>Naviga tra GLOBAL, ENGINES e SETTINGS.</td></tr>
+        <tr><td>OCT− / OCT+</td><td>Navigazione locale alla categoria: Macro nelle pagine musicali; sottopagine FX e GLO nelle rispettive sezioni.</td></tr>
+        <tr><td>EDIT</td><td>Modificatore: richiama i parametri contrassegnati con <kbd>*</kbd> e i comandi secondari.</td></tr>
+        <tr><td>SEL</td><td>Modificatore momentaneo di precisione/velocità degli encoder, senza cambiare l'algoritmo.</td></tr>
+        <tr><td>PLAY/STOP</td><td>Avvio e arresto del trasporto; alcune modalità generative reagiscono al nuovo PLAY.</td></tr>
+        <tr><td>REC</td><td>Modalità temporanea di acquisizione/richiamo delle modifiche (TEMP).</td></tr>
+        <tr><td>SAVE</td><td>Funzione TEMP momentanea nella versione documentata. Non equivale al salvataggio permanente su flash.</td></tr>
+      </tbody>
+    </table>
+    <p><strong>ENCODER:</strong> SELECT, PRESETS e ALGORITHM si trovano a sinistra dello schermo; K1–K4 a destra. La funzione varia secondo la pagina attiva. Non forzare gli encoder: MT4 conserva la risposta stabile senza accelerazione automatica ×1–×8.</p>
+  </section>
+  <section id="pages">
+    <p class="tag">02 / INTERFACCIA</p><h2>PAGINE DI LAVORO</h2>
+    <details class="detail" open><summary>MACRO / SINTESI</summary><div class="inside">
+      <p>Quattro Macro indipendenti, ciascuna con il proprio modello sonoro. La scelta del modello è sul controllo ALGORITHM. Ogni Macro dispone di frequenza, armoniche, timbro, morph, intonazione, inviluppo di pitch, decay e livello.</p>
+      <table><thead><tr><th>ENCODER</th><th>DEFAULT</th><th>CON EDIT</th></tr></thead>
+      <tbody><tr><td>SELECT</td><td>DECAY</td><td>LEVEL</td></tr><tr><td>PRESETS</td><td>PITCH</td><td>PITCH ENV</td></tr><tr><td>ALGORITHM</td><td>MODEL / ALGO</td><td>Secondo l'indicazione sul display</td></tr><tr><td>K1</td><td>FREQUENCY</td><td>—</td></tr><tr><td>K2</td><td>HARMONICS</td><td>—</td></tr><tr><td>K3</td><td>TIMBRE</td><td>—</td></tr><tr><td>K4</td><td>MORPH</td><td>—</td></tr></tbody></table>
+      <p>La versione GOLD utilizza undici modelli nella selezione base e prevede sei modelli supplementari attivabili. L'accesso ai modelli esclusi rimane controllato dal firmware per evitare combinazioni non ammesse o eccessive per la CPU.</p>
+    </div></details>
+    <details class="detail"><summary>TURING / GENERAZIONE</summary><div class="inside">
+      <p>Ogni Macro dispone di una macchina Turing indipendente. Può generare note e modulazioni con variazioni regolabili e può essere congelata per stabilizzare una frase.</p>
+      <table><thead><tr><th>ENCODER</th><th>PARAMETRO</th></tr></thead><tbody>
+        <tr><td>SELECT</td><td>LENGTH</td></tr><tr><td>PRESETS</td><td>FREEZE ON / OFF</td></tr><tr><td>ALGORITHM</td><td>TARGET</td></tr><tr><td>K1</td><td>DENSITY</td></tr><tr><td>K2</td><td>VARIATION</td></tr><tr><td>K3</td><td>SHIFT</td></tr><tr><td>K4</td><td>AMOUNT / DIVISION (secondo il motore)</td></tr>
+      </tbody></table>
+      <p>FREEZE blocca la generazione in modo da poter intervenire sugli step. REGEN crea una nuova variazione quando previsto dalla modalità attiva. Evita di confondere il FREEZE della Turing con l'arresto del trasporto.</p>
+    </div></details>
+    <details class="detail"><summary>SEQ / TRIGGER E P-LOCK</summary><div class="inside">
+      <p>Le sedici note inferiori rappresentano gli step della banca corrente. Puoi attivare o disattivare i trigger e selezionare lo step da editare; le banche consentono di raggiungere sequenze più lunghe.</p>
+      <table><thead><tr><th>ENCODER</th><th>PARAMETRO</th></tr></thead><tbody>
+        <tr><td>SELECT</td><td>LENGTH</td></tr><tr><td>PRESETS</td><td>BANK</td></tr><tr><td>ALGORITHM</td><td>STEP</td></tr><tr><td>K1</td><td>NOTE</td></tr><tr><td>K2</td><td>TRIGGER</td></tr><tr><td>K3</td><td>MORPH LOCK</td></tr><tr><td>K4</td><td>MODEL LOCK</td></tr>
+      </tbody></table>
+      <p>Per registrare modifiche su uno step, tienilo premuto e ruota un encoder compatibile. Gli indicatori LOCK nel display aiutano a distinguere il valore dello step dal valore globale. <kbd>EDIT</kbd> + <kbd>SEQ</kbd> tenuto per circa 1,5 secondi cancella trigger e P-Lock della Macro selezionata: procedi solo se vuoi svuotarla.</p>
+      <p>La navigazione della banca prevede anche <kbd>SEL</kbd> + <kbd>OCT−/+</kbd>. In SEQ, <kbd>EDIT</kbd> + <kbd>OCT−/+</kbd> può intervenire sulla lunghezza. Controlla sempre il contesto visualizzato.</p>
+    </div></details>
+    <details class="detail"><summary>ENV / FILTER E ADSR</summary><div class="inside">
+      <p>La prima pagina contiene MODE (low pass, band pass, high pass), DRIVE, KEYTRACK, CUTOFF, RESONANCE, ENV AMOUNT e ADSR→FILTER. La seconda gestisce AMP AMOUNT, FILTER AMOUNT, CURVE, ATTACK, DECAY, SUSTAIN e RELEASE.</p>
+      <p>Queste regolazioni sono associate alla Macro selezionata. Varia i filtri in performance e monitora il carico CPU quando utilizzi contemporaneamente tutti i motori e gli effetti.</p>
+    </div></details>
+    <details class="detail"><summary>LFO / MODULAZIONI</summary><div class="inside"><p>Seleziona TARGET e WAVE; regola RATE, AMOUNT, PHASE e SLEW. Il controllo SYNC passa fra modulazione libera e sincronizzata. La navigazione mantiene il focus locale degli LFO per ciascuna Macro.</p></div></details>
+    <details class="detail"><summary>FX / MIXER, REVERB, DELAY</summary><div class="inside">
+      <p>La categoria FX comprende MIXER, REVERB e DELAY. Usa <kbd>FX</kbd> o <kbd>OCT−/+</kbd> nella sezione per navigare; <kbd>EDIT</kbd> + <kbd>OCT−/+</kbd> seleziona la Macro per le mandate individuali.</p>
+      <p><strong>REVERB:</strong> SELECT per DRY/WET della Macro, PRESETS per DECAY, ALGORITHM per DIFFUSION e K1–K4 per DAMPING, FX RETURN, COLOR e WIDTH. EDIT richiama i parametri alternativi del riverbero leggero.</p>
+      <p><strong>DELAY:</strong> SELECT per DRY/WET della Macro, PRESETS per FEEDBACK, ALGORITHM per TIME e K1–K4 per SYNC, FX RETURN, DUCKING e TONE. EDIT richiama TIME/FEEDBACK del secondo delay leggero.</p>
+      <p><strong>MIXER:</strong> livello e controlli delle voci, mandate effetti e trattamento master. La pagina fa parte della stessa categoria FX; non è necessario abbandonare la performance per raggiungerla.</p>
+    </div></details>
+    <details class="detail"><summary>GLO / GLOBAL, ENGINES, SETTINGS</summary><div class="inside">
+      <p>La categoria GLO contiene tre sottopagine. GLOBAL gestisce BPM, SHUFFLE, DRONE e gli interruttori delle modalità musicali. ENGINES espone le abilitazioni delle Macro e dei DSP. SETTINGS raccoglie le funzioni di sistema e reset.</p>
+      <p><strong>GLOBAL:</strong> SELECT regola BPM; EDIT + SELECT regola MASTER. PRESETS regola SHUFFLE; EDIT attiva funzioni alternative come DRONE. In GLOBAL sono mostrati anche AMBIENT e TECHNO, ciascuno con la propria indicazione ON/OFF.</p>
+      <p><strong>ENGINES:</strong> regola con cautela le abilitazioni delle quattro Macro e di riverbero/delay. Un DSP disattivato riduce il consumo e può aiutare nella diagnosi.</p>
+      <p><strong>SETTINGS:</strong> i comandi di reset richiedono conferme intenzionali; non usarli durante una sessione che vuoi conservare. Le funzioni di memorizzazione persistente non vanno presunte operative solo perché esiste il tasto SAVE.</p>
+    </div></details>
+  </section>
+  <section id="ambient">
+    <p class="tag">03 / GENERAZIONE MUSICALE</p><h2>AMBIENT / TECHNO / DRONE</h2>
+    <h3>AMBIENT</h3><p>La P7.4.7 GOLD genera quattro pattern autonomi di 16 beat, uno per Macro. Le parti hanno ruoli complementari (fondazione, basso, melodia e risposta) e le nuove scene cercano di non ripetere esattamente il disegno precedente. AMBIENT è indipendente dalle sequenze SEQ salvate in memoria temporanea: non le riscrive.</p>
+    <p>L'attivazione e i comandi PLAY/REGEN possono produrre nuove combinazioni. Il display e il controllo GLOBAL mostrano lo stato AMBIENT. Disattivando AMBIENT le nuove note generate dalla modalità vengono arrestate; le code degli effetti possono proseguire.</p>
+    <h3>TECHNO</h3><p>Modalità dedicata alla generazione e alla variazione ritmica. È separata da AMBIENT: l'attivazione di AMBIENT esclude TECHNO per evitare che due generatori competano per lo stesso flusso di note.</p>
+    <h3>DRONE</h3><p>Consente l'emissione continua della voce come base di texture o improvvisazione. DRONE non equivale ad AMBIENT e mantiene i controlli sonori della Macro. La gestione del trasporto resta distinta.</p>
+  </section>
+  <section id="cpu">
+    <p class="tag">04 / PRESTAZIONI</p><h2>GESTIONE CPU / AUDIO</h2>
+    <p>L'FM1 ha risorse limitate. Quattro Macro contemporanee, modelli sonori pesanti e più effetti possono causare sovraccarichi. Il meter CPU è un'indicazione utile per capire quando alleggerire la sessione.</p>
+    <ul><li>Se senti click o audio discontinuo, disattiva prima un DSP o riduci il numero di Macro attive.</li><li>Clouds offre frequenze di lavoro selezionabili; frequenze più basse alleggeriscono il processore, ma modificano la resa timbrica.</li><li>Evita di interpretare CPU al 100% come condizione sicura per un live.</li><li>Usa un'alimentazione stabile e non valutare i crash senza prima escludere una batteria scarica.</li><li>Le modalità generative e gli effetti vanno testati sulla macchina fisica, non solo nell'emulatore.</li></ul>
+  </section>
+  <section id="flash-help">
+    <p class="tag">05 / INSTALLAZIONE E RECUPERO</p><h2>FLASH / DIAGNOSTICA</h2>
+    <p>Per installare EXS MT4 utilizza il <a href="../../mt4-flasher/">flasher universale da Chrome</a>. Il flasher funziona soltanto quando il firmware già avviato nell'FM1 offre un handshake OTA compatibile. Non è un sistema di sblocco della ROM U-Boot.</p>
+    <ol><li>Alimenta l'FM1 e usa un cavo USB-C dati. Chiudi DAW e altre applicazioni che occupano la porta MIDI.</li><li>Apri il flasher su Chrome Android tramite HTTPS e concedi l'accesso WebMIDI/SysEx.</li><li>Esegui la verifica di identità: questa fase non scrive nulla.</li><li>Seleziona il file .fwsc esatto della release GOLD e verifica modello e SHA-256 visualizzato.</li><li>Conferma solo se la diagnosi e l'handshake OTA passano; non interrompere il collegamento fino alla verifica.</li></ol>
+    <div class="warning"><strong>SE LA VERIFICA FALLISCE: NON FLASHARE</strong>
+      <p>Se il dispositivo non risponde all'handshake, fermati. Se appare WL82/JieLi UBOOT, la procedura WebMIDI non può recuperarlo. Serve il metodo hardware di recupero già collaudato, con tool U-Boot su computer e un backup valido. Se Windows propone di formattare l'unità UBOOT, annulla.</p></div>
+    <h3 style="margin-top:28px">IMPRONTA DELLA GOLD</h3>
+    <div class="code">FWSC: EXS_MT4_v030_P747_REAL_AMBIENT_PATTERNS_GOLD.fwsc<br>MODELLO: FM-1_986<br>DIMENSIONE: 609912 BYTES<br>SHA-256: 986585ed3b980b799577fc11c23a50c48c9e302446f96b9aacdebacaf659f566</div>
+    <p style="margin-top:17px">Un hash corrispondente controlla l'integrità del file rispetto alla release nota, ma non garantisce la provenienza del file o il successo dell'installazione sull'hardware. Conserva sempre una copia della versione stabile precedente.</p>
+    <div class="actions"><a class="btn inverse" href="../../mt4-flasher/">APRI IL FLASHER</a><a class="btn" href="../#flash">PROCEDURA RAPIDA</a></div>
+  </section>
+  <section id="credits">
+    <p class="tag">06 / INFORMAZIONI</p><h2>EXSIDERURGICA INSTRUMENTS</h2>
+    <p>MT4 è un progetto indipendente per M-VAVE FM1. Utilizza o deriva componenti di sintesi Mutable Instruments Plaits, Clouds e altre basi open source secondo le relative licenze. Non è un firmware ufficiale M-VAVE, né la versione Android TTG.</p>
+    <p>La documentazione si riferisce alla GOLD P7.4.7 e può differire da build sperimentali successive. In caso di dubbio, considera sempre autoritativa la pagina corrente del display hardware e consulta il repository del codice.</p>
+    <div class="actions"><a class="btn" href="https://github.com/exsiderurgica/EXS-FM1/tree/stable/mt4-v030-p747-gold" target="_blank" rel="noopener noreferrer">SORGENTE GOLD</a><a class="btn" href="../">TORNA ALLA PAGINA MT4</a></div>
+  </section>
+  <footer><div class="foot"><span>EXSIDERURGICA / MT4 MANUAL</span><a href="../">EXS MT4</a><a href="../../">TTG</a></div></footer>
+</div></body></html>
