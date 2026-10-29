@@ -1,27 +1,24 @@
 <!doctype html>
-<html lang="it">
-<head>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
-<meta name="description" content="EXS MT4: firmware generativo di Exsiderurgica Instruments per M-VAVE FM1. Specifiche, manuale e procedura sicura di flashing.">
-<title>EXS / MT4 — Exsiderurgica Instruments</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="wrap">
-  <div class="topbar">
-    <a class="brand" href="../">EXSIDERURGICA / INSTRUMENTS</a>
-    <nav class="nav" aria-label="Navigazione MT4">
-      <a href="#specs">SPECIFICHE</a><a href="manual/">MANUALE</a><a href="#flash">FLASH</a><a href="../">TTG</a>
-    </nav>
-  </div>
-  <header class="hero" id="home">
-    <p class="eyebrow">M-VAVE FM1 / FIRMWARE ALTERNATIVO / EXS</p>
-    <h1>EXS / MT4</h1>
-    <p class="lead">Quattro motori sonori. Quattro sistemi generativi. Un unico strumento da suonare, trasformare e lasciare evolvere.</p>
-    <svg class="hero-unit" viewBox="0 0 1000 575" aria-labelledby="unitTitle unitDesc" role="img">
-      <title id="unitTitle">EXS MT4, groovebox disegnata con sole linee bianche su nero</title>
-      <desc id="unitDesc">Contorno minimale dell'M-VAVE FM1 con display MT4, otto encoder, dodici pulsanti funzione e ventisei tasti.</desc>
+<meta name="description" content="EXS MT4 by Exsiderurgica. Generative techno / ambient / experimental firmware for M-VAVE FM1. Four Macro voices, eight LFOs, four Turing Machines. No presets. No saving.">
+<title>EXS MT4 / Exsiderurgica</title><link rel="stylesheet" href="./style.css"></head>
+<body><div class="wrap">
+<div class="topbar">
+  <a class="brand" href="../">EXSIDERURGICA / MT4</a>
+  <nav class="nav" aria-label="Navigation"><a href="#specs" data-en="SPECS" data-it="SPECIFICHE">SPECS</a><a href="manual/" data-en="MANUAL" data-it="MANUALE">MANUAL</a><a href="#flash" data-en="FLASH" data-it="FLASH">FLASH</a>
+    <div class="language" role="group" aria-label="Language"><button type="button" id="lang-en" aria-pressed="true">EN</button><button type="button" id="lang-it" aria-pressed="false">IT</button></div>
+  </nav>
+</div>
+<header class="hero">
+  <p class="eyebrow" data-en="EXSIDERURGICA / M-VAVE FM1 / CUSTOM FIRMWARE" data-it="EXSIDERURGICA / M-VAVE FM1 / FIRMWARE ALTERNATIVO">EXSIDERURGICA / M-VAVE FM1 / CUSTOM FIRMWARE</p>
+  <h1>EXS / MT4</h1>
+  <p class="lead" data-en="Techno. Ambient. Experimental." data-it="Techno. Ambient. Sperimentazione.">Techno. Ambient. Experimental.</p>
+  <p data-en="Eurorack philosophy in a standalone instrument. Make sound, shape it live, let it evolve. No presets. No saving." data-it="Filosofia Eurorack in uno strumento autonomo. Crea suoni, modificali dal vivo, lasciali evolvere. Nessun preset. Nessun salvataggio.">Eurorack philosophy in a standalone instrument. Make sound, shape it live, let it evolve. No presets. No saving.</p>
+  <svg class="hero-unit" viewBox="0 0 1000 575" aria-labelledby="unitTitle unitDesc" role="img">
+      <title id="unitTitle">EXS MT4 hardware outline in white lines</title>
+      <desc id="unitDesc">Minimal M-VAVE FM1 front panel outline with MT4 display.</desc>
       <defs>
         <g id="rot"><circle r="22"/><circle r="16" class="fine"/><path d="M0 -8 V-17"/></g>
         <g id="soft"><rect x="-22" y="-18" width="44" height="36" rx="7"/><path d="M-5 0 H5" class="fine"/></g>
@@ -52,60 +49,70 @@
       <use href="#pad" x="529" y="463"/><use href="#pad" x="583" y="463"/><use href="#pad" x="637" y="463"/><use href="#pad" x="691" y="463"/>
       <use href="#pad" x="745" y="463"/><use href="#pad" x="799" y="463"/><use href="#pad" x="853" y="463"/><use href="#pad" x="907" y="463"/>
     </svg>
-    <div class="actions">
-      <a class="btn inverse" href="manual/">APRI IL MANUALE</a>
-      <a class="btn" href="#flash">COME INSTALLARLO</a>
-      <a class="btn" href="https://github.com/exsiderurgica/EXS-FM1/tree/stable/mt4-v030-p747-gold" target="_blank" rel="noopener noreferrer">SORGENTI GOLD</a>
+  <div class="meta"><div class="stat"><strong data-en="VERSION" data-it="VERSIONE">VERSION</strong><span>V0.30 / P7.4.7</span></div><div class="stat"><strong data-en="BUILD" data-it="BUILD">BUILD</strong><span>GOLD</span></div><div class="stat"><strong data-en="HARDWARE" data-it="HARDWARE">HARDWARE</strong><span>M-VAVE FM1</span></div></div>
+  <div class="actions"><a class="btn inverse" href="#flash" data-en="DOWNLOAD / FLASH" data-it="SCARICA / FLASH">DOWNLOAD / FLASH</a><a class="btn" href="manual/" data-en="MANUAL" data-it="MANUALE">MANUAL</a></div>
+</header>
+<section id="specs" class="section">
+  <p class="tag" data-en="01 / ARCHITECTURE" data-it="01 / ARCHITETTURA">01 / ARCHITECTURE</p><h2 data-en="THE ENGINE" data-it="IL MOTORE">THE ENGINE</h2>
+  <div class="specs">
+    <div class="spec"><strong>4× MACRO</strong><span data-en="Plaits-based voices" data-it="Voci derivate da Plaits">Plaits-based voices</span></div>
+    <div class="spec"><strong>8× LFO</strong><span data-en="Two per Macro" data-it="Due per Macro">Two per Macro</span></div>
+    <div class="spec"><strong>4× TURING</strong><span data-en="Independent generative machines" data-it="Generatori indipendenti">Independent generative machines</span></div>
+    <div class="spec"><strong>4× SEQUENCER</strong><span data-en="Triggers / notes / P-locks" data-it="Trigger / note / P-lock">Triggers / notes / P-locks</span></div>
+    <div class="spec"><strong>4× FILTER</strong><span data-en="Per-voice filtering / drive" data-it="Filtri e drive per voce">Per-voice filtering / drive</span></div>
+    <div class="spec"><strong>4× ADSR</strong><span data-en="Per-voice envelopes" data-it="Inviluppi per voce">Per-voice envelopes</span></div>
+    <div class="spec"><strong>FX</strong><span data-en="Reverb / delay / per-voice sends" data-it="Riverbero / delay / mandate per voce">Reverb / delay / per-voice sends</span></div>
+    <div class="spec"><strong>USB MIDI</strong><span data-en="USB only / clock" data-it="Solo USB / clock">USB only / clock</span></div>
+    <div class="spec"><strong>USB AUDIO</strong><span data-en="44.1 kHz output" data-it="Uscita 44,1 kHz">44.1 kHz output</span></div>
+    <div class="spec"><strong>0× PRESETS</strong><span data-en="No save / no recall" data-it="Nessun salvataggio / richiamo">No save / no recall</span></div>
+  </div>
+  <p class="small" data-en="Live control. Turing, regeneration, and independent Ambient / Techno / Drone modes." data-it="Controllo dal vivo. Turing, rigenerazione e modalità Ambient / Techno / Drone indipendenti.">Live control. Turing, regeneration, and independent Ambient / Techno / Drone modes.</p>
+</section>
+<section id="manual" class="section">
+  <p class="tag" data-en="02 / DOCUMENTATION" data-it="02 / DOCUMENTAZIONE">02 / DOCUMENTATION</p><h2 data-en="NO MENUS. JUST PLAY." data-it="NIENTE MENU. SUONA.">NO MENUS. JUST PLAY.</h2>
+  <p data-en="Controls, Macro, Turing, sequencers, modulation, FX, and generative modes." data-it="Controlli, Macro, Turing, sequencer, modulazioni, effetti e modalità generative.">Controls, Macro, Turing, sequencers, modulation, FX, and generative modes.</p>
+  <div class="actions"><a class="btn" href="manual/" data-en="OPEN MANUAL" data-it="APRI IL MANUALE">OPEN MANUAL</a></div>
+</section>
+<section id="flash" class="section">
+  <p class="tag" data-en="03 / FIRMWARE" data-it="03 / FIRMWARE">03 / FIRMWARE</p><h2>FLASH MT4</h2>
+  <p data-en="Current verified build: P7.4.7 GOLD. Firmware is ready to download and prepare directly here. Chrome / Android / USB-C / WebMIDI." data-it="Build corrente verificata: P7.4.7 GOLD. Firmware scaricabile e preparabile direttamente qui. Chrome / Android / USB-C / WebMIDI.">Current verified build: P7.4.7 GOLD. Firmware is ready to download and prepare directly here. Chrome / Android / USB-C / WebMIDI.</p>
+  <div class="flash-grid">
+    <div class="flash-box"><h3 data-en="01 / FIRMWARE" data-it="01 / FIRMWARE">01 / FIRMWARE</h3>
+      <p class="fwline">MT4 V0.30 / P7.4.7 GOLD<br>609,912 BYTES</p>
+      <button type="button" class="btn inverse" id="downloadBtn" data-en="DOWNLOAD GOLD" data-it="SCARICA GOLD">DOWNLOAD GOLD</button>
+      <button type="button" class="btn" id="prepareBtn" data-en="LOAD GOLD FOR FLASH" data-it="CARICA GOLD PER IL FLASH">LOAD GOLD FOR FLASH</button>
+      <div class="status" id="fileStatus" role="status" data-en="Firmware not loaded." data-it="Firmware non caricato.">Firmware not loaded.</div>
     </div>
-    <div class="meta" aria-label="Dati della versione">
-      <div class="stat"><strong>VERSIONE</strong><span>V0.30 / P7.4.7</span></div>
-      <div class="stat"><strong>STATO</strong><span>GOLD / TESTATA SU FM1</span></div>
-      <div class="stat"><strong>HARDWARE</strong><span>M-VAVE FM1</span></div>
+    <div class="flash-box"><h3 data-en="02 / CONNECT" data-it="02 / COLLEGA">02 / CONNECT</h3>
+      <p data-en="Connect a powered FM1 with a data-capable USB-C cable. Chrome must detect the genuine OTA identity." data-it="Collega l'FM1 alimentato con un cavo USB-C dati. Chrome deve rilevare la corretta identità OTA.">Connect a powered FM1 with a data-capable USB-C cable. Chrome must detect the genuine OTA identity.</p>
+      <button type="button" class="btn" id="probeBtn" data-en="CHECK USB MIDI" data-it="VERIFICA USB MIDI">CHECK USB MIDI</button>
+      <div class="status" id="probeStatus" role="status" data-en="Device not checked." data-it="Dispositivo non verificato.">Device not checked.</div>
     </div>
-  </header>
-  <section class="section" id="about">
-    <p class="tag">01 / IL PROGETTO</p>
-    <h2>NON UN PRESET.<br>UN ALTRO STRUMENTO.</h2>
-    <p>MT4 è un firmware indipendente per M-VAVE FM1, sviluppato da Exsiderurgica Instruments per l'improvvisazione elettronica. Combina sintesi Macro, sequenze modificabili in tempo reale, generazione Turing e processori di effetti all'interno di un'interfaccia essenziale, senza menu profondi.</p>
-    <p>Può essere suonato manualmente, usato come groovebox techno o lasciato evolvere in modalità AMBIENT, dove quattro parti musicali producono pattern distinti e nuove variazioni.</p>
-  </section>
-  <section class="section" id="specs">
-    <p class="tag">02 / SPECIFICHE TECNICHE</p>
-    <h2>IL SISTEMA MT4</h2>
-    <div class="grid">
-      <article class="cell"><h3>04 / MACRO</h3><p>Quattro voci di sintesi basate su modelli Plaits, selezionabili e indipendenti. Undici algoritmi di base, con ulteriori modelli opzionali attivabili.</p></article>
-      <article class="cell"><h3>04 / TURING</h3><p>Quattro motori generativi indipendenti: densità, variazione, lunghezza, freeze, shift e destinazioni per nota e modulazione.</p></article>
-      <article class="cell"><h3>SEQ / P-LOCK</h3><p>Sequencer separato per ogni Macro. Trigger, note, blocchi di parametro per step e rigenerazione dei pattern.</p></article>
-      <article class="cell"><h3>ENV / LFO / FILTER</h3><p>Modulazioni LFO, envelope ADSR, filtri per voce e controlli diretti su cutoff, risonanza, drive e inviluppi.</p></article>
-      <article class="cell"><h3>FX / MIXER</h3><p>Mandate per voce, delay sincronizzabili, riverbero Clouds selezionabile e processori leggeri supplementari, con controllo del carico CPU.</p></article>
-      <article class="cell"><h3>AMBIENT / TECHNO</h3><p>Modalità generative dedicate: AMBIENT con quattro pattern musicali indipendenti e TECHNO per variazioni ritmiche. DRONE separato.</p></article>
-      <article class="cell"><h3>MIDI / CLOCK</h3><p>Funzioni MIDI e sincronizzazione, con clock interno, ingresso o uscita secondo le impostazioni e le capacità del firmware installato.</p></article>
-      <article class="cell"><h3>INTERFACCIA / FM1</h3><p>Schermo monocromatico, encoder originali, tasti fisici, navigazione per sezioni e indicatore CPU. Nessuna modifica hardware richiesta.</p></article>
+    <div class="flash-box wide"><h3 data-en="03 / INSTALL" data-it="03 / INSTALLA">03 / INSTALL</h3>
+      <label class="check"><input id="ack1" type="checkbox" disabled><span data-en="Stable power, a known-good USB-C data cable and a recovery backup are ready." data-it="Alimentazione stabile, cavo USB-C dati affidabile e backup di ripristino disponibili.">Stable power, a known-good USB-C data cable and a recovery backup are ready.</span></label>
+      <label class="check"><input id="ack2" type="checkbox" disabled><span data-en="I will not disconnect the FM1 during flashing. I understand this is an unofficial firmware." data-it="Non scollego l'FM1 durante il flash. Sono consapevole che questo è un firmware non ufficiale.">I will not disconnect the FM1 during flashing. I understand this is an unofficial firmware.</span></label>
+      <button type="button" class="btn inverse" id="flashBtn" disabled data-en="FLASH MT4 GOLD" data-it="INSTALLA MT4 GOLD">FLASH MT4 GOLD</button>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="status" id="flashStatus" role="status" data-en="Load GOLD and verify OTA before flashing." data-it="Carica GOLD e verifica OTA prima di installare.">Load GOLD and verify OTA before flashing.</div>
+      <details class="detail"><summary data-en="TECHNICAL LOG" data-it="LOG TECNICO">TECHNICAL LOG</summary><pre class="log" id="log"></pre></details>
     </div>
-    <div class="actions"><a class="btn" href="manual/#controls">TUTTI I CONTROLLI</a><a class="btn" href="manual/#pages">GUIDA ALLE PAGINE</a></div>
-  </section>
-  <section class="section" id="manual">
-    <p class="tag">03 / MANUALE</p><h2>SUONA. MODIFICA. RIGENERA.</h2>
-    <p>Il manuale online spiega la navigazione dei tasti HOME, SEQ, ENV, LFO, FX e GLO; la gestione di Macro e Turing; i P-Lock; le modalità AMBIENT, TECHNO e DRONE; gli effetti, i controlli globali e i limiti pratici dell'FM1.</p>
-    <div class="actions"><a class="btn inverse" href="manual/">MANUALE ONLINE / IT</a></div>
-  </section>
-  <section class="section" id="flash">
-    <p class="tag">04 / INSTALLAZIONE</p>
-    <h2>FLASH / USB-C</h2>
-    <p>L'installazione ordinaria utilizza il flasher WebMIDI universale già presente su questo sito. Funziona da Chrome su Android con un FM1 compatibile con il protocollo OTA Felucca/SLOOP. <strong>La porta MIDI visibile da sola non garantisce che il firmware sia aggiornabile.</strong></p>
-    <div class="steps">
-      <div class="step"><div class="stepnum">01</div><div><h3>PREPARA</h3><p>Carica e alimenta stabilmente l'FM1. Usa un cavo USB-C dati affidabile. Conserva un backup e una GOLD precedente per l'eventuale ripristino.</p></div></div>
-      <div class="step"><div class="stepnum">02</div><div><h3>SCARICA IL FILE CORRETTO</h3><p>Procurati il firmware <strong>.fwsc</strong> EXS MT4 GOLD da una fonte verificata. Il file ZIP del pacchetto non è il file da selezionare nel browser.</p></div></div>
-      <div class="step"><div class="stepnum">03</div><div><h3>VERIFICA IL DISPOSITIVO</h3><p>Apri Chrome sul telefono, collega l'FM1 via USB-C e apri il flasher. Concedi l'accesso MIDI/SysEx ed esegui la diagnosi senza scrittura.</p></div></div>
-      <div class="step"><div class="stepnum">04</div><div><h3>SELEZIONA E CONTROLLA</h3><p>Seleziona il file .fwsc locale. Controlla modello, dimensione, SHA-256 e conferme. Se identità o handshake OTA non passano, interrompi.</p></div></div>
-      <div class="step"><div class="stepnum">05</div><div><h3>INSTALLA E VERIFICA</h3><p>Autorizza il flash solo se tutti i controlli sono superati. Non chiudere il browser né scollegare l'alimentazione durante la scrittura. Verifica il riavvio.</p></div></div>
-    </div>
-    <div class="actions"><a class="btn inverse" href="../mt4-flasher/">APRI FLASHER UNIVERSALE</a><a class="btn" href="manual/#flash-help">DIAGNOSTICA / RECUPERO</a></div>
-    <div class="warning"><strong>ATTENZIONE / MODIFICA DEL FIRMWARE</strong><p>Un flash interrotto può rendere il dispositivo non avviabile. Il flasher WebMIDI <strong>non</strong> effettua il recupero dalla modalità WL82 U-BOOT: in quel caso serve una procedura di ripristino separata su computer. Non tentare scritture senza identità OTA valida.</p></div>
-    <p class="small" style="margin-top:22px">RELEASE GOLD VERIFICATA / 29.10.2026</p>
-    <div class="code">EXS_MT4_v030_P747_REAL_AMBIENT_PATTERNS_GOLD.fwsc<br>SIZE: 609912 BYTES<br>SHA-256: 986585ed3b980b799577fc11c23a50c48c9e302446f96b9aacdebacaf659f566</div>
-    <p class="muted small" style="margin-top:15px">Questa pagina documenta la release approvata e non effettua flash automatici. Il file firmware non viene scaricato né inviato al server del flasher: viene selezionato localmente dall'utente.</p>
-  </section>
-  <footer><div class="foot"><span>EXSIDERURGICA INSTRUMENTS / EXS MT4</span><a href="../">TORNA A TTG</a><a href="https://github.com/exsiderurgica/EXS-FM1">GITHUB / CODICE</a></div></footer>
+  </div>
+  <div class="warning">
+    <strong data-en="WARNING / OTA ONLY" data-it="ATTENZIONE / SOLO OTA">WARNING / OTA ONLY</strong>
+    <p data-en="Flashing is disabled unless both the GOLD firmware hash and the device's OTA identity are verified. If the FM1 enters WL82 U-BOOT, this page cannot recover it. Do not format the device or disconnect during an active write." data-it="Il flash rimane bloccato senza verifica dell'hash GOLD e dell'identità OTA. Se l'FM1 entra in WL82 U-BOOT, questa pagina non può recuperarlo. Non formattare il dispositivo e non scollegarlo durante la scrittura.">Flashing is disabled unless both the GOLD firmware hash and the device's OTA identity are verified. If the FM1 enters WL82 U-BOOT, this page cannot recover it. Do not format the device or disconnect during an active write.</p>
+  </div>
+  <p class="fwline"><strong>SHA-256</strong><br>986585ed3b980b799577fc11c23a50c48c9e302446f96b9aacdebacaf659f566</p>
+</section>
+<footer><span>EXSIDERURGICA / EXS MT4 / 2026</span><a href="../">TTG</a></footer>
 </div>
+<div class="modal" id="donationModal" role="dialog" aria-modal="true" aria-labelledby="donationTitle" aria-hidden="true">
+  <div class="modal-panel">
+    <h2 class="modal-title" id="donationTitle" data-en="MT4 IS FREE." data-it="MT4 È GRATUITO.">MT4 IS FREE.</h2>
+    <p data-en="If you enjoy the project, you can support its development. Donation is optional. The firmware is identical either way." data-it="Se apprezzi il progetto, puoi sostenere lo sviluppo. La donazione è facoltativa. Il firmware è identico in entrambi i casi.">If you enjoy the project, you can support its development. Donation is optional. The firmware is identical either way.</p>
+    <div class="modal-actions"><button class="btn inverse" type="button" id="donateDownload" data-en="SUPPORT / PAYPAL" data-it="SOSTIENI / PAYPAL">SUPPORT / PAYPAL</button>
+      <button class="btn" type="button" id="freeDownload" data-en="NO THANKS / FREE DOWNLOAD" data-it="NO GRAZIE / DOWNLOAD GRATUITO">NO THANKS / FREE DOWNLOAD</button>
+      <button class="btn" type="button" id="cancelDownload" data-en="CANCEL" data-it="ANNULLA">CANCEL</button></div>
+  </div>
+</div>
+<script type="module" src="./site.mjs"></script><script type="module" src="./flash.mjs"></script>
 </body></html>
