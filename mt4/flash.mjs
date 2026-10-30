@@ -8,7 +8,7 @@ import {inspectFwsc,compatibleDevice} from '../mt4-flasher/fwsc-check.mjs';
 const $=id=>document.getElementById(id);
 const SHA='986585ed3b980b799577fc11c23a50c48c9e302446f96b9aacdebacaf659f566';
 const NAME='EXS_MT4_v030_P747_REAL_AMBIENT_PATTERNS_GOLD.fwsc';
-const FW_URL='https://raw.githubusercontent.com/exsiderurgica/EXS-FM1/main/public-firmware/'+NAME;
+const FW_URL=new URL('./'+NAME,import.meta.url).href;
 const i=(en,it)=>document.documentElement.lang==='it'?it:en;
 let loaded=null,access=null,identity=null,busy=false,wake=null;
 const isOta=x=>/^ota-/i.test(x?.model||'');
