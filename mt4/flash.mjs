@@ -60,6 +60,8 @@ window.addEventListener('mt4-download-approved',async()=>{
     const blob=new Blob([gold.raw],{type:'application/octet-stream'});
     const link=document.createElement('a'),obj=URL.createObjectURL(blob);
     link.href=obj;link.download=NAME;document.body.append(link);link.click();link.remove();
+    window.dispatchEvent(new CustomEvent('mt4-gold-download-started'));
+
     setTimeout(()=>URL.revokeObjectURL(obj),60000);
     status('fileStatus','Verified GOLD download started / ready to flash','Download GOLD verificato avviato / pronto al flash','ok');
   }catch(e){status('fileStatus',e.message,e.message,'err');log('Download: '+e.message)}
