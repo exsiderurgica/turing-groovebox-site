@@ -41,6 +41,10 @@ p{margin:0 0 14px}
 .stat{border-top:1px solid white;padding-top:13px;min-width:0}
 .stat span{display:block;font-size:21px}
 .stat strong{display:block;font-size:12px;margin:7px 0}
+.mt4-counter{font:clamp(34px,7vw,58px)/1.15 'Silkscreen',monospace!important;display:block;margin-top:12px;overflow-wrap:anywhere}
+#stats .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
+#stats .small{margin-top:22px;line-height:1.35}
+@media(max-width:560px){#stats .meta{grid-template-columns:1fr}}
 .specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:21px 0;border-left:1px solid white;border-top:1px solid white}
 .spec{padding:21px;border-right:1px solid white;border-bottom:1px solid white}
 .spec strong{display:block;font:clamp(20px,3.5vw,31px)/1.35 'Silkscreen',monospace}
