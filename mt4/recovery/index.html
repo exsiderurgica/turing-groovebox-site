@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000"><meta name="description" content="EXS MT4 Recovery Kit: guida e strumenti per tentare il recupero di una M-VAVE FM1 bloccata su Windows o macOS.">
+<title>FM1 Recovery / EXS MT4</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+.intro{max-width:800px}.columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:28px 0}.block{border:1px solid #fff;padding:24px}.block .btn{width:100%;margin:12px 0 0}.block h3{font-size:17px}.block ul{padding-left:24px}.block li{margin:12px 0}.notice{border:2px solid #fff;padding:22px;margin:26px 0}.hash{word-break:break-all;font:12px/1.6 monospace;color:#ccc}code{font:15px/1.6 monospace;white-space:normal}.note{font-size:20px;line-height:1.4}a{text-decoration:underline}@media(max-width:750px){.columns{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+<div class="topbar"><a class="brand" href="../">EXSIDERURGICA / MT4</a><nav class="nav"><a href="../">MT4</a><a href="../manual/">MANUAL</a></nav></div>
+<header class="hero"><p class="eyebrow">M-VAVE FM1 / RECOVERY TOOLS / 01 NOV 2026</p><h1>FM1 / RECOVERY</h1>
+<p class="lead">Schermo nero? Prima la diagnosi. Poi, se possibile, il recupero.</p>
+<p class="intro">Kit gratuito di avvio guidato per FM1 bloccate dopo un aggiornamento. Gli strumenti sono open-source, ma il procedimento è sperimentale e non garantisce il recupero. <strong>Non è un prodotto M-VAVE.</strong></p>
+<div class="notice"><strong>PRIMA DI COMINCIARE</strong>
+<p>Non formattare mai il disco <code>WL82 UBOOT1.00</code>. Usa un cavo USB dati diretto e alimentazione stabile. I pacchetti NON includono il firmware M-VAVE e NON avviano automaticamente alcuna scrittura.</p>
+<p>Il firmware ufficiale V15 <code>FM-1.fwsc</code> va scaricato separatamente da <a href="https://www.m-vave.com/download" target="_blank" rel="noopener">M-VAVE Download</a>. È richiesto Python 3.9+ e accesso a Internet per preparare gli strumenti.</p>
+</div></header>
+<section class="section"><p class="tag">01 / DOWNLOAD</p><h2>SCARICA IL KIT</h2>
+<div class="columns">
+<div class="block"><h3>WINDOWS 10 / 11</h3><p>Diagnosi USB, identificazione WL82, backup doppio della memoria, ripristino verificato del firmware originale V15.</p>
+<a class="btn inverse" href="./EXS_MT4_Recovery_Windows.zip" download>DOWNLOAD WINDOWS .ZIP</a>
+<p class="small">Estrai lo ZIP, apri <code>AVVIA_WINDOWS.cmd</code> e scegli prima la diagnosi (1). Per leggere o scrivere la memoria, avvia come amministratore.</p>
+</div>
+<div class="block"><h3>macOS</h3><p>Diagnosi USB e percorso alternativo di recupero tramite FM-1 Transporter con <strong>Seeed XIAO RP2040</strong>, da procurare separatamente.</p>
+<a class="btn inverse" href="./EXS_MT4_Recovery_Mac.zip" download>DOWNLOAD macOS .ZIP</a>
+<p class="small">Estrai lo ZIP e apri <code>AVVIA_MAC.command</code>. <strong>Il recupero USB diretto WL82 non è supportato su Mac.</strong> Se il Mac vede WL82, usa Windows o Linux.</p>
+</div>
+</div>
+<p class="small">I kit scaricano al primo utilizzo gli strumenti originali MIT da un <a href="https://github.com/Quixotic7/MvaveFM1Unbricker/tree/517b9387e62e908115e5eec66c32d0ac3289f039" target="_blank" rel="noopener">commit GitHub fissato</a> e controllano i file essenziali tramite SHA-1 Git. Il firmware ufficiale resta una scelta e un download dell'utente.</p>
+</section>
+<section class="section"><p class="tag">02 / QUAL È IL TUO CASO?</p><h2>PRIMA DI SCRIVERE</h2>
+<div class="steps">
+<div class="step"><span class="stepnum">01</span><div><h3>FM1 rilevata come WL82 UBOOT1.00</h3><p>Su Windows è possibile tentare il recupero via USB. Il tool controlla chip e flash, esegue due letture e salva il backup prima di chiedere <code>WRITE</code>.</p></div></div>
+<div class="step"><span class="stepnum">02</span><div><h3>FM1 ancora funzionante / USB-MIDI visibile</h3><p>Non usare subito un recupero di emergenza. Verifica prima il percorso normale di aggiornamento. La funzione softkey da Mac richiede una FM1 ancora funzionante e non equivale al ripristino.</p></div></div>
+<div class="step"><span class="stepnum">03</span><div><h3>Nessun dispositivo USB su alcun computer</h3><p>Il normale recupero USB non può comunicare con il chip. Il progetto <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener">FM-1 Transporter</a> usa XIAO RP2040 e tre collegamenti USB: procedura hardware da affrontare solo dopo aver letto attentamente lo schema.</p></div></div>
+</div></section>
+<section class="section"><p class="tag">03 / SICUREZZA</p><h2>LEGGI PRIMA</h2>
+<p>Nessun ripristino è garantito. Non intervenire sull'hardware senza conoscere i collegamenti. Non usare RP2350 al posto dello XIAO RP2040 indicato dalla guida originale. Non collegare il filo VBUS (rosso) al Transporter.</p>
+<p>La scrittura deve interessare solo la regione firmware consentita e non la parte iniziale di boot. Se la verifica fallisce, <strong>non scollegare e non spegnere</strong>: leggere il messaggio dello strumento. I backup potrebbero contenere suoni e progetti: conservarli privatamente.</p>
+<p class="small">Documentazione / sorgenti: <a href="https://github.com/Quixotic7/MvaveFM1Unbricker" target="_blank" rel="noopener">MvaveFM1Unbricker</a> · <a href="https://github.com/kagaimiq/jl-uboot-tool" target="_blank" rel="noopener">jl-uboot-tool</a> · <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener">FM-1 Transporter</a>. Si ringraziano gli autori originali. Kit EXS non affiliato a M-VAVE.</p>
+</section>
+<section class="section"><p class="tag">04 / INTEGRITÀ</p><h2>SHA-256 ZIP</h2>
+<p class="hash">WINDOWS · 553ba54d63d0c34e588dcf5201b42711820d8f09ef39371cc1e082445cab250d</p>
+<p class="hash">MAC · fa95ccbce401de15c876895de29ed240785adbf81e261219fdd84eedb736342e</p>
+</section>
+<footer><span>EXSIDERURGICA / MT4 RECOVERY 1.0</span><a href="../">TORNA A MT4</a></footer>
+</div></body></html>
