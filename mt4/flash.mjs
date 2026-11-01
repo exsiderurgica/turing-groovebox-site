@@ -6,8 +6,8 @@ import {Updater,OUR_LOADER,FM1_PORT} from '../fm1-test-a03/fm1ota.js';
 import {inspectFwsc,compatibleDevice} from '../mt4-flasher/fwsc-check.mjs';
 
 const $=id=>document.getElementById(id);
-const SHA='986585ed3b980b799577fc11c23a50c48c9e302446f96b9aacdebacaf659f566';
-const NAME='EXS_MT4_v030_P747_REAL_AMBIENT_PATTERNS_GOLD.fwsc';
+const SHA='30d6738118e269087d32917ba5c5bbcb25d45f9417f5e8c203b5adb0d4c3751e';
+const NAME='EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc';
 const FW_URL=new URL('./'+NAME,import.meta.url).href;
 const i=(en,it)=>document.documentElement.lang==='it'?it:en;
 let loaded=null,access=null,identity=null,busy=false,wake=null;
@@ -46,7 +46,7 @@ async function loadGold(){
   try{
     status('fileStatus','Downloading and verifying GOLD…','Scarico e verifico GOLD…','warn');
     await getGold();
-    status('fileStatus','P7.4.7 GOLD verified / SHA-256 OK','P7.4.7 GOLD verificata / SHA-256 OK','ok');
+    status('fileStatus','P7.5.9 GOLD verified / SHA-256 OK','P7.5.9 GOLD verificata / SHA-256 OK','ok');
   }catch(e){status('fileStatus',e.message,e.message,'err');log('GOLD: '+e.message)}
   finally{busy=false;controls()}
 }
@@ -116,8 +116,8 @@ $('flashBtn').addEventListener('click',async()=>{
   if(busy||!loaded||!identity||!compatibleDevice(identity,loaded.meta)||
      !$('ack1').checked||!$('ack2').checked)return;
   const message=i(
-    'FLASH MT4 P7.4.7 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
-    'INSTALLA MT4 P7.4.7 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
+    'FLASH MT4 P7.5.9 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
+    'INSTALLA MT4 P7.5.9 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
   );
   if(!window.confirm(message))return;
   busy=true;controls();bar(2);
