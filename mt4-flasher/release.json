@@ -2,10 +2,10 @@
   "schema": 1,
   "flash_enabled": true,
   "ota_enabled": true,
-  "release": "MT4 v0.30 P5.1",
+  "release": "MT4 v0.30 P7.5.9 GOLD",
   "product": "FM-1_986",
   "size": 609912,
-  "sha256": "9cba756d32b8a679d867ac643519a4a5a344553a5aa81f0d6d4f06ba2bbc502e",
-  "firmware_url": null,
-  "notes": "TEST HARDWARE SPERIMENTALE. USB Audio solo 44.1 kHz, fix REGEN/CLEAR step, batteria allineata al BPM. FM1 P5 GOLD OTA handshake verificato ma SCRITTURA/loader Chrome non ancora verificata: backup e M-Flasher Mac pronti; file .fwsc fornito a parte."
+  "sha256": "30d6738118e269087d32917ba5c5bbcb25d45f9417f5e8c203b5adb0d4c3751e",
+  "firmware_url": "../mt4/EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc",
+  "notes": "GOLD designated by author 2026-11-01; native JieLi build and host tests passed. String Machine EXTRA only (manual selection), EDIT+PLAY regenerates AMBIENT/TECHNO/HYBRID without STOP. Browser OTA flashing requires valid FM1 device handshake; CPU/hardware behavior still demands testing."
 }
