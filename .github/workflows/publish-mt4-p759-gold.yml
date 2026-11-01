@@ -1,0 +1,43 @@
+name: Publish MT4 P7.5.9 GOLD to website
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-mt4-p759-gold.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mt4-p759-site-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download exact SHA-verified GOLD binary from EXS-FM1
+        run: |
+          set -euo pipefail
+          mkdir -p mt4
+          SOURCE="https://raw.githubusercontent.com/exsiderurgica/EXS-FM1/main/public-firmware/EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc"
+          DEST="mt4/EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc"
+          curl -fLsS --retry 4 --retry-all-errors --retry-delay 3 --connect-timeout 10 --max-time 90 "$SOURCE" -o "$DEST"
+          test "$(wc -c < "$DEST")" -eq 609912
+          echo "30d6738118e269087d32917ba5c5bbcb25d45f9417f5e8c203b5adb0d4c3751e  $DEST" | sha256sum -c -
+          echo "Website GOLD binary validated"
+      - name: Commit firmware to GitHub Pages published directory
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f mt4/EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc
+          if git diff --cached --quiet; then
+            echo "Already available on the MT4 site"
+          else
+            git commit -m "site(MT4): host P7.5.9 GOLD flashable firmware with verified SHA"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
