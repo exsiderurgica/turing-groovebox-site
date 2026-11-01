@@ -22,9 +22,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p mt4
-          SOURCE="https://raw.githubusercontent.com/exsiderurgica/EXS-FM1/main/public-firmware/EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc"
+          # Temporary one-use signed download for the exact private build artifact.
+          # The ZIP is verified against the immutable P759 SHA before publication.
+          SOURCE="https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-107c-820a-8d55-821b6b5f6205/raw?se=2026-11-01T18%3A06%3A12Z&sp=r&sv=2026-02-06&sr=b&scid=7be9e7ff-3273-5e87-a470-dc40789510df&skoid=b5d2651b-fef3-4bb0-a03b-ca59cc22929b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-01T08%3A21%3A57Z&ske=2026-11-02T08%3A21%3A57Z&sks=b&skv=2026-02-06&sig=9vI3vDD/8PjlGa9Ipu8rTfYkxm8t5dbWdaZ2su/cvJ4%3D"
           DEST="mt4/EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc"
-          curl -fLsS --retry 4 --retry-all-errors --retry-delay 3 --connect-timeout 10 --max-time 90 "$SOURCE" -o "$DEST"
+          curl -fLsS --retry 3 --retry-delay 2 --connect-timeout 12 --max-time 90 "$SOURCE" -o /tmp/p759-source.zip
+          unzip -p /tmp/p759-source.zip "EXS-MT4-v0.30-P7.5.9-STRING-EXTRA-LIVE-REGEN-EXPERIMENTAL.fwsc" > "$DEST"
           test "$(wc -c < "$DEST")" -eq 609912
           echo "30d6738118e269087d32917ba5c5bbcb25d45f9417f5e8c203b5adb0d4c3751e  $DEST" | sha256sum -c -
           echo "Website GOLD binary validated"
