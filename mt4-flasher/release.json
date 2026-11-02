@@ -2,10 +2,10 @@
   "schema": 1,
   "flash_enabled": true,
   "ota_enabled": true,
-  "release": "MT4 v0.30 P7.5.9 GOLD",
+  "release": "MT4 v0.30 P7.6.7 GOLD",
   "product": "FM-1_986",
   "size": 609912,
-  "sha256": "30d6738118e269087d32917ba5c5bbcb25d45f9417f5e8c203b5adb0d4c3751e",
-  "firmware_url": "../mt4/EXS_MT4_v030_P759_STRING_EXTRA_LIVE_REGEN_GOLD.fwsc",
-  "notes": "GOLD designated by author 2026-11-01; native JieLi build and host tests passed. String Machine EXTRA only (manual selection), EDIT+PLAY regenerates AMBIENT/TECHNO/HYBRID without STOP. Browser OTA flashing requires valid FM1 device handshake; CPU/hardware behavior still demands testing."
+  "sha256": "7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e",
+  "firmware_url": "../mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc",
+  "notes": "GOLD designated by author 2026-11-02. Original JieLi P7.6.7 build SHA-256 verified and 59 automated CI steps passed. Mutable FxEngine single-instance stereo ping-pong delay; Clouds Reverb default 16 kHz; original DRY/WET; musical REGEN categories / DIV1 and no auto Turing freeze; SAVE CONTROL ALL; lower kick and varied TECHNO Macro 4. Physical FM1 CPU and audio not independently certified. Browser OTA requires compatible device identity."
 }
