@@ -55,7 +55,7 @@ jobs:
           assert 'P7.6.8.5' in html and 'P7.6.8.5' in manual
           assert 'id="downloadBtn"' in html and 'id="flashBtn"' in html
           assert 'PAYPAL' in html.upper() and 'freeDownload' in html
-          assert 'P7.6.7' in html and 'P7.6.8.5' in html
+          assert 'P7.6.8.5' in html and 'CONTROL ALL' in html
           print('PASS MT4 P7685 GOLD binary SHA256, previous GOLD archive, download/OTA, bilingual site')
           PY
           node --check mt4/flash.mjs
