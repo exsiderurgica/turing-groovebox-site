@@ -2,10 +2,10 @@
   "schema": 1,
   "flash_enabled": true,
   "ota_enabled": true,
-  "release": "MT4 v0.30 P7.6.7 GOLD",
+  "release": "MT4 v0.30 P7.6.8.5 GOLD",
   "product": "FM-1_986",
   "size": 609912,
-  "sha256": "7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e",
-  "firmware_url": "../mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc",
-  "notes": "GOLD designated by author 2026-11-02. Original JieLi P7.6.7 build SHA-256 verified and 59 automated CI steps passed. Mutable FxEngine single-instance stereo ping-pong delay; Clouds Reverb default 16 kHz; original DRY/WET; musical REGEN categories / DIV1 and no auto Turing freeze; SAVE CONTROL ALL; lower kick and varied TECHNO Macro 4. Physical FM1 CPU and audio not independently certified. Browser OTA requires compatible device identity."
+  "sha256": "4b909d0d3a6db5737d5670d1f5a38999597099138681741150982a22844083ac",
+  "firmware_url": "../mt4/EXS_MT4_v030_P7685_MACRO4_VOLUME_REGEN_GOLD.fwsc",
+  "notes": "GOLD designated by author 2026-11-03. Original JieLi P7.6.8.5 build SHA-256 verified; 62 CI steps passed. 4 Macros/4 Turing/8 LFO. Based on P7.6.7 Mutable FxEngine stereo Ping-Pong and Clouds 16 kHz; CONTROL ALL algorithm protection; varied OP6 phrase REGEN; bipolar neutral non-kick Pitch ENV raw 64; kick tuned around -12; offbeat hat REGEN uses same generator as TECHNO; Macro 4 MIXER volume now controls real audio with step velocity P-Locks preserved. FM1 hardware/CPU has not been independently certified; OTA gated by firmware hash and device identity."
 }
