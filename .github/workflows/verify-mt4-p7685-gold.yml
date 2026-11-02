@@ -1,0 +1,64 @@
+name: Verify published EXS MT4 P7.6.8.5 GOLD (current)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-mt4-p7685-gold.yml'
+      - 'mt4/**'
+      - 'mt4-flasher/release.json'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-mt4-p7685-gold.yml'
+      - 'mt4/**'
+      - 'mt4-flasher/release.json'
+      - '.github/workflows/publish-mt4-p767-gold.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact immutable GOLD firmware and safe integrated flasher
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          want='4b909d0d3a6db5737d5670d1f5a38999597099138681741150982a22844083ac'
+          name='EXS_MT4_v030_P7685_MACRO4_VOLUME_REGEN_GOLD.fwsc'
+          path=Path('mt4')/name
+          data=path.read_bytes()
+          assert len(data)==609912,(len(data),)
+          assert hashlib.sha256(data).hexdigest()==want
+          old=Path('mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc')
+          assert len(old.read_bytes())==609912
+          assert hashlib.sha256(old.read_bytes()).hexdigest()=='7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e'
+          release=json.loads(Path('mt4-flasher/release.json').read_text())
+          assert release['release']=='MT4 v0.30 P7.6.8.5 GOLD'
+          assert release['sha256']==want and release['size']==609912
+          assert release['firmware_url']=='../mt4/'+name
+          assert release['flash_enabled'] and release['ota_enabled'] and release['product']=='FM-1_986'
+          flash=Path('mt4/flash.mjs').read_text()
+          assert f"const SHA='{want}'" in flash
+          assert f"const NAME='{name}'" in flash
+          assert "P7.6.8.5 GOLD" in flash
+          assert "compatibleDevice(identity,loaded.meta)" in flash
+          assert "allowUnverifiedFelucca:false" in flash
+          assert "inspectFwsc(raw,NAME)" in flash
+          html=Path('mt4/index.html').read_text()
+          manual=Path('mt4/manual/index.html').read_text()
+          assert 'P7.6.8.5' in html and 'P7.6.8.5' in manual
+          assert 'id="downloadBtn"' in html and 'id="flashBtn"' in html
+          assert 'PAYPAL' in html.upper() and 'freeDownload' in html
+          assert 'P7.6.7' in html and 'P7.6.8.5' in html
+          print('PASS MT4 P7685 GOLD binary SHA256, previous GOLD archive, download/OTA, bilingual site')
+          PY
+          node --check mt4/flash.mjs
+          node --check mt4/site.mjs
+          node --check mt4-flasher/app.mjs
+          node --experimental-default-type=module --test mt4-flasher/fwsc-check.test.mjs
