@@ -1,53 +1,44 @@
-name: Publish MT4 P7.6.7 GOLD verified firmware
+name: Verify published EXS MT4 P7.6.7 GOLD
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/publish-mt4-p767-gold.yml'
+      - 'mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc'
+      - 'mt4/index.html'
+      - 'mt4/flash.mjs'
+      - 'mt4-flasher/release.json'
+      - 'mt4/manual/index.html'
   workflow_dispatch:
 permissions:
-  contents: write
-concurrency:
-  group: mt4-p767-gold-publication
-  cancel-in-progress: false
+  contents: read
 jobs:
-  publish:
+  verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-      - name: Fetch exact successful EXS-FM1 P767 build artifact, verify, publish
-        env:
-          SOURCE_ARCHIVE_URL: 'https://sdmntprnortheu.oaiusercontent.com/files/00000000-d430-81f4-adc4-69c7b858e780/raw?se=2026-11-02T07%3A51%3A12Z&sp=r&sv=2026-02-06&sr=b&scid=26bd6893-7401-5320-bbda-bf49316c9b60&skoid=3804227d-1b52-417d-afd9-9ffbb50fa53e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-11-02T06%3A29%3A48Z&ske=2026-11-03T06%3A29%3A48Z&sks=b&skv=2026-02-06&sig=D/3ZeKnZCG9IYJb/OpJgtRS8MtpMOEHAuaro1tnRH6s%3D'
+      - name: Verify checked GOLD, SHA, website and Chrome flasher
         run: |
           set -euo pipefail
-          curl --fail --location --silent --show-error --retry 3 --max-time 90 "$SOURCE_ARCHIVE_URL" -o /tmp/p767-source.zip
+          FILE="mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc"
+          test "$(wc -c < "$FILE")" -eq 609912
+          echo "7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e  $FILE" | sha256sum -c -
+          node --check mt4/flash.mjs
+          node --check mt4/site.mjs
+          node --check mt4-flasher/app.mjs
           python3 - <<'PY'
-          import io, zipfile, hashlib
           from pathlib import Path
-          archive=zipfile.ZipFile('/tmp/p767-source.zip')
-          firmware=[name for name in archive.namelist() if name.endswith('.fwsc')]
-          assert len(firmware)==1,firmware
-          payload=archive.read(firmware[0])
-          sha=hashlib.sha256(payload).hexdigest()
-          want="7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e"
-          assert len(payload)==609912 and sha==want,(len(payload),sha)
-          target=Path('mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc')
-          target.parent.mkdir(parents=True,exist_ok=True)
-          target.write_bytes(payload)
-          print('Verified MT4 P7.6.7 GOLD',target,len(payload),sha)
+          import json
+          html=Path("mt4/index.html").read_text()
+          flash=Path("mt4/flash.mjs").read_text()
+          manual=Path("mt4/manual/index.html").read_text()
+          release=json.loads(Path("mt4-flasher/release.json").read_text())
+          assert "P7.6.7" in html and "P7.6.7" in flash and "P7.6.7" in manual
+          assert "7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e" in flash
+          assert release["sha256"]=="7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e"
+          assert release["firmware_url"]=="../mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc"
+          assert "P7.5.9 GOLD verified" not in flash
+          assert "PAYPAL" in html.upper() and "freeDownload" in html
+          print("PASS: published P7.6.7 GOLD, integrated OTA SHA guard, Italian/English manual, donation optional")
           PY
-      - name: Commit checked binary without touching prior GOLD
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc
-          if git diff --cached --quiet; then
-            echo "P767 binary already published"
-          else
-            git commit -m "release(MT4): P7.6.7 GOLD binary SHA-256 verified"
-            git push origin HEAD:main
-          fi
