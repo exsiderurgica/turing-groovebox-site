@@ -1,14 +1,10 @@
-name: Verify published EXS MT4 P7.6.7 GOLD
+name: Verify archived EXS MT4 P7.6.7 GOLD
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/publish-mt4-p767-gold.yml'
       - 'mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc'
-      - 'mt4/index.html'
-      - 'mt4/flash.mjs'
-      - 'mt4-flasher/release.json'
-      - 'mt4/manual/index.html'
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,27 +14,10 @@ jobs:
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
-      - name: Verify checked GOLD, SHA, website and Chrome flasher
+      - name: Verify preserved previous GOLD binary (not the current release)
         run: |
           set -euo pipefail
           FILE="mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc"
           test "$(wc -c < "$FILE")" -eq 609912
           echo "7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e  $FILE" | sha256sum -c -
-          node --check mt4/flash.mjs
-          node --check mt4/site.mjs
-          node --check mt4-flasher/app.mjs
-          python3 - <<'PY'
-          from pathlib import Path
-          import json
-          html=Path("mt4/index.html").read_text()
-          flash=Path("mt4/flash.mjs").read_text()
-          manual=Path("mt4/manual/index.html").read_text()
-          release=json.loads(Path("mt4-flasher/release.json").read_text())
-          assert "P7.6.7" in html and "P7.6.7" in flash and "P7.6.7" in manual
-          assert "7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e" in flash
-          assert release["sha256"]=="7a47cbf3ad9fedf910c0f862940d94b29ec777523664e0c3f7664a636b8cd67e"
-          assert release["firmware_url"]=="../mt4/EXS_MT4_v030_P767_MUTABLE_PINGPONG_GOLD.fwsc"
-          assert "P7.5.9 GOLD verified" not in flash
-          assert "PAYPAL" in html.upper() and "freeDownload" in html
-          print("PASS: published P7.6.7 GOLD, integrated OTA SHA guard, Italian/English manual, donation optional")
-          PY
+          echo "Previous P7.6.7 GOLD binary remains preserved"
