@@ -21,3 +21,6 @@ Sources: https://github.com/nzimas/molecular/blob/main/device/hal.c and https://
 7. Only after hardware validation develop an application-only installable build and independent recovery validation.
 
 Do not overwrite region 'c', bootloader, production installer, or approved firmware SHA list during the probe. Prototype does not include vendor binaries, proprietary SDK or Sonicake presets. Licensing of any Molecular-derived code: GPL-3.0-only.
+
+## Added capture module
+`src/spis_probe.{h,c}` is a bounded capture ring, sampling one completed 512-byte SPI RX frame every 32 transfers. It drops frames when full instead of blocking; any USB output must happen later in the foreground, not inside an ISR. `tests/test_spis_probe.c` verifies decimation, queue integrity and overflow. Hardware DMA hook, transport, cache coherency and target CPU/latency validation are still missing. Compiler barrier assumes an in-order single-core device with atomic aligned index reads/writes.
