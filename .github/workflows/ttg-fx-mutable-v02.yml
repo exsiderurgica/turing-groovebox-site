@@ -1,6 +1,9 @@
 name: TTG FX genuine Mutable DSP (host verification)
 on:
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'pocket-master/dev/ttg-fx-v0.2/**'
+      - '.github/workflows/ttg-fx-mutable-v02.yml'
   push:
     branches:
       - 'pocket-master/ttg-fx-restart-20261104'
