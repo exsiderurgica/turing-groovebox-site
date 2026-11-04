@@ -26,3 +26,10 @@ jobs:
         run: |
           g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_mutable_delay.cpp -o build/test_mutable_delay
           ./build/test_mutable_delay
+      - name: Run independent UI to DSP application control tests
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttg_ui.c src/ttg_app.c tests/test_app.c -o build/test_app
+          ./build/test_app
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttg_ui.c tests/test_ui.c -o build/test_ui
+          ./build/test_ui
