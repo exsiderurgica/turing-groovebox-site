@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+mkdir -p build
+${CC:-cc} -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttgfx.c tests/test_fx.c -lm -o build/test_fx
+./build/test_fx
