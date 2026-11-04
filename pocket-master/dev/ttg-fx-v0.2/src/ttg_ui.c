@@ -3,13 +3,14 @@
 #include <stdio.h>
 #include <string.h>
 static const char *const names[6]={"DRIVE 1","FILTER 1","FILTER 2","DRIVE 2","DELAY","REVERB"};
-static const char *const par[6][4]={
-{"GAIN","LEVEL","TONE","MODE"},
-{"CUTOFF","RESO","LEVEL","HP/LP"},
-{"CUTOFF","RESO","LEVEL","HP/LP"},
-{"GAIN","LEVEL","TONE","MODE"},
-{"TIME","FEEDBACK","COLOR","WET"},
-{"DECAY","DIFFUSE","TONE","WET"}
+static const unsigned char counts[6]={4,4,4,4,5,4};
+static const char *const par[6][5]={
+{"GAIN","LEVEL","TONE","MODE",""},
+{"CUTOFF","RESO","LEVEL","HP/LP",""},
+{"CUTOFF","RESO","LEVEL","HP/LP",""},
+{"GAIN","LEVEL","TONE","MODE",""},
+{"TIME","FEEDBACK","COLOR","WET","PINGPONG"},
+{"DECAY","DIFFUSE","TONE","WET",""}
 };
 static const char cs[]=" ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:/-+%";
 static const unsigned char f[][5]={
@@ -47,7 +48,7 @@ void ttg_ui_side(ttg_ui *u,int side){u->selected=(u->selected+(side>0?1:5))%6;u-
 void ttg_ui_turn(ttg_ui *u,int d){
  if(u->editing){int t=u->values[u->selected][u->parameter]+d;
    u->values[u->selected][u->parameter]=t<0?0:t>100?100:t;
- }else{int t=u->parameter+d;u->parameter=t<0?0:t>=4?3:t;}
+ }else{int t=u->parameter+d;u->parameter=t<0?0:t>=counts[u->selected]?counts[u->selected]-1:t;}
 }
 void ttg_ui_press(ttg_ui *u,int held){if(held){u->enabled[u->selected]^=1;u->editing=0;}else u->editing^=1;}
 void ttg_ui_draw(const ttg_ui *u,uint16_t v[TTG_UI_H][TTG_UI_W]){
