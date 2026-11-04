@@ -26,6 +26,7 @@ struct TTGState {
   uint16_t delay_mem[DELAY_LEN];
   MutableEcho echo;
   float delay_prev[2],delwet[2],lp[2];
+  float drive_lp[2][2];
   float decim_acc;
   unsigned decim_count,phase;
 };
@@ -36,18 +37,23 @@ int16_t sample(float x){
   float y=limit(x,-1,1)*32767;
   return static_cast<int16_t>(y>=0?y+0.5f:y-0.5f);
 }
-float drive(float x){
-  float g=1.0f+14.0f*s.p.gain;
-  return stmlib::SoftClip(x*g)*s.p.level;
+float drive(int i,int c,float x){
+  float gain=s.p.use_extended?s.p.d_gain[i]:s.p.gain;
+  float level=s.p.use_extended?s.p.d_level[i]:s.p.level;
+  float tone=s.p.use_extended?s.p.d_tone[i]:1.0f;
+  float g=1.0f+14.0f*gain;
+  float y=s.p.use_extended&&s.p.d_mode[i]?limit(x*g,-1.0f,1.0f):stmlib::SoftClip(x*g);
+  float a=0.02f+0.98f*tone;
+  s.drive_lp[i][c]+=(y-s.drive_lp[i][c])*a;
+  return s.drive_lp[i][c]*level;
 }
 float filt(int stage,int channel,float x){
   if(!s.p.on[stage+1])return x;
-  float y=s.f[stage][channel].Process<stmlib::FILTER_MODE_LOW_PASS>(x);
-  return stmlib::SoftClip(y);
+  float y=s.p.use_extended&&s.p.f_hp[stage]
+    ?s.f[stage][channel].Process<stmlib::FILTER_MODE_HIGH_PASS>(x)
+    :s.f[stage][channel].Process<stmlib::FILTER_MODE_LOW_PASS>(x);
+  return stmlib::SoftClip(y*(s.p.use_extended?s.p.f_level[stage]:1.0f));
 }
-/* Shared MT4 P7.6.7 algorithm: Context::Interpolate + Write feedback.
- * The sample-rate adapter is Pocket-specific: exactly 8k ticks/second,
- * not the v0.2 half-rate 22.05k custom tape/echo. */
 void echo_step(float input){
   MutableEcho::Context ctx;
   EchoTapL tap_l;
@@ -95,7 +101,7 @@ void tick_delay(float *l,float *r){
     echo_step(input);
   }
   if(s.p.on[4]){
-    float mix=unit(s.p.wet);
+    float mix=unit(s.p.use_extended?s.p.delay_wet:s.p.wet);
     *l=now_l*(1-mix)+s.delwet[0]*mix;
     *r=now_r*(1-mix)+s.delwet[1]*mix;
   }
@@ -108,6 +114,7 @@ extern "C" void ttg_mutable_init(void){
   std::memset(s.delay_prev,0,sizeof(s.delay_prev));
   std::memset(s.delwet,0,sizeof(s.delwet));
   std::memset(s.lp,0,sizeof(s.lp));
+  std::memset(s.drive_lp,0,sizeof(s.drive_lp));
   s.decim_acc=0.0f;s.decim_count=s.phase=0;
   for(int i=0;i<2;i++)for(int c=0;c<2;c++)s.f[i][c].Init();
   s.rv.Init(s.rv_mem);
@@ -125,14 +132,22 @@ extern "C" void ttg_mutable_set_params(const ttg_mutable_params *p){
   s.p.wet=unit(p->wet);s.p.feedback=limit(p->feedback,0,.9f);
   s.p.tone=unit(p->tone);s.p.decay=unit(p->decay);s.p.diffusion=unit(p->diffusion);
   s.p.pingpong=(uint8_t)(p->pingpong?1:0);
-  float fc=20*powf(800,s.p.cutoff),q=.7f+s.p.resonance*9;
-  for(int i=0;i<2;i++)for(int c=0;c<2;c++)
-    s.f[i][c].set_f_q<stmlib::FREQUENCY_FAST>(fc/44100,q);
-  s.rv.set_amount(.65f);
+  s.p.use_extended=p->use_extended?1:0;
+  for(int i=0;i<2;i++){
+    float fc=20.0f*powf(800.0f,s.p.use_extended?unit(p->f_cutoff[i]):s.p.cutoff);
+    float q=.7f+(s.p.use_extended?unit(p->f_resonance[i]):s.p.resonance)*9.0f;
+    for(int c=0;c<2;c++)s.f[i][c].set_f_q<stmlib::FREQUENCY_FAST>(fc/44100.0f,q);
+    s.p.d_gain[i]=unit(p->d_gain[i]);s.p.d_level[i]=limit(p->d_level[i],0.0f,1.5f);
+    s.p.d_tone[i]=unit(p->d_tone[i]);s.p.d_mode[i]=p->d_mode[i]?1:0;
+    s.p.f_level[i]=limit(p->f_level[i],0.0f,1.5f);s.p.f_hp[i]=p->f_hp[i]?1:0;
+  }
+  s.p.delay_wet=unit(p->delay_wet);s.p.reverb_wet=unit(p->reverb_wet);
+  s.p.reverb_tone=unit(p->reverb_tone);
+  s.rv.set_amount(1.0f);
   s.rv.set_input_gain(.25f);
   s.rv.set_time(.2f+.73f*s.p.decay);
   s.rv.set_diffusion(.25f+.65f*s.p.diffusion);
-  s.rv.set_lp(.1f+.85f*s.p.tone);
+  s.rv.set_lp(.1f+.85f*(s.p.use_extended?s.p.reverb_tone:s.p.tone));
 }
 extern "C" void ttg_mutable_process(const int16_t *in,int16_t *out,size_t count){
   if(!in||!out)return;
@@ -143,16 +158,16 @@ extern "C" void ttg_mutable_process(const int16_t *in,int16_t *out,size_t count)
     unsigned n=(unsigned)(count-done<CHUNK?count-done:CHUNK);
     for(unsigned i=0;i<n;i++){
       float l=in[2*(done+i)]/32768.0f,r=in[2*(done+i)+1]/32768.0f;
-      if(s.p.on[0]){l=drive(l);r=drive(r);}
+      if(s.p.on[0]){l=drive(0,0,l);r=drive(0,1,r);}
       l=filt(0,0,l);r=filt(0,1,r);
       l=filt(1,0,l);r=filt(1,1,r);
-      if(s.p.on[3]){l=drive(l);r=drive(r);}
+      if(s.p.on[3]){l=drive(1,0,l);r=drive(1,1,r);}
       tick_delay(&l,&r);
       dry[i][0]=l;dry[i][1]=r;frame[i].l=l;frame[i].r=r;
     }
     if(s.p.on[5])s.rv.Process(frame,n);
     for(unsigned i=0;i<n;i++){
-      float wet=s.p.on[5]?s.p.wet:0;
+      float wet=s.p.on[5]?(s.p.use_extended?s.p.reverb_wet:s.p.wet):0;
       out[2*(done+i)]=sample(dry[i][0]*(1-wet)+frame[i].l*wet);
       out[2*(done+i)+1]=sample(dry[i][1]*(1-wet)+frame[i].r*wet);
     }
