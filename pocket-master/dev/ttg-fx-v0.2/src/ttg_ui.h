@@ -5,7 +5,7 @@
 #define TTG_UI_W 160
 #define TTG_UI_H 128
 #define TTG_UI_BLOCKS 6
-#define TTG_UI_PARAMETERS 4
+#define TTG_UI_PARAMETERS 5
 typedef struct {
  uint8_t selected,parameter,editing,enabled[TTG_UI_BLOCKS];
  uint8_t values[TTG_UI_BLOCKS][TTG_UI_PARAMETERS];
