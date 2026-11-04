@@ -1,0 +1,20 @@
+name: TTG FX genuine Mutable DSP (host verification)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'pocket-master/ttg-fx-restart-20261104'
+    paths:
+      - 'pocket-master/dev/ttg-fx-v0.2/**'
+      - '.github/workflows/ttg-fx-mutable-v02.yml'
+jobs:
+  genuine-mutable-dsp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and exercise actual stmlib SoftClip/SVF and Clouds Reverb
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          mkdir -p build
+          g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_mutable_reverb.cpp -o build/test_mutable
+          ./build/test_mutable
