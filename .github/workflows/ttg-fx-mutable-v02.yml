@@ -21,3 +21,8 @@ jobs:
           mkdir -p build
           g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_mutable_reverb.cpp -o build/test_mutable
           ./build/test_mutable
+      - name: MT4 P7.6.7 one-FxEngine 8kHz mono/pingpong impulse regression
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_mutable_delay.cpp -o build/test_mutable_delay
+          ./build/test_mutable_delay
