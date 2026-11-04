@@ -16,3 +16,6 @@ The former site flasher in `pocket-master/` must remain untouched. v0.7 was the 
 Next: read-only SPIS RX capture under official V1.3.3 companion ARM firmware, then link and benchmark input FX on device only if true audio samples are established. This branch is intentionally a draft, not an update announcement.
 
 Source authored for this prototype: MIT (see LICENSE).
+
+## Passive SPIS diagnostic module
+`src/spis_probe.{h,c}` adds a bounded, nonblocking single-producer/single-consumer queue for completed 512-byte SPI RX DMA frames. It copies one of every 32 frames into a four-slot ring, then foreground code may drain records for host analysis. No USB activity inside the ISR; no audio-path memory allocation. Host tests verify decimation, FIFO and overflow; the actual ISR hook and USB export remain to be measured and integrated on hardware. This still does **not** prove that RX contains usable analog audio.
