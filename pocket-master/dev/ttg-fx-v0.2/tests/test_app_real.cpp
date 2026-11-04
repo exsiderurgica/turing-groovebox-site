@@ -37,7 +37,11 @@ int main(){
   ttg_app_tick(&app,1001);
   assert(!app.params.on[2]&&app.params.on[1]);
   ttg_app_event(&app,TTG_EV_PUSH_UP,1100);
-  ttg_app_draw(&app,rgb);assert(rgb[0][0]!=rgb[15][15]);
+  ttg_app_draw(&app,rgb);
+  unsigned different=0;
+  for(int y=0;y<TTG_UI_H;y++)for(int x=0;x<TTG_UI_W;x++)
+    if(rgb[y][x]!=rgb[0][0])different++;
+  assert(different>1000);
   std::printf("PASS real Mutable TTG app UI→audio, filter independence, bypass; sums %lld/%lld RAM %zu\n",
     (long long)original,(long long)changed,ttg_mutable_static_bytes());
 }
