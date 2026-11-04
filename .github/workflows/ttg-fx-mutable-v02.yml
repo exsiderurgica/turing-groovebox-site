@@ -33,3 +33,10 @@ jobs:
           ./build/test_app
           cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttg_ui.c tests/test_ui.c -o build/test_ui
           ./build/test_ui
+      - name: Link genuine Mutable DSP to independent UI (no mocks)
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -c src/ttg_app.c -o build/ttg_app.o
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -c src/ttg_ui.c -o build/ttg_ui.o
+          g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_app_real.cpp build/ttg_app.o build/ttg_ui.o -o build/test_app_real
+          ./build/test_app_real
