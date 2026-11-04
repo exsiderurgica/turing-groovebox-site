@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct {float gain,level,cutoff,resonance,delay_ms,feedback,wet,decay,diffusion,tone;uint8_t on[6];} ttg_mutable_params;
+typedef struct {float gain,level,cutoff,resonance,delay_ms,feedback,wet,decay,diffusion,tone;uint8_t on[6];uint8_t pingpong;} ttg_mutable_params;
 void ttg_mutable_init(void);
 void ttg_mutable_set_params(const ttg_mutable_params *p);
 void ttg_mutable_process(const int16_t *in,int16_t *out,size_t frames);
