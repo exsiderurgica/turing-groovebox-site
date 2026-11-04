@@ -40,3 +40,19 @@ jobs:
           cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -c src/ttg_ui.c -o build/ttg_ui.o
           g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_app_real.cpp build/ttg_app.o build/ttg_ui.o -o build/test_app_real
           ./build/test_app_real
+
+      - name: Verify diagnostic ADC1 bridge and safe muted boot
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttg_input.c tests/test_input.c -o build/test_input
+          ./build/test_input
+      - name: Check NDS32 diagnostic app interfaces against TEST-ONLY fake HAL
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -fsyntax-only -DTTG_DEVICE_DIAGNOSTIC_ONLY=1 -Itests/fake_hal -Isrc device/ttg_main.c
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -fsyntax-only -Itests/fake_hal device/ttg_adc_adapter.c
+          if cc -std=c11 -fsyntax-only -Itests/fake_hal -Isrc device/ttg_main.c 2>/dev/null; then
+            echo "FAIL: hardware diagnostic source compiled without mandatory guard"
+            exit 1
+          fi
+          echo "PASS: diagnostic build guard cannot be bypassed accidentally"
