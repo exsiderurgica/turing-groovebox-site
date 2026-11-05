@@ -1,0 +1,58 @@
+name: TTG FX genuine Mutable DSP (host verification)
+on:
+  pull_request:
+    paths:
+      - 'pocket-master/dev/ttg-fx-v0.2/**'
+      - '.github/workflows/ttg-fx-mutable-v02.yml'
+  push:
+    branches:
+      - 'pocket-master/ttg-fx-restart-20261104'
+    paths:
+      - 'pocket-master/dev/ttg-fx-v0.2/**'
+      - '.github/workflows/ttg-fx-mutable-v02.yml'
+jobs:
+  genuine-mutable-dsp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and exercise actual stmlib SoftClip/SVF and Clouds Reverb
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          mkdir -p build
+          g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_mutable_reverb.cpp -o build/test_mutable
+          ./build/test_mutable
+      - name: MT4 P7.6.7 one-FxEngine 8kHz mono/pingpong impulse regression
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_mutable_delay.cpp -o build/test_mutable_delay
+          ./build/test_mutable_delay
+      - name: Run independent UI to DSP application control tests
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttg_ui.c src/ttg_app.c tests/test_app.c -o build/test_app
+          ./build/test_app
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttg_ui.c tests/test_ui.c -o build/test_ui
+          ./build/test_ui
+      - name: Link genuine Mutable DSP to independent UI (no mocks)
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -c src/ttg_app.c -o build/ttg_app.o
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -c src/ttg_ui.c -o build/ttg_ui.o
+          g++ -std=c++11 -O2 -Wall -Wextra -DTEST=1 -Ivendor src/mutable_chain.cpp tests/test_app_real.cpp build/ttg_app.o build/ttg_ui.o -o build/test_app_real
+          ./build/test_app_real
+
+      - name: Verify diagnostic ADC1 bridge and safe muted boot
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic src/ttg_input.c tests/test_input.c -o build/test_input
+          ./build/test_input
+      - name: Check NDS32 diagnostic app interfaces against TEST-ONLY fake HAL
+        working-directory: pocket-master/dev/ttg-fx-v0.2
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -fsyntax-only -DTTG_DEVICE_DIAGNOSTIC_ONLY=1 -Itests/fake_hal -Isrc device/ttg_main.c
+          cc -std=c11 -Wall -Wextra -Werror -pedantic -fsyntax-only -Itests/fake_hal device/ttg_adc_adapter.c
+          if cc -std=c11 -fsyntax-only -Itests/fake_hal -Isrc device/ttg_main.c 2>/dev/null; then
+            echo "FAIL: hardware diagnostic source compiled without mandatory guard"
+            exit 1
+          fi
+          echo "PASS: diagnostic build guard cannot be bypassed accidentally"

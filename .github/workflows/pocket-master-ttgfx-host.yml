@@ -1,0 +1,28 @@
+name: Pocket Master TTG FX host tests
+on:
+  pull_request:
+    paths:
+      - 'pocket-master/dev/ttg-fx-v0.1/**'
+      - '.github/workflows/pocket-master-ttgfx-host.yml'
+  push:
+    branches:
+      - 'pocket-master/ttg-fx-restart-20261104'
+    paths:
+      - 'pocket-master/dev/ttg-fx-v0.1/**'
+      - '.github/workflows/pocket-master-ttgfx-host.yml'
+jobs:
+  portable-core:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pocket-master/dev/ttg-fx-v0.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run portable DSP and SPIS ring tests
+        run: sh build.sh
+      - name: Run address and undefined behavior sanitizers
+        run: |
+          cc -std=c11 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer src/ttgfx.c tests/test_fx.c -lm -o build/test_fx_san
+          cc -std=c11 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer src/spis_probe.c tests/test_spis_probe.c -o build/test_spis_san
+          ./build/test_fx_san
+          ./build/test_spis_san
