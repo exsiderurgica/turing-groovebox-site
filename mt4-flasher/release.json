@@ -2,10 +2,10 @@
   "schema": 1,
   "flash_enabled": true,
   "ota_enabled": true,
-  "release": "MT4 v0.30 P7.6.8.5 GOLD",
+  "release": "MT4 v0.30 P7.6.8.6 GOLD",
   "product": "FM-1_986",
   "size": 609912,
-  "sha256": "4b909d0d3a6db5737d5670d1f5a38999597099138681741150982a22844083ac",
-  "firmware_url": "../mt4/EXS_MT4_v030_P7685_MACRO4_VOLUME_REGEN_GOLD.fwsc",
-  "notes": "GOLD designated by author 2026-11-03. Original JieLi P7.6.8.5 build SHA-256 verified; 62 CI steps passed. 4 Macros/4 Turing/8 LFO. Based on P7.6.7 Mutable FxEngine stereo Ping-Pong and Clouds 16 kHz; CONTROL ALL algorithm protection; varied OP6 phrase REGEN; bipolar neutral non-kick Pitch ENV raw 64; kick tuned around -12; offbeat hat REGEN uses same generator as TECHNO; Macro 4 MIXER volume now controls real audio with step velocity P-Locks preserved. FM1 hardware/CPU has not been independently certified; OTA gated by firmware hash and device identity."
+  "sha256": "2b7f9cd975fe9f76da77d451a85640afb875983b28ad0c2fba7b9914f756b43b",
+  "firmware_url": "../mt4/EXS_MT4_v030_P7686_REGEN_FX_AMBIENT_START_GOLD.fwsc",
+  "notes": "GOLD promoted by author on 2026-11-08. Original P7.6.8.6 native JieLi CI build and automated host regressions passed, SHA-256 verified. Semitone REGEN preserves per-Macro Delay/Reverb sends; Ambient startup crossfade is faster and score rephase no longer waits for stale clock division. All P7.6.8.5 functionality retained. Author-designated GOLD, not certified by physical FM1 audio/CPU test. Previous P7.6.8.5 GOLD remains available."
 }

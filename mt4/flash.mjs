@@ -6,8 +6,8 @@ import {Updater,OUR_LOADER,FM1_PORT} from '../fm1-test-a03/fm1ota.js';
 import {inspectFwsc,compatibleDevice} from '../mt4-flasher/fwsc-check.mjs';
 
 const $=id=>document.getElementById(id);
-const SHA='4b909d0d3a6db5737d5670d1f5a38999597099138681741150982a22844083ac';
-const NAME='EXS_MT4_v030_P7685_MACRO4_VOLUME_REGEN_GOLD.fwsc';
+const SHA='2b7f9cd975fe9f76da77d451a85640afb875983b28ad0c2fba7b9914f756b43b';
+const NAME='EXS_MT4_v030_P7686_REGEN_FX_AMBIENT_START_GOLD.fwsc';
 const FW_URL=new URL('./'+NAME,import.meta.url).href;
 const i=(en,it)=>document.documentElement.lang==='it'?it:en;
 let loaded=null,access=null,identity=null,busy=false,wake=null;
@@ -46,7 +46,7 @@ async function loadGold(){
   try{
     status('fileStatus','Downloading and verifying GOLD…','Scarico e verifico GOLD…','warn');
     await getGold();
-    status('fileStatus','P7.6.8.5 GOLD verified / SHA-256 OK','P7.6.8.5 GOLD verificata / SHA-256 OK','ok');
+    status('fileStatus','P7.6.8.6 GOLD verified / SHA-256 OK','P7.6.8.6 GOLD verificata / SHA-256 OK','ok');
   }catch(e){status('fileStatus',e.message,e.message,'err');log('GOLD: '+e.message)}
   finally{busy=false;controls()}
 }
@@ -116,8 +116,8 @@ $('flashBtn').addEventListener('click',async()=>{
   if(busy||!loaded||!identity||!compatibleDevice(identity,loaded.meta)||
      !$('ack1').checked||!$('ack2').checked)return;
   const message=i(
-    'FLASH MT4 P7.6.8.5 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
-    'INSTALLA MT4 P7.6.8.5 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
+    'FLASH MT4 P7.6.8.6 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
+    'INSTALLA MT4 P7.6.8.6 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
   );
   if(!window.confirm(message))return;
   busy=true;controls();bar(2);
