@@ -2,10 +2,10 @@
   "schema": 1,
   "flash_enabled": true,
   "ota_enabled": true,
-  "release": "MT4 v0.30 P7.6.8.6 GOLD",
-  "product": "FM-1_986",
-  "size": 609912,
-  "sha256": "2b7f9cd975fe9f76da77d451a85640afb875983b28ad0c2fba7b9914f756b43b",
-  "firmware_url": "../mt4/EXS_MT4_v030_P7686_REGEN_FX_AMBIENT_START_GOLD.fwsc",
-  "notes": "GOLD promoted by author on 2026-11-08. Original P7.6.8.6 native JieLi CI build and automated host regressions passed, SHA-256 verified. Semitone REGEN preserves per-Macro Delay/Reverb sends; Ambient startup crossfade is faster and score rephase no longer waits for stale clock division. All P7.6.8.5 functionality retained. Author-designated GOLD, not certified by physical FM1 audio/CPU test. Previous P7.6.8.5 GOLD remains available."
+  "release": "MT4 v0.30 P7.6.8.7 GOLD",
+  "product": "FM-1_987",
+  "size": 609927,
+  "sha256": "6bc7c10c582afa90b69f3659a89924f705dc608f63037f4ec9c5bf0181ff7dbd",
+  "firmware_url": "../mt4/EXS_MT4_v030_P7687_DUAL_FLASH_GOLD.fwsc",
+  "notes": "Author-designated GOLD 2026-11-09, first boot confirmed on a newer FM1 with 0xB36014 UC25HQ80 after M-Flasher verified install. Reuses unchanged P7.6.8.6 sound engine, 4 Plaits Macros, Clouds and Mutable Delay. Adds support for flash JEDEC 0x856014 Puya and 0xB36014 UC25HQ80 in application, recovery and OTA loader, with unknown chips refused. All pinned JieLi CI and host regressions passed. The old Puya chip and OTA/recovery on the new chip have not yet been tested on this exact build; retain full flash backup and P7.6.8.6 GOLD fallback."
 }
