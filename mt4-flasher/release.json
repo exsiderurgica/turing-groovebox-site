@@ -2,10 +2,15 @@
   "schema": 1,
   "flash_enabled": true,
   "ota_enabled": true,
-  "release": "MT4 v0.30 P7.6.8.7 GOLD",
-  "product": "FM-1_987",
-  "size": 609927,
-  "sha256": "6bc7c10c582afa90b69f3659a89924f705dc608f63037f4ec9c5bf0181ff7dbd",
-  "firmware_url": "../mt4/EXS_MT4_v030_P7687_DUAL_FLASH_GOLD.fwsc",
-  "notes": "Author-designated GOLD 2026-11-09, first boot confirmed on a newer FM1 with 0xB36014 UC25HQ80 after M-Flasher verified install. Reuses unchanged P7.6.8.6 sound engine, 4 Plaits Macros, Clouds and Mutable Delay. Adds support for flash JEDEC 0x856014 Puya and 0xB36014 UC25HQ80 in application, recovery and OTA loader, with unknown chips refused. All pinned JieLi CI and host regressions passed. The old Puya chip and OTA/recovery on the new chip have not yet been tested on this exact build; retain full flash backup and P7.6.8.6 GOLD fallback."
+  "release": "MT4 v0.30 P7.6.9.6 GOLD",
+  "product": "FM-1_996",
+  "size": 610201,
+  "sha256": "6de2e39b0a4a2f35bc563abb2433dee1a35c53f39dd0e32f9ceff14118e78cda",
+  "firmware_url": "../mt4/EXS_MT4_v030_P7696_USB_TRS_SYNC_GOLD.fwsc",
+  "notes": "Author-designated GOLD 2026-11-12. Exact P7696 binary from successful CI 43313448230, unchanged. TRS clock/START/STOP received on hardware with Type A wiring; explicit USB IN slave, USB OUT master, TRS IN. Cached audio tempo calculations and stabilized BPM estimation retain raw F8 step phase. Known CPU limit: owner reports peaks around 90% under MIDI IN with four Macros; disabling one Macro restores headroom. This is not a measured MIDI-only CPU cost or a confirmed all-four-Macro dropout fix. Bluetooth is excluded and unresolved. P7687 GOLD remains available for rollback.",
+  "designation": "author requested GOLD with documented CPU limitation",
+  "source_recipe": "f67f0e24b5b88104a45f5bdf5f971ed931425bc2",
+  "source_ref": "stable/mt4-p7696-gold",
+  "ci_url": "https://github.com/exsiderurgica/EXS-MT4/actions/runs/43313448230",
+  "fallback_url": "../mt4/EXS_MT4_v030_P7687_DUAL_FLASH_GOLD.fwsc"
 }
