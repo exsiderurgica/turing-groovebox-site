@@ -69,3 +69,108 @@ edit("index.html", [
     )
 ])
 print("MT4 mobile A/B patch applied: JIT 4/quantum, LCD 12 fps.")
+
+
+# V2 experiment: configurable JIT budget + identify which stage owns the worst quantum.
+edit("main.js", [
+    (
+        '  (params.get("mobile") !== "0" && /Android|iPhone|iPad/i.test(navigator.userAgent));',
+        '''  (params.get("mobile") !== "0" && /Android|iPhone|iPad/i.test(navigator.userAgent));
+const parsedJitCap = Number(params.get("jitcap"));
+const JIT_CAP = Number.isInteger(parsedJitCap) && parsedJitCap >= 1 && parsedJitCap <= 16
+  ? parsedJitCap : 2;'''
+    ),
+    (
+        'mhz: clock, jit: params.get("jit") !== "0", mobile: MOBILE_TUNE,',
+        'mhz: clock, jit: params.get("jit") !== "0", mobile: MOBILE_TUNE, jitCap: JIT_CAP,'
+    ),
+    (
+        '    this.stamp = null; this.jit = null; this.dismissed = false;',
+        '    this.stamp = null; this.jit = null; this.peakInfo = null; this.dismissed = false;'
+    ),
+    (
+        '    if (m.worst > this.worst) this.worst = m.worst;',
+        '''    if (m.worst > this.worst) {
+      this.worst = m.worst;
+      this.peakInfo = m.peakInfo ?? null;
+    }'''
+    ),
+    (
+        '      ' + chr(96) + 'FM-1 emulator report (',
+        '''      "MT4 mobile V2: " + (MOBILE_TUNE ? "on" : "off") +
+        " · JIT cap: " + (MOBILE_TUNE ? JIT_CAP : 16) + " regions/quantum",
+      "worst audio quantum breakdown: " + (this.peakInfo ? JSON.stringify(this.peakInfo) : "not yet recorded"),
+      ''' + chr(96) + '''FM-1 emulator report ('''
+    )
+])
+
+edit("worklet.js", [
+    (
+        '    x.fm1_jit(m.jit === false ? 0 : 1, m.mobile ? 4 : 16);',
+        '    x.fm1_jit(m.jit === false ? 0 : 1, m.mobile ? m.jitCap : 16);'
+    ),
+    (
+        '    this.worst = 0;                    // the longest quantum among them (once audio plays)',
+        '''    this.worst = 0;                    // the longest quantum among them (once audio plays)
+    this.worstInfo = null;'''
+    ),
+    (
+        '  process(_inputs, outputs) {',
+        '''  capturePeak(took, renderMs, jitMs, jitRegions, afterAudioMs) {
+    if (!this.playing || took <= this.worst) return;
+    this.worst = took;
+    this.worstInfo = {
+      totalMs: Math.round(took * 10) / 10,
+      renderMs: Math.round(renderMs * 10) / 10,
+      jitMs: Math.round(jitMs * 10) / 10,
+      jitRegions,
+      overheadMs: Math.round((took - afterAudioMs) * 10) / 10,
+    };
+  }
+
+  process(_inputs, outputs) {'''
+    ),
+    (
+        '    const t0 = now();',
+        '''    const t0 = now();
+    const jitMs0 = this.jit.compileMs;
+    const jitRegions0 = this.jit.regions;'''
+    ),
+    (
+        '    const buffer = x.memory.buffer, lp = x.fm1_out_l(), rp = x.fm1_out_r();',
+        '''    const renderMs = now() - t0;
+    const jitMs = this.jit.compileMs - jitMs0;
+    const jitRegions = this.jit.regions - jitRegions0;
+    const buffer = x.memory.buffer, lp = x.fm1_out_l(), rp = x.fm1_out_r();'''
+    ),
+    (
+        '    if (out[1]) out[1].set(r);',
+        '''    if (out[1]) out[1].set(r);
+    const afterAudioMs = now() - t0;'''
+    ),
+    (
+        '        busy: this.lastTiming?.busy ?? 0, worst: this.lastTiming?.worst ?? 0,',
+        '        busy: this.lastTiming?.busy ?? 0, worst: this.lastTiming?.worst ?? 0, peakInfo: this.lastTiming?.peakInfo ?? null,'
+    ),
+    (
+        '      const took = now() - t0;\n      // busy:',
+        '''      const took = now() - t0;
+      this.capturePeak(took, renderMs, jitMs, jitRegions, afterAudioMs);
+      // busy:'''
+    ),
+    (
+        'this.lastTiming = { busy: this.busy + took, worst: playing ? Math.max(this.worst, took) : this.worst,',
+        'this.lastTiming = { busy: this.busy + took, worst: this.worst, peakInfo: this.worstInfo,'
+    ),
+    (
+        '      this.worst = 0;\n      this.reportFrames = 0;',
+        '      this.worst = 0;\n      this.worstInfo = null;\n      this.reportFrames = 0;'
+    ),
+    (
+        '      const took = now() - t0;\n      this.busy += took;\n      if (playing) this.worst = Math.max(this.worst, took);',
+        '''      const took = now() - t0;
+      this.busy += took;
+      this.capturePeak(took, renderMs, jitMs, jitRegions, afterAudioMs);'''
+    )
+])
+print("V2: per-quantum JIT budget and detailed peak-stage diagnostics enabled.")
