@@ -15,6 +15,12 @@ emu.fm1_ahead(1024);
 const ptr=emu.fm1_alloc(pkg.length);
 new Uint8Array(emu.memory.buffer,ptr,pkg.length).set(pkg);
 if(emu.fm1_boot_fwsc(ptr,pkg.length,0,0,mhz)!==0) throw Error("MT4 GOLD package boot failed");
+const playScript = new TextEncoder().encode("1000:PLAY,1050:PLAY^");
+const playPtr = emu.fm1_alloc(playScript.length);
+new Uint8Array(emu.memory.buffer,playPtr,playScript.length).set(playScript);
+if(emu.fm1_bench_script(playPtr,playScript.length)!==0) throw Error("Could not schedule PLAY key");
+console.log("MT4_SCRIPT: press PLAY at 1000ms, release at 1050ms");
+
 let budget=mhz*1e6*0.02;
 const playBudget=mhz*1e6*1.5*quantum/hz;
 let playing=false,lastBin=0,lastWall=performance.now(),maxRender=0,short=0;
