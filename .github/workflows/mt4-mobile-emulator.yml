@@ -33,25 +33,25 @@ jobs:
         run: bash web/build.sh /tmp/mt4-mobile-dist
       - name: Stage isolated mobile test page
         run: |
-          mkdir -p mt4/emulator-mobile
-          cp -a /tmp/mt4-mobile-dist/. mt4/emulator-mobile/
-          cp /tmp/fm1-emu/LICENSE mt4/emulator-mobile/LICENSE
-          cp mt4-mobile-emulator-src/README.md mt4/emulator-mobile/README.md
-          test -s mt4/emulator-mobile/fm1_web.wasm
-          test -s mt4/emulator-mobile/worklet.js
-          test -s mt4/emulator-mobile/index.html
+          mkdir -p mt4/emulator-mobile-v2
+          cp -a /tmp/mt4-mobile-dist/. mt4/emulator-mobile-v2/
+          cp /tmp/fm1-emu/LICENSE mt4/emulator-mobile-v2/LICENSE
+          cp mt4-mobile-emulator-src/README.md mt4/emulator-mobile-v2/README.md
+          test -s mt4/emulator-mobile-v2/fm1_web.wasm
+          test -s mt4/emulator-mobile-v2/worklet.js
+          test -s mt4/emulator-mobile-v2/index.html
       - name: Upload beta build for inspection
         uses: actions/upload-artifact@v4
         with:
           name: MT4-mobile-emulator-beta
-          path: mt4/emulator-mobile/
+          path: mt4/emulator-mobile-v2/
           retention-days: 14
       - name: Publish beta only after merging on main
         if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mt4/emulator-mobile
+          git add mt4/emulator-mobile-v2
           if ! git diff --staged --quiet; then
             git commit -m "Publish isolated MT4 mobile emulator beta [skip ci]"
             git push
