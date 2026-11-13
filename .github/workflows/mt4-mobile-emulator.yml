@@ -2,7 +2,7 @@ name: Build MT4 mobile emulator beta
 
 on:
   push:
-    branches: [main, feature/mt4-mobile-emulator]
+    branches: [main, 'feature/mt4-mobile-*']
     paths:
       - 'mt4-mobile-emulator-src/**'
       - '.github/workflows/mt4-mobile-emulator.yml'
