@@ -140,4 +140,3 @@ self.onmessage = async e => {
 '''
 (web / "engine-worker.js").write_text(shim + worklet + tail)
 print("Built WebWorker engine + lightweight PCM output transport.")
-'''
