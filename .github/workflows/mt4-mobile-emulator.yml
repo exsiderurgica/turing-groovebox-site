@@ -25,17 +25,17 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Apply Android experiment (no firmware changes)
         run: python3 mt4-mobile-emulator-src/patch.py /tmp/fm1-emu/web
+      - name: Upstream browser regression tests (before worker transport split)
+        working-directory: /tmp/fm1-emu
+        run: node --test web/main.test.mjs web/worklet.test.mjs
       - name: Build Android audio worker prototype
         run: python3 mt4-mobile-emulator-src/patch-worker.py /tmp/fm1-emu/web
-      - name: Validate prototype JavaScript and PCM queue
+      - name: Validate worker JavaScript and PCM queue
         run: |
           node --check /tmp/fm1-emu/web/main.js
           node --check /tmp/fm1-emu/web/engine-worker.js
           node --check mt4-mobile-emulator-src/output-worklet.js
           node --test mt4-mobile-emulator-src/output-worklet.test.mjs
-      - name: Browser tests
-        working-directory: /tmp/fm1-emu
-        run: node --test web/main.test.mjs web/worklet.test.mjs
       - name: Build patched WebAssembly emulator
         working-directory: /tmp/fm1-emu
         run: bash web/build.sh /tmp/mt4-mobile-dist
