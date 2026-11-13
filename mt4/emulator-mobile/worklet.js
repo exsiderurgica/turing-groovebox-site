@@ -111,7 +111,7 @@ class Fm1 extends AudioWorkletProcessor {
     // hot code compiled to WebAssembly, a few blocks per quantum at most (?jit=0: interpreter only)
     // Spread JIT compiling over more audio quanta on mobile.
     // It may reduce pauses but prolongs JIT warmup.
-    x.fm1_jit(m.jit === false ? 0 : 1, m.mobile ? 4 : 16);
+    x.fm1_jit(m.jit === false ? 0 : 1, m.mobile ? m.jitCap : 16);
     const ahead = x.fm1_ahead ? m.ahead ?? AHEAD_FRAMES : 0;
     x.fm1_ahead?.(ahead);               // (?ahead=0: each quantum runs for its own frames only)
     // the whole update package (.fwsc): the machine unpacks it, gets the flash chip and the
@@ -149,7 +149,8 @@ class Fm1 extends AudioWorkletProcessor {
     this.short = 0;
     this.calls = 0;
     this.busy = 0;                      // ms spent emulating since the last frame message
-    this.worst = 0;                     // the longest quantum among them (once audio plays)
+    this.worst = 0;                    // the longest quantum among them (once audio plays)
+    this.worstInfo = null;
     this.timedMs = 0;                   // the emulated ms when the timed interval began
     this.timedIdle = 0;                 // and the idle ms skipped by then
     this.board = x.fm1_board();         // 0 the FM-1, 1 the SMK-37 (the package says which)
@@ -201,6 +202,18 @@ class Fm1 extends AudioWorkletProcessor {
     }
   }
 
+  capturePeak(took, renderMs, jitMs, jitRegions, afterAudioMs) {
+    if (!this.playing || took <= this.worst) return;
+    this.worst = took;
+    this.worstInfo = {
+      totalMs: Math.round(took * 10) / 10,
+      renderMs: Math.round(renderMs * 10) / 10,
+      jitMs: Math.round(jitMs * 10) / 10,
+      jitRegions,
+      overheadMs: Math.round((took - afterAudioMs) * 10) / 10,
+    };
+  }
+
   process(_inputs, outputs) {
     const out = outputs[0];
     const x = this.x;
@@ -208,6 +221,8 @@ class Fm1 extends AudioWorkletProcessor {
     const n = out[0].length;
     const playing = this.playing;       // (the worst quantum: of those once audio played)
     const t0 = now();
+    const jitMs0 = this.jit?.compileMs ?? 0;
+    const jitRegions0 = this.jit?.regions ?? 0;
     let have;
     try {
       have = x.fm1_render(n, this.budget);
@@ -219,6 +234,9 @@ class Fm1 extends AudioWorkletProcessor {
       this.port.postMessage({ type: "error", seq: this.seq, fatal: true, message: `render: ${err}` });
       return true;
     }
+    const renderMs = now() - t0;
+    const jitMs = (this.jit?.compileMs ?? 0) - jitMs0;
+    const jitRegions = (this.jit?.regions ?? 0) - jitRegions0;
     const buffer = x.memory.buffer, lp = x.fm1_out_l(), rp = x.fm1_out_r();
     if (!this.views || this.views.l.buffer !== buffer || this.views.l.length !== n ||
         this.views.l.byteOffset !== lp || this.views.r.byteOffset !== rp) {
@@ -227,6 +245,7 @@ class Fm1 extends AudioWorkletProcessor {
     const { l, r } = this.views;
     out[0].set(l);
     if (out[1]) out[1].set(r);
+    const afterAudioMs = now() - t0;
     if (have > 0 && !this.playing) {
       this.playing = true;
       if (this.ahead > 0) this.budget = budgets(this.mhz, n).play;
@@ -254,25 +273,27 @@ class Fm1 extends AudioWorkletProcessor {
       const ms = x.fm1_ms(), idle = x.fm1_idle_ms?.() ?? 0;
       this.port.postMessage({ type: "frame", seq: this.seq, lcd, leds, ms,
         short: this.short, halted: x.fm1_halted(), jit: this.jit, pads, playing: this.playing,
-        busy: this.lastTiming?.busy ?? 0, worst: this.lastTiming?.worst ?? 0,
+        busy: this.lastTiming?.busy ?? 0, worst: this.lastTiming?.worst ?? 0, peakInfo: this.lastTiming?.peakInfo ?? null,
         emulated: this.lastTiming?.emulated ?? 0, idle: this.lastTiming?.idle ?? 0,
         quanta: this.lastTiming?.quanta ?? 0, frames: this.lastTiming?.frames ?? n }, transfer);
       const took = now() - t0;
+      this.capturePeak(took, renderMs, jitMs, jitRegions, afterAudioMs);
       // busy: ms of wall clock the interval's quanta took; emulated: ms of emulated time they ran,
       // idle: of which idle skipping jumped over (cost nothing)
-      this.lastTiming = { busy: this.busy + took, worst: playing ? Math.max(this.worst, took) : this.worst,
+      this.lastTiming = { busy: this.busy + took, worst: this.worst, peakInfo: this.worstInfo,
         emulated: ms - this.timedMs, idle: idle - this.timedIdle,
         quanta: this.reportCalls, frames: this.reportFrames / this.reportCalls };
       this.timedMs = ms;
       this.timedIdle = idle;
       this.busy = 0;
       this.worst = 0;
+      this.worstInfo = null;
       this.reportFrames = 0;
       this.reportCalls = 0;
     } else {
       const took = now() - t0;
       this.busy += took;
-      if (playing) this.worst = Math.max(this.worst, took);
+      this.capturePeak(took, renderMs, jitMs, jitRegions, afterAudioMs);
     }
     return true;
   }

@@ -26,6 +26,9 @@ if (!params.has("package") && !params.has("fw")) {
 // ?mobile=0 disables experimental tuning for an A/B comparison.
 const MOBILE_TUNE = params.get("mobile") === "1" ||
   (params.get("mobile") !== "0" && /Android|iPhone|iPad/i.test(navigator.userAgent));
+const parsedJitCap = Number(params.get("jitcap"));
+const JIT_CAP = Number.isInteger(parsedJitCap) && parsedJitCap >= 1 && parsedJitCap <= 16
+  ? parsedJitCap : 2;
 const stored = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } };
 
@@ -677,7 +680,7 @@ const perf = {
   reset() {
     this.busy = 0; this.span = 0; this.emulated = 0; this.idle = 0; this.idleShare = 0; this.worst = 0;
     this.secs = 0; this.bad = 0; this.drops = 0; this.loads = []; this.speeds = []; this.drift = 0;
-    this.stamp = null; this.jit = null; this.dismissed = false;
+    this.stamp = null; this.jit = null; this.peakInfo = null; this.dismissed = false;
     warnBox.hidden = true;
   },
   add(m) {
@@ -685,7 +688,10 @@ const perf = {
     this.span += (m.quanta * m.frames) / 44.1;     // ms of audio those quanta stand for
     this.emulated += m.emulated ?? 0;              // ms of emulated time they ran
     this.idle += m.idle ?? 0;                      // of which idle skipping jumped over
-    if (m.worst > this.worst) this.worst = m.worst;
+    if (m.worst > this.worst) {
+      this.worst = m.worst;
+      this.peakInfo = m.peakInfo ?? null;
+    }
     this.jit = m.jit;
   },
   load() { return this.loads.length ? this.loads[this.loads.length - 1] : 0; },
@@ -769,6 +775,9 @@ const perf = {
     const r = (v, d = 0) => (Number.isFinite(v) ? v.toFixed(d) : "?");
     const loads = this.loads.map((l) => Math.round(100 * l)), jit = this.jit;
     return [
+      "MT4 mobile V2: " + (MOBILE_TUNE ? "on" : "off") +
+        " · JIT cap: " + (MOBILE_TUNE ? JIT_CAP : 16) + " regions/quantum",
+      "worst audio quantum breakdown: " + (this.peakInfo ? JSON.stringify(this.peakInfo) : "not yet recorded"),
       `FM-1 emulator report (${location.origin}${location.pathname})`,
       `firmware: ${fw.id} ${fw.version || ""} · clock ${mhz} MHz · JIT ${params.get("jit") === "0" ? "off" : "on"}`,
       `browser: ${navigator.userAgent}`,
@@ -947,7 +956,7 @@ function boot(options = {}) {
       node.port.postMessage({ type: "boot", seq, wasm: wasm.slice(0), package: got.bytes.slice().buffer,
         sectors: packSectors(sectors).buffer, syx: importedBank ? importedBank.slice().buffer : null,
         script: trying?.script ? new TextEncoder().encode(trying.script).buffer : null,
-        mhz: clock, jit: params.get("jit") !== "0", mobile: MOBILE_TUNE,
+        mhz: clock, jit: params.get("jit") !== "0", mobile: MOBILE_TUNE, jitCap: JIT_CAP,
         // (?ahead=0: each quantum emulates only for its own frames, as before the even pace)
         ahead: params.has("ahead") ? Number(params.get("ahead")) : undefined });
       status.textContent = `booting ${f.name}…`;

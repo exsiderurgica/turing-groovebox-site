@@ -36,3 +36,9 @@ The beta is not claimed to resolve the issue until this test passes.
 Build workflow reconstructs this mobile variant from pinned MIT upstream
 source and its own matching WebAssembly binary, then publishes only to the
 isolated mt4/emulator-mobile/ staging path.
+
+## V2 diagnostic beta
+
+The first Android A/B report did not improve real-time behavior: P7696 on the site had a 214% worst-second load, 35 ms worst quantum, 0.47x minimum speed, and five short quanta. The earlier P7697 report had 211%, 43 ms, 0.47x and five short quanta; because firmware builds differ, this comparison is only suggestive.
+
+V2 adds a narrower configurable JIT compilation budget (default 2 regions/quantum when mobile tuning is on; query parameter jitcap=1..16) and instrumentation for the worst audio quantum: total time, render time, JIT compilation time and region count, and post-audio overhead. The Copy a report output includes these details along with the tuning state. Run the same firmware and clock across both URLs. A lower JIT cap may also lengthen warm-up, so do not interpret these settings as a verified fix.
