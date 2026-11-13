@@ -25,33 +25,44 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Apply Android experiment (no firmware changes)
         run: python3 mt4-mobile-emulator-src/patch.py /tmp/fm1-emu/web
-      - name: Browser tests
+      - name: Upstream browser regression tests (before worker transport split)
         working-directory: /tmp/fm1-emu
         run: node --test web/main.test.mjs web/worklet.test.mjs
+      - name: Build Android audio worker prototype
+        run: python3 mt4-mobile-emulator-src/patch-worker.py /tmp/fm1-emu/web
+      - name: Validate worker JavaScript and PCM queue
+        run: |
+          node --check /tmp/fm1-emu/web/main.js
+          node --check /tmp/fm1-emu/web/engine-worker.js
+          node --check mt4-mobile-emulator-src/output-worklet.js
+          node --test mt4-mobile-emulator-src/output-worklet.test.mjs
       - name: Build patched WebAssembly emulator
         working-directory: /tmp/fm1-emu
         run: bash web/build.sh /tmp/mt4-mobile-dist
       - name: Stage isolated mobile test page
         run: |
-          mkdir -p mt4/emulator-mobile-v2
-          cp -a /tmp/mt4-mobile-dist/. mt4/emulator-mobile-v2/
-          cp /tmp/fm1-emu/LICENSE mt4/emulator-mobile-v2/LICENSE
-          cp mt4-mobile-emulator-src/README.md mt4/emulator-mobile-v2/README.md
-          test -s mt4/emulator-mobile-v2/fm1_web.wasm
-          test -s mt4/emulator-mobile-v2/worklet.js
-          test -s mt4/emulator-mobile-v2/index.html
+          mkdir -p mt4/emulator-worker-v3
+          cp -a /tmp/mt4-mobile-dist/. mt4/emulator-worker-v3/
+          cp /tmp/fm1-emu/web/engine-worker.js mt4/emulator-worker-v3/
+          cp mt4-mobile-emulator-src/output-worklet.js mt4/emulator-worker-v3/
+          cp /tmp/fm1-emu/LICENSE mt4/emulator-worker-v3/LICENSE
+          cp mt4-mobile-emulator-src/README.md mt4/emulator-worker-v3/README.md
+          test -s mt4/emulator-worker-v3/fm1_web.wasm
+          test -s mt4/emulator-worker-v3/engine-worker.js
+          test -s mt4/emulator-worker-v3/output-worklet.js
+          test -s mt4/emulator-worker-v3/index.html
       - name: Upload beta build for inspection
         uses: actions/upload-artifact@v4
         with:
           name: MT4-mobile-emulator-beta
-          path: mt4/emulator-mobile-v2/
+          path: mt4/emulator-worker-v3/
           retention-days: 14
       - name: Publish beta only after merging on main
         if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mt4/emulator-mobile-v2
+          git add mt4/emulator-worker-v3
           if ! git diff --staged --quiet; then
             git commit -m "Publish isolated MT4 mobile emulator beta [skip ci]"
             git push
