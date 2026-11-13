@@ -110,7 +110,7 @@ edit("worklet.js", [
         '    x.fm1_jit(m.jit === false ? 0 : 1, m.mobile ? m.jitCap : 16);'
     ),
     (
-        '    this.worst = 0;                    // the longest quantum among them (once audio plays)',
+        '    this.worst = 0;                     // the longest quantum among them (once audio plays)',
         '''    this.worst = 0;                    // the longest quantum among them (once audio plays)
     this.worstInfo = null;'''
     ),
