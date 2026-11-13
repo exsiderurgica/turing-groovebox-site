@@ -1,0 +1,58 @@
+name: Build MT4 mobile emulator beta
+
+on:
+  push:
+    branches: [main, feature/mt4-mobile-emulator]
+    paths:
+      - 'mt4-mobile-emulator-src/**'
+      - '.github/workflows/mt4-mobile-emulator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-beta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone pinned MIT-licensed emulator
+        run: |
+          git clone https://github.com/joakimeriksson/fm1-emu.git /tmp/fm1-emu
+          git -C /tmp/fm1-emu checkout 3e3fb27df91239fe0e7c5bbf82b14c20ad7dd62a
+      - name: Install Rust WASM target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Apply Android experiment (no firmware changes)
+        run: python3 mt4-mobile-emulator-src/patch.py /tmp/fm1-emu/web
+      - name: Browser tests
+        working-directory: /tmp/fm1-emu
+        run: node --test web/main.test.mjs web/worklet.test.mjs
+      - name: Build patched WebAssembly emulator
+        working-directory: /tmp/fm1-emu
+        run: bash web/build.sh /tmp/mt4-mobile-dist
+      - name: Stage isolated mobile test page
+        run: |
+          mkdir -p mt4/emulator-mobile
+          cp -a /tmp/mt4-mobile-dist/. mt4/emulator-mobile/
+          cp /tmp/fm1-emu/LICENSE mt4/emulator-mobile/LICENSE
+          cp mt4-mobile-emulator-src/README.md mt4/emulator-mobile/README.md
+          test -s mt4/emulator-mobile/fm1_web.wasm
+          test -s mt4/emulator-mobile/worklet.js
+          test -s mt4/emulator-mobile/index.html
+      - name: Upload beta build for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: MT4-mobile-emulator-beta
+          path: mt4/emulator-mobile/
+          retention-days: 14
+      - name: Publish beta only after merging on main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mt4/emulator-mobile
+          if ! git diff --staged --quiet; then
+            git commit -m "Publish isolated MT4 mobile emulator beta [skip ci]"
+            git push
+          fi
