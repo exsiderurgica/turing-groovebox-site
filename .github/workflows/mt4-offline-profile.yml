@@ -1,0 +1,41 @@
+name: MT4 P7696 offline core profile
+
+on:
+  push:
+    branches: [feature/mt4-offline-performance-profile]
+    paths:
+      - 'mt4-mobile-emulator-src/profile-bench.mjs'
+      - '.github/workflows/mt4-offline-profile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone pinned FM1 emulator
+        run: |
+          git clone https://github.com/joakimeriksson/fm1-emu.git /tmp/fm1-emu
+          git -C /tmp/fm1-emu checkout 3e3fb27df91239fe0e7c5bbf82b14c20ad7dd62a
+      - name: Install WebAssembly Rust target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Build matching emulator core
+        working-directory: /tmp/fm1-emu
+        run: bash web/build.sh web/dist
+      - name: Collect detailed second-by-second profile of unchanged MT4 GOLD
+        working-directory: /tmp/fm1-emu
+        env:
+          MT4_PACKAGE: ${{ github.workspace }}/mt4/EXS_MT4_v030_P7696_USB_TRS_SYNC_GOLD.fwsc
+        run: |
+          cp "$GITHUB_WORKSPACE/mt4-mobile-emulator-src/profile-bench.mjs" web/mt4-profile.mjs
+          node web/mt4-profile.mjs
+      - name: Preserve profile JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: mt4-p7696-offline-32s-profile
+          path: mt4-profile-results.json
+          retention-days: 10
