@@ -133,14 +133,14 @@ edit("worklet.js", [
     (
         '    const t0 = now();',
         '''    const t0 = now();
-    const jitMs0 = this.jit.compileMs;
-    const jitRegions0 = this.jit.regions;'''
+    const jitMs0 = this.jit?.compileMs ?? 0;
+    const jitRegions0 = this.jit?.regions ?? 0;'''
     ),
     (
         '    const buffer = x.memory.buffer, lp = x.fm1_out_l(), rp = x.fm1_out_r();',
         '''    const renderMs = now() - t0;
-    const jitMs = this.jit.compileMs - jitMs0;
-    const jitRegions = this.jit.regions - jitRegions0;
+    const jitMs = (this.jit?.compileMs ?? 0) - jitMs0;
+    const jitRegions = (this.jit?.regions ?? 0) - jitRegions0;
     const buffer = x.memory.buffer, lp = x.fm1_out_l(), rp = x.fm1_out_r();'''
     ),
     (
