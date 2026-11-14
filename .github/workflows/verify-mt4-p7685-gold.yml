@@ -1,4 +1,4 @@
-name: Verify published EXS MT4 P7.6.9.6 GOLD (current)
+name: Verify published EXS MT4 P7.6.9.7 GOLD (current)
 on:
   push:
     branches: [main]
@@ -32,8 +32,8 @@ jobs:
           python3 - <<'PY'
           import hashlib,json
           from pathlib import Path
-          want='6de2e39b0a4a2f35bc563abb2433dee1a35c53f39dd0e32f9ceff14118e78cda'
-          name='EXS_MT4_v030_P7696_USB_TRS_SYNC_GOLD.fwsc'
+          want='11a1229711bb6573fce3b46e5a298d548a9e67b4376350ccde577c5852e0939d'
+          name='EXS_MT4_v030_P7697_RUNTIME_AUDIT_GOLD.fwsc'
           path=Path('mt4')/name
           data=path.read_bytes()
           assert len(data)==610201,(len(data),)
@@ -45,28 +45,29 @@ jobs:
           assert len(old.read_bytes())==609912
           assert hashlib.sha256(old.read_bytes()).hexdigest()=='2b7f9cd975fe9f76da77d451a85640afb875983b28ad0c2fba7b9914f756b43b'
           release=json.loads(Path('mt4-flasher/release.json').read_text())
-          assert release['release']=='MT4 v0.30 P7.6.9.6 GOLD'
+          assert release['release']=='MT4 v0.30 P7.6.9.7 GOLD'
           assert release['sha256']==want and release['size']==610201
           assert release['firmware_url']=='../mt4/'+name
-          assert release['flash_enabled'] and release['ota_enabled'] and release['product']=='FM-1_996'
+          assert release['flash_enabled'] and release['ota_enabled'] and release['product']=='FM-1_997'
           flash=Path('mt4/flash.mjs').read_text()
           assert f"const SHA='{want}'" in flash
           assert f"const NAME='{name}'" in flash
-          assert "P7.6.9.6 GOLD" in flash
+          assert "P7.6.9.7 GOLD" in flash
           assert "compatibleDevice(identity,loaded.meta)" in flash
           assert "allowUnverifiedFelucca:false" in flash
           assert "inspectFwsc(raw,NAME)" in flash
           html=Path('mt4/index.html').read_text()
           manual=Path('mt4/manual/index.html').read_text()
-          assert 'P7.6.9.6' in html and 'P7.6.9.6' in manual
+          assert 'P7.6.9.7' in html and 'P7.6.9.7' in manual
           assert 'id="downloadBtn"' in html and 'id="flashBtn"' in html
           assert 'PAYPAL' in html.upper() and 'freeDownload' in html
-          assert 'P7.6.9.6' in html and 'CONTROL ALL' in html
+          assert 'P7.6.9.7' in html and 'CONTROL ALL' in html
           assert want in html and '610,201 BYTES' in html
-          assert '90%' in html and '90%' in manual
+          assert '60976' in html and '60976' in manual
+          assert 'CPU' in html and 'CPU' in manual
           assert 'USB IN' in manual and 'TRS IN' in manual and 'USB OUT' in manual
           assert 'Bluetooth' in manual and 'AUDIO LATE' in manual
-          print('PASS MT4 P7696 GOLD binary SHA256, P7686 fallback archive, download/OTA, bilingual site')
+          print('PASS MT4 P7697 GOLD binary SHA256, P7686 fallback archive, download/OTA, bilingual site')
           PY
           node --check mt4/flash.mjs
           node --check mt4/site.mjs
