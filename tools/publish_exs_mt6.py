@@ -39,9 +39,9 @@ def exact(text,needle,repl,label):
  n=text.count(needle)
  if n!=1: raise RuntimeError(f"{label}: expected 1 anchor, got {n}: {needle[:90]}")
  return text.replace(needle,repl)
-def pattern(text,expression,repl,label):
+def pattern(text,expression,repl,label,expected=1):
  out,n=re.subn(expression,lambda _:repl,text,count=0)
- if n!=1: raise RuntimeError(f"{label}: expected 1 regex, got {n}")
+ if n!=expected: raise RuntimeError(f"{label}: expected {expected} regex, got {n}")
  return out
 def ptag(en,it,klass=""):
  if '"' in en or '"' in it:raise RuntimeError("unexpected double quote in data attrs")
@@ -112,7 +112,7 @@ write("mt6/index.html",site)
 manual=get("mt4/manual/index.html")
 manual=manual.replace("MT4","MT6").replace("P7.6.9.7",VER).replace("8× LFO","12× LFO").replace("4×","6×")
 manual=pattern(manual,r'<p class="small muted" data-en="P7\.7\.1\.0 GOLD:[^\n]*</p>',
- ptag(DESC_EN,DESC_IT,"small muted"),"manual GOLD description")
+ ptag(DESC_EN,DESC_IT,"small muted"),"manual GOLD description",2)
 manual=manual.replace("all four Macro voices","all six Macro voices").replace("sulle quattro Macro","sulle sei Macro")
 manual=manual.replace("Four Plaits-based synthesis voices","Six Plaits/sample synthesis voices").replace(
  "Quattro voci di sintesi basate su Plaits","Sei voci di sintesi Plaits/sample")
