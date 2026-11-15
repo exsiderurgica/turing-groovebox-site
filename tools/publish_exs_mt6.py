@@ -296,6 +296,17 @@ jobs:
 '''
 write(".github/workflows/verify-mt4-p7685-gold.yml",verify)
 
+# Universal flasher checks must follow the new public route, while old
+# /mt4-flasher/ remains a redirect for existing bookmarks.
+universal=get(".github/workflows/mt4-universal-flasher-check.yml")
+universal=universal.replace("'mt4-flasher/**'","'mt6-flasher/**'")
+universal=universal.replace("mt4-flasher/app.mjs","mt6-flasher/app.mjs")
+universal=universal.replace("mt4-flasher/fwsc-check.mjs","mt6-flasher/fwsc-check.mjs")
+universal=universal.replace("mt4-flasher/fwsc-check.test.mjs","mt6-flasher/fwsc-check.test.mjs")
+universal=universal.replace("mt4-flasher/index.html","mt6-flasher/index.html")
+universal=universal.replace("MT4 Chrome universal flasher checks","MT6 Chrome universal flasher checks")
+write(".github/workflows/mt4-universal-flasher-check.yml",universal)
+
 # Validation: no obsolete marketing copy remains in CURRENT MT6 pages.
 for path in ("mt6/index.html","mt6/manual/index.html","mt6/flash.mjs","mt6-flasher/index.html"):
  src=get(path)
