@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// EXS MT6 universal Chrome / Android flasher. The user selects a trusted .fwsc.
+// EXS/MT6 universal Chrome / Android flasher. The user selects a trusted .fwsc.
 // NO pinned version, external release manifest dependency or hardcoded SHA-256.
 // OTA remains fail-closed on device identity / model / foreign loader mismatch.
 // Uses TTG A0.3 transport, derived from Felucca / SLOOP (GPL-3.0-only).
@@ -162,7 +162,7 @@ $('flashBtn').addEventListener('click',async()=>{
     wake=null;busy=false;updateButtons();
   }
 });
-status('releaseStatus','Flasher universale MT6: nessun firmware preimpostato o SHA-256 P5.1 fisso.','ok');
+status('releaseStatus','Flasher universale EXS/MT6: nessun firmware preimpostato o SHA-256 P5.1 fisso.','ok');
 if(!window.isSecureContext)
   status('probeStatus','Apri questa pagina HTTPS in Chrome Android.','err');
 updateButtons();

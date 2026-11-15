@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// EXS MT6 integrated GOLD flasher: verified firmware only, OTA fail-closed.
+// EXS/MT6 integrated GOLD flasher: verified firmware only, OTA fail-closed.
 // The transport reuses the original Felucca/SLOOP-derived WebMIDI engine.
 import {logicalImage,sha256hex} from '../fm1-test-a03/fm1pkg.js';
 import {Updater,OUR_LOADER,FM1_PORT} from '../fm1-test-a03/fm1ota.js';
@@ -116,8 +116,8 @@ $('flashBtn').addEventListener('click',async()=>{
   if(busy||!loaded||!identity||!compatibleDevice(identity,loaded.meta)||
      !$('ack1').checked||!$('ack2').checked)return;
   const message=i(
-    'FLASH MT6 P7.7.1.0 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
-    'INSTALLA MT6 P7.7.1.0 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
+    'FLASH EXS/MT6 P7.7.1.0 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
+    'INSTALLA EXS/MT6 P7.7.1.0 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
   );
   if(!window.confirm(message))return;
   busy=true;controls();bar(2);
