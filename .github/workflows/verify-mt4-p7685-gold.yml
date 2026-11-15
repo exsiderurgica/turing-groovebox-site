@@ -1,18 +1,16 @@
-name: Verify published EXS MT4 P7.6.9.7 GOLD (current)
+name: Verify published EXS/MT6 P7710 GOLD
 on:
   push:
     branches: [main]
     paths:
-      - '.github/workflows/verify-mt4-p7685-gold.yml'
-      - 'mt4/**'
+      - 'mt6/**'
+      - 'mt6-flasher/**'
+      - 'mt4/index.html'
+      - 'mt4/manual/index.html'
       - 'mt4-flasher/release.json'
+      - '.github/workflows/verify-mt4-p7685-gold.yml'
   pull_request:
     branches: [main]
-    paths:
-      - '.github/workflows/verify-mt4-p7685-gold.yml'
-      - 'mt4/**'
-      - 'mt4-flasher/release.json'
-      - '.github/workflows/publish-mt4-p767-gold.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,51 +23,39 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify exact immutable GOLD firmware and safe integrated flasher
-        shell: bash
+      - name: Validate published MT6 GOLD and preserved P7708 fallback
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import hashlib,json
+          python3 - <<'PY_CHECK'
+          import json,hashlib
           from pathlib import Path
-          want='11a1229711bb6573fce3b46e5a298d548a9e67b4376350ccde577c5852e0939d'
-          name='EXS_MT4_v030_P7697_RUNTIME_AUDIT_GOLD.fwsc'
-          path=Path('mt4')/name
-          data=path.read_bytes()
-          assert len(data)==610201,(len(data),)
-          assert hashlib.sha256(data).hexdigest()==want
-          rollback=Path('mt4/EXS_MT4_v030_P7687_DUAL_FLASH_GOLD.fwsc').read_bytes()
-          assert len(rollback)==609927
-          assert hashlib.sha256(rollback).hexdigest()=='6bc7c10c582afa90b69f3659a89924f705dc608f63037f4ec9c5bf0181ff7dbd'
-          old=Path('mt4/EXS_MT4_v030_P7686_REGEN_FX_AMBIENT_START_GOLD.fwsc')
-          assert len(old.read_bytes())==609912
-          assert hashlib.sha256(old.read_bytes()).hexdigest()=='2b7f9cd975fe9f76da77d451a85640afb875983b28ad0c2fba7b9914f756b43b'
-          release=json.loads(Path('mt4-flasher/release.json').read_text())
-          assert release['release']=='MT4 v0.30 P7.6.9.7 GOLD'
-          assert release['sha256']==want and release['size']==610201
-          assert release['firmware_url']=='../mt4/'+name
-          assert release['flash_enabled'] and release['ota_enabled'] and release['product']=='FM-1_997'
-          flash=Path('mt4/flash.mjs').read_text()
-          assert f"const SHA='{want}'" in flash
-          assert f"const NAME='{name}'" in flash
-          assert "P7.6.9.7 GOLD" in flash
-          assert "compatibleDevice(identity,loaded.meta)" in flash
-          assert "allowUnverifiedFelucca:false" in flash
-          assert "inspectFwsc(raw,NAME)" in flash
-          html=Path('mt4/index.html').read_text()
-          manual=Path('mt4/manual/index.html').read_text()
-          assert 'P7.6.9.7' in html and 'P7.6.9.7' in manual
-          assert 'id="downloadBtn"' in html and 'id="flashBtn"' in html
-          assert 'PAYPAL' in html.upper() and 'freeDownload' in html
-          assert 'P7.6.9.7' in html and 'CONTROL ALL' in html
-          assert want in html and '610,201 BYTES' in html
-          assert '60976' in html and '60976' in manual
-          assert 'CPU' in html and 'CPU' in manual
-          assert 'USB IN' in manual and 'TRS IN' in manual and 'USB OUT' in manual
-          assert 'Bluetooth' in manual and 'AUDIO LATE' in manual
-          print('PASS MT4 P7697 GOLD binary SHA256, P7686 fallback archive, download/OTA, bilingual site')
-          PY
-          node --check mt4/flash.mjs
-          node --check mt4/site.mjs
-          node --check mt4-flasher/app.mjs
-          node --test mt4-flasher/fwsc-check.test.mjs
+          fw=Path('mt6/EXS_MT6_P7710_GOLD.fwsc')
+          prev=Path('mt6/EXS_MT4_P7708_GOLD.fwsc')
+          assert len(fw.read_bytes())==610201
+          assert hashlib.sha256(fw.read_bytes()).hexdigest()=='fc9c52601f07ed3ecab3ece493b855c3781f8606b3541b65873db74fa846fc6e'
+          assert len(prev.read_bytes())==610201
+          assert hashlib.sha256(prev.read_bytes()).hexdigest()=='e21586d0fcb3921a63693f756867abd77b4ac926f0c22565070dbd94294cceae'
+          rel=json.loads(Path('mt6-flasher/release.json').read_text())
+          assert rel['product']=='FM-1_910' and rel['sha256']==hashlib.sha256(fw.read_bytes()).hexdigest()
+          assert rel['firmware_url']=='../mt6/EXS_MT6_P7710_GOLD.fwsc'
+          for page in ('mt6/index.html','mt6/manual/index.html'):
+           src=Path(page).read_text()
+           assert 'EXS/MT6' in src and 'P7.7.1.0' in src
+           assert '12× LFO' in src or '12 LFO' in src
+           assert 'P7.6.9.7' not in src and '32-step' not in src
+          page=Path('mt6/index.html').read_text()
+          assert '<text x="417"' in page and '>EXS/MT6</text>' in page
+          assert '6× Macro' in page and '6× Turing' in page and '6× Sequencer' in page
+          assert 'id="downloadBtn"' in page and 'id="flashBtn"' in page
+          flash=Path('mt6/flash.mjs').read_text()
+          assert "const SHA='"+rel['sha256']+"'" in flash
+          assert "const NAME='EXS_MT6_P7710_GOLD.fwsc'" in flash
+          assert "FM-1_910" in flash and 'allowUnverifiedFelucca:false' in flash
+          assert 'href="mt6/">EXS/MT6 / FM1' in Path('index.html').read_text()
+          print('PASS: MT6 GOLD, P7708 rollback, bilingual specs and safe OTA')
+          PY_CHECK
+          node --check mt6/flash.mjs
+          node --check mt6/site.mjs
+          node --check mt6/stats.mjs
+          node --check mt6-flasher/app.mjs
+          node --experimental-default-type=module --test mt6-flasher/fwsc-check.test.mjs

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="EXS/MT6 by Exsiderurgica. Generative techno / ambient / experimental firmware for M-VAVE FM1. Six Macro voices, twelve LFOs, six Turing Machines. No presets. No saving.">
+<title>EXS/MT6 / Exsiderurgica</title><link rel="stylesheet" href="./style.css"></head>
+<body><div class="wrap">
+<div class="topbar">
+  <a class="brand" href="../">EXSIDERURGICA / MT6</a>
+  <nav class="nav" aria-label="Navigation"><a href="#specs" data-en="SPECS" data-it="SPECIFICHE">SPECS</a><a href="manual/" data-en="MANUAL" data-it="MANUALE">MANUAL</a><a href="#flash" data-en="FLASH" data-it="FLASH">FLASH</a>
+    <a href="recovery/" data-en="RECOVERY" data-it="RECUPERO">RECOVERY</a>
+    <div class="language" role="group" aria-label="Language"><button type="button" id="lang-en" aria-pressed="true">EN</button><button type="button" id="lang-it" aria-pressed="false">IT</button></div>
+  </nav>
+</div>
+<header class="hero">
+  <p class="eyebrow" data-en="EXSIDERURGICA / M-VAVE FM1 / CUSTOM FIRMWARE" data-it="EXSIDERURGICA / M-VAVE FM1 / FIRMWARE ALTERNATIVO">EXSIDERURGICA / M-VAVE FM1 / CUSTOM FIRMWARE</p>
+  <h1>EXS/MT6</h1>
+  <p class="lead" data-en="Techno. Ambient. Experimental." data-it="Techno. Ambient. Sperimentazione.">Techno. Ambient. Experimental.</p>
+  <p data-en="Eurorack philosophy in a standalone instrument. Make sound, shape it live, let it evolve. No presets. No saving." data-it="Filosofia Eurorack in uno strumento autonomo. Crea suoni, modificali dal vivo, lasciali evolvere. Nessun preset. Nessun salvataggio.">Eurorack philosophy in a standalone instrument. Make sound, shape it live, let it evolve. No presets. No saving.</p>
+
+  <svg class="hero-unit" viewBox="0 0 1000 575" aria-labelledby="unitTitle unitDesc" role="img">
+      <title id="unitTitle">EXS/MT6 hardware outline in white lines</title>
+      <desc id="unitDesc">Minimal M-VAVE FM1 front panel outline with MT6 display.</desc>
+      <defs>
+        <g id="rot"><circle r="22"/><circle r="16" class="fine"/><path d="M0 -8 V-17"/></g>
+        <g id="soft"><rect x="-22" y="-18" width="44" height="36" rx="7"/><path d="M-5 0 H5" class="fine"/></g>
+        <g id="pad"><rect x="-20" y="-32" width="40" height="64" rx="18"/><path d="M0 -17 V17" class="fine"/></g>
+        <g id="padSmall"><rect x="-20" y="-28" width="40" height="56" rx="18"/><path d="M0 -13 V13" class="fine"/></g>
+      </defs>
+      <rect x="35" y="46" width="930" height="485" rx="41"/>
+      <rect x="42" y="53" width="916" height="471" rx="36" class="fine"/>
+      <use href="#rot" x="114" y="130"/><use href="#rot" x="214" y="130"/><use href="#rot" x="114" y="217"/><use href="#rot" x="214" y="217"/>
+      <rect x="90" y="267" width="155" height="48" rx="13"/><rect x="99" y="275" width="64" height="32" rx="7" class="fine"/><rect x="173" y="275" width="63" height="32" rx="7" class="fine"/>
+      <rect x="298" y="92" width="239" height="224" rx="23"/>
+      <rect x="326" y="120" width="183" height="166" rx="3" class="fine screen"/>
+      <path d="M342 149 H493 M342 259 H493" class="fine"/>
+      <text x="417" y="216" text-anchor="middle" font-size="40" class="pixel">EXS/MT6</text>
+      <text x="417" y="239" text-anchor="middle" font-size="13" class="pixel">6 MACROS</text>
+      <use href="#rot" x="599" y="130"/><use href="#rot" x="702" y="130"/><use href="#rot" x="805" y="130"/><use href="#rot" x="907" y="130"/>
+      <rect x="560" y="185" width="381" height="130" rx="15"/>
+      <use href="#soft" x="598" y="226"/><use href="#soft" x="658" y="226"/><use href="#soft" x="718" y="226"/><use href="#soft" x="778" y="226"/><use href="#soft" x="838" y="226"/><use href="#soft" x="898" y="226"/>
+      <use href="#soft" x="598" y="274"/><use href="#soft" x="658" y="274"/><use href="#soft" x="718" y="274"/><use href="#soft" x="778" y="274"/><use href="#soft" x="838" y="274"/><use href="#soft" x="898" y="274"/>
+      <rect x="63" y="350" width="874" height="159" rx="29"/>
+      <use href="#padSmall" x="125" y="390"/><use href="#padSmall" x="184" y="390"/><use href="#padSmall" x="243" y="390"/>
+      <use href="#padSmall" x="353" y="390"/><use href="#padSmall" x="410" y="390"/>
+      <use href="#padSmall" x="509" y="390"/><use href="#padSmall" x="565" y="390"/><use href="#padSmall" x="621" y="390"/>
+      <use href="#padSmall" x="721" y="390"/><use href="#padSmall" x="777" y="390"/><use href="#padSmall" x="883" y="390"/>
+      <circle cx="292" cy="429" r="3" class="fine"/><circle cx="459" cy="429" r="3" class="fine"/><circle cx="674" cy="429" r="3" class="fine"/><circle cx="828" cy="429" r="3" class="fine"/>
+      <use href="#pad" x="97" y="463"/><use href="#pad" x="151" y="463"/><use href="#pad" x="205" y="463"/><use href="#pad" x="259" y="463"/>
+      <use href="#pad" x="313" y="463"/><use href="#pad" x="367" y="463"/><use href="#pad" x="421" y="463"/><use href="#pad" x="475" y="463"/>
+      <use href="#pad" x="529" y="463"/><use href="#pad" x="583" y="463"/><use href="#pad" x="637" y="463"/><use href="#pad" x="691" y="463"/>
+      <use href="#pad" x="745" y="463"/><use href="#pad" x="799" y="463"/><use href="#pad" x="853" y="463"/><use href="#pad" x="907" y="463"/>
+    </svg>
+  <div class="meta"><div class="stat"><strong data-en="VERSION" data-it="VERSIONE">VERSION</strong><span>V0.30 / P7.7.1.0</span></div><div class="stat"><strong data-en="BUILD" data-it="BUILD">BUILD</strong><span>GOLD</span></div><div class="stat"><strong data-en="HARDWARE" data-it="HARDWARE">HARDWARE</strong><span>M-VAVE FM1</span></div></div>
+  <div class="actions"><a class="btn inverse" href="#flash" data-en="DOWNLOAD / FLASH" data-it="SCARICA / FLASH">DOWNLOAD / FLASH</a><a class="btn" href="manual/" data-en="MANUAL" data-it="MANUALE">MANUAL</a></div>
+</header>
+<section id="specs" class="section">
+  <p class="tag" data-en="01 / SPECS" data-it="01 / SPECIFICHE">01 / SPECS</p>
+  <h2 data-en="Specs" data-it="Specifiche">Specs</h2>
+  <div class="specs">
+    <div class="spec"><strong data-en="6× Macro Oscillator" data-it="6× Oscillatori Macro">6× Macro Oscillator</strong></div>
+    <div class="spec"><strong data-en="12× LFO" data-it="12× LFO">12× LFO</strong></div>
+    <div class="spec"><strong data-en="6× Turing Machine" data-it="6× Macchine Turing">6× Turing Machine</strong></div>
+    <div class="spec"><strong data-en="6× Sequencer" data-it="6× Sequencer">6× Sequencer</strong></div>
+    <div class="spec"><strong data-en="6× Filter" data-it="6× Filtri">6× Filter</strong></div>
+    <div class="spec"><strong data-en="6× ADSR" data-it="6× ADSR">6× ADSR</strong></div>
+    <div class="spec"><strong data-en="Reverb" data-it="Riverbero">Reverb</strong></div>
+    <div class="spec"><strong data-en="Delay" data-it="Delay">Delay</strong></div>
+    <div class="spec"><strong data-en="USB MIDI" data-it="MIDI USB">USB MIDI</strong></div>
+    <div class="spec"><strong data-en="USB Audio 44.1 kHz" data-it="Audio USB 44,1 kHz">USB Audio 44.1 kHz</strong></div>
+    <div class="spec"><strong data-en="Ambient Mode" data-it="Modalità Ambient">Ambient Mode</strong></div>
+    <div class="spec"><strong data-en="Techno Mode" data-it="Modalità Techno">Techno Mode</strong></div>
+    <div class="spec"><strong data-en="Drone Mode" data-it="Modalità Drone">Drone Mode</strong></div>
+    <div class="spec"><strong data-en="Switchable Engines" data-it="Motori disattivabili">Switchable Engines</strong></div>
+    <div class="spec"><strong data-en="CPU Meter" data-it="Indicatore CPU">CPU Meter</strong></div>
+    <div class="spec"><strong data-en="GLO ambient REGEN" data-it="GLO REGEN ambient">GLO ambient REGEN</strong><span data-en="Editable decay / DIV 2–16" data-it="Decay modificabile / DIV 2–16">Editable decay / DIV 2–16</span></div>
+<div class="spec"><strong data-en="HYBRID 3+3" data-it="IBRIDA 3+3">HYBRID 3+3</strong><span>3 TECHNO + 3 AMBIENT</span></div>
+<div class="spec"><strong data-en="SEQ / TURING 1–16 steps" data-it="SEQ / TURING 1–16 step">SEQ / TURING 1–16 steps</strong></div>
+<div class="spec"><strong data-en="Stereo filter BUS" data-it="Filtro BUS stereo">Stereo filter BUS</strong></div>
+<div class="spec"><strong data-en="Original TTG samples" data-it="Sample originali TTG">Original TTG samples</strong><span>Tom / Open Hat / Ride</span></div>
+<div class="spec"><strong data-en="Mixer / PERFORM / 6 mutes" data-it="Mixer / PERFORM / 6 mute">Mixer / PERFORM / 6 mutes</strong></div>
+<div class="spec"><strong data-en="Mutable ping-pong delay" data-it="Delay ping-pong Mutable">Mutable ping-pong delay</strong></div>
+<div class="spec"><strong data-en="REC temporary snapshot" data-it="REC snapshot temporaneo">REC temporary snapshot</strong></div>
+<div class="spec"><strong data-en="No permanent presets" data-it="Nessun preset permanente">No permanent presets</strong></div>
+  </div>
+</section>
+<section id="cpu" class="section">
+  <p class="tag">CPU / PERFORMANCE</p>
+  <div class="warning">
+    <strong data-en="CPU / FIND THE BALANCE" data-it="CPU / TROVA L'EQUILIBRIO">CPU / FIND THE BALANCE</strong>
+    <p data-en="Six voices, 12 LFOs, filters and FX share the FM-1 CPU. Monitor the CPU meter and disable unused engines or effects if needed." data-it="Sei voci, 12 LFO, filtri ed FX condividono la CPU FM-1. Controlla il meter e disattiva i motori o gli effetti inutilizzati quando serve.">Six voices, 12 LFOs, filters and FX share the FM-1 CPU. Monitor the CPU meter and disable unused engines or effects if needed.</p>
+  </div>
+</section>
+<section id="manual" class="section">
+  <p class="tag" data-en="02 / DOCUMENTATION" data-it="02 / DOCUMENTAZIONE">02 / DOCUMENTATION</p><h2 data-en="NO MENUS. JUST PLAY." data-it="NIENTE MENU. SUONA.">NO MENUS. JUST PLAY.</h2>
+  <p data-en="Controls, Macro, Turing, sequencers, modulation, FX, and generative modes." data-it="Controlli, Macro, Turing, sequencer, modulazioni, effetti e modalità generative.">Controls, Macro, Turing, sequencers, modulation, FX, and generative modes.</p>
+  <div class="actions"><a class="btn" href="manual/" data-en="OPEN MANUAL" data-it="APRI IL MANUALE">OPEN MANUAL</a></div>
+</section>
+<section id="flash" class="section">
+  <p class="tag" data-en="03 / FIRMWARE" data-it="03 / FIRMWARE">03 / FIRMWARE</p><h2>FLASH EXS/MT6</h2>
+  <p data-en="Current GOLD: EXS/MT6 P7.7.1.0. Download and verify the official firmware, then flash with Chrome Android / USB-C / WebMIDI." data-it="GOLD attuale: EXS/MT6 P7.7.1.0. Scarica e verifica il firmware ufficiale, poi installalo con Chrome Android / USB-C / WebMIDI.">Current GOLD: EXS/MT6 P7.7.1.0. Download and verify the official firmware, then flash with Chrome Android / USB-C / WebMIDI.</p>
+  <p class="small muted" data-en="EXS/MT6 GOLD: six Macro synth/sample engines, six Turing Machines, six sequencers (1–16 steps), 12 LFOs, six filters and ADSRs, original TTG samples and stereo filter BUS. GLO makes varying ambient phrases, editable decay and clock divisions from 2 to 16. HYBRID splits M1–M3 TECHNO and M4–M6 AMBIENT. Software CI passed; there is no new physical FM-1 listening or CPU test report for this release. Bluetooth remains disabled." data-it="EXS/MT6 GOLD: sei Macro synth/sample, sei Turing, sei sequencer (1–16 step), 12 LFO, sei filtri e ADSR, sample originali TTG e filtro BUS stereo. GLO genera frasi ambient variabili con decay modificabile e divisioni da 2 a 16. HYBRID divide M1–M3 TECHNO e M4–M6 AMBIENT. CI software superata; non risulta un nuovo collaudo fisico FM-1 di ascolto o CPU per questa versione. Bluetooth disabilitato.">EXS/MT6 GOLD: six Macro synth/sample engines, six Turing Machines, six sequencers (1–16 steps), 12 LFOs, six filters and ADSRs, original TTG samples and stereo filter BUS. GLO makes varying ambient phrases, editable decay and clock divisions from 2 to 16. HYBRID splits M1–M3 TECHNO and M4–M6 AMBIENT. Software CI passed; there is no new physical FM-1 listening or CPU test report for this release. Bluetooth remains disabled.</p>
+  <p class="small"><a href="./EXS_MT4_P7708_GOLD.fwsc" data-en="P7708 GOLD / rollback" data-it="P7708 GOLD / ripristino">P7708 GOLD / rollback</a> · <a href="../mt4/EXS_MT4_v030_P7697_RUNTIME_AUDIT_GOLD.fwsc" data-en="Older P7697 archive" data-it="Archivio P7697">Older P7697 archive</a></p>
+  <p class="small muted" data-en="Six Plaits/sample Macros, 12 LFOs, stereo BUS, Clouds Reverb, Mutable Delay, REGEN and SAVE CONTROL ALL." data-it="Sei Macro Plaits/sample, 12 LFO, BUS stereo, riverbero Clouds, delay Mutable, REGEN e SAVE CONTROL ALL.">Six Plaits/sample Macros, 12 LFOs, stereo BUS, Clouds Reverb, Mutable Delay, REGEN and SAVE CONTROL ALL.</p>
+  <p class="small" data-en="You can also use the universal manual flasher to select a .fwsc." data-it="Puoi usare anche il flasher universale manuale per selezionare il file .fwsc.">You can also use the universal manual flasher to select a .fwsc.</p><p><a class="btn" href="../mt6-flasher/" data-en="UNIVERSAL FLASHER" data-it="FLASHER UNIVERSALE">UNIVERSAL FLASHER</a></p>
+  <div class="flash-grid">
+    <div class="flash-box"><h3 data-en="01 / FIRMWARE" data-it="01 / FIRMWARE">01 / FIRMWARE</h3>
+      <p class="fwline">EXS/MT6 V0.30 / P7.7.1.0 GOLD<br>610,201 BYTES</p>
+      <p class="small muted" data-en="Release: 15 November 2026 · SHA-256 verified" data-it="Pubblicata: 15 novembre 2026 · SHA-256 verificato">Release: 15 November 2026 · SHA-256 verified</p>
+      <button type="button" class="btn inverse" id="downloadBtn" data-en="DOWNLOAD GOLD" data-it="SCARICA GOLD">DOWNLOAD GOLD</button>
+      <button type="button" class="btn" id="prepareBtn" data-en="LOAD GOLD FOR FLASH" data-it="CARICA GOLD PER IL FLASH">LOAD GOLD FOR FLASH</button>
+      <div class="status" id="fileStatus" role="status" data-en="Firmware not loaded." data-it="Firmware non caricato.">Firmware not loaded.</div>
+    </div>
+    <div class="flash-box"><h3 data-en="02 / CONNECT" data-it="02 / COLLEGA">02 / CONNECT</h3>
+      <p data-en="Connect a powered FM1 with a data-capable USB-C cable. Chrome must detect the genuine OTA identity." data-it="Collega l'FM1 alimentato con un cavo USB-C dati. Chrome deve rilevare la corretta identità OTA.">Connect a powered FM1 with a data-capable USB-C cable. Chrome must detect the genuine OTA identity.</p>
+      <button type="button" class="btn" id="probeBtn" data-en="CHECK USB MIDI" data-it="VERIFICA USB MIDI">CHECK USB MIDI</button>
+      <div class="status" id="probeStatus" role="status" data-en="Device not checked." data-it="Dispositivo non verificato.">Device not checked.</div>
+    </div>
+    <div class="flash-box wide"><h3 data-en="03 / INSTALL" data-it="03 / INSTALLA">03 / INSTALL</h3>
+      <label class="check"><input id="ack1" type="checkbox" disabled><span data-en="Stable power, a known-good USB-C data cable and a recovery backup are ready." data-it="Alimentazione stabile, cavo USB-C dati affidabile e backup di ripristino disponibili.">Stable power, a known-good USB-C data cable and a recovery backup are ready.</span></label>
+      <label class="check"><input id="ack2" type="checkbox" disabled><span data-en="I will not disconnect the FM1 during flashing. I understand this is an unofficial firmware." data-it="Non scollego l'FM1 durante il flash. Sono consapevole che questo è un firmware non ufficiale.">I will not disconnect the FM1 during flashing. I understand this is an unofficial firmware.</span></label>
+      <button type="button" class="btn inverse" id="flashBtn" disabled data-en="FLASH EXS/MT6 GOLD" data-it="INSTALLA EXS/MT6 GOLD">FLASH EXS/MT6 GOLD</button>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="status" id="flashStatus" role="status" data-en="Load GOLD and verify OTA before flashing." data-it="Carica GOLD e verifica OTA prima di installare.">Load GOLD and verify OTA before flashing.</div>
+      <details class="detail"><summary data-en="TECHNICAL LOG" data-it="LOG TECNICO">TECHNICAL LOG</summary><pre class="log" id="log"></pre></details>
+    </div>
+  </div>
+  <div class="warning">
+    <strong data-en="WARNING / OTA ONLY" data-it="ATTENZIONE / SOLO OTA">WARNING / OTA ONLY</strong>
+    <p data-en="Flashing is disabled unless both the GOLD firmware hash and the device's OTA identity are verified. If the FM1 enters WL82 U-BOOT, this page cannot recover it. Do not format the device or disconnect during an active write." data-it="Il flash rimane bloccato senza verifica dell'hash GOLD e dell'identità OTA. Se l'FM1 entra in WL82 U-BOOT, questa pagina non può recuperarlo. Non formattare il dispositivo e non scollegarlo durante la scrittura.">Flashing is disabled unless both the GOLD firmware hash and the device's OTA identity are verified. If the FM1 enters WL82 U-BOOT, this page cannot recover it. Do not format the device or disconnect during an active write.</p>
+  </div>
+  <p class="fwline"><strong>SHA-256</strong><br>fc9c52601f07ed3ecab3ece493b855c3781f8606b3541b65873db74fa846fc6e</p>
+</section>
+<section id="recovery" class="section">
+  <p class="tag" data-en="04 / RECOVERY" data-it="04 / RECUPERO">04 / RECOVERY</p>
+  <h2 data-en="FM1 / RECOVERY KIT" data-it="FM1 / KIT DI RECUPERO">FM1 / RECOVERY KIT</h2>
+  <p data-en="FM1 stuck on a black screen? Download the guided Windows or macOS troubleshooting and recovery kit. Windows supports direct WL82 UBOOT recovery; macOS requires different hardware for actual recovery." data-it="FM1 bloccata su schermo nero? Scarica il kit guidato di diagnosi e recupero per Windows o macOS. Windows supporta il recupero diretto WL82 UBOOT; su macOS il recupero effettivo richiede hardware aggiuntivo.">FM1 stuck on a black screen? Download the guided Windows or macOS troubleshooting and recovery kit. Windows supports direct WL82 UBOOT recovery; macOS requires different hardware for actual recovery.</p>
+  <div class="actions"><a class="btn inverse" href="recovery/" data-en="RECOVERY DOWNLOADS / GUIDE" data-it="SCARICA KIT / GUIDA">RECOVERY DOWNLOADS / GUIDE</a></div>
+</section>
+<section id="stats" class="section" aria-label="MT6 project statistics">
+  <p class="tag">04 / STATS</p>
+  <h2 data-en="Visits &amp; Downloads" data-it="Accessi e download">Visits &amp; Downloads</h2>
+  <div class="meta">
+    <div class="stat"><strong data-en="SITE VISITS" data-it="ACCESSI AL SITO">SITE VISITS</strong><span class="mt6-counter" id="mt6VisitCount" aria-live="polite">—</span></div>
+    <div class="stat"><strong data-en="FIRMWARE DOWNLOADS" data-it="DOWNLOAD FIRMWARE">FIRMWARE DOWNLOADS</strong><span class="mt6-counter" id="mt6DownloadCount" aria-live="polite">—</span></div>
+  </div>
+  <p class="small muted" data-en="One visit per browser session. Downloads count verified GOLD file downloads started here. Direct downloads elsewhere are not included. Public figures are approximate." data-it="Un accesso per sessione del browser. I download conteggiano gli scaricamenti del file GOLD verificato avviati da qui. Non comprendono i download diretti altrove. I numeri pubblici sono indicativi.">One visit per browser session. Downloads count verified GOLD file downloads started here. Direct downloads elsewhere are not included. Public figures are approximate.</p>
+</section>
+<footer><span>EXSIDERURGICA / EXS/MT6 / 2026</span><a href="../">TTG</a></footer>
+</div>
+<div class="modal" id="donationModal" role="dialog" aria-modal="true" aria-labelledby="donationTitle" aria-hidden="true">
+  <div class="modal-panel">
+    <h2 class="modal-title" id="donationTitle" data-en="EXS/MT6 IS FREE." data-it="EXS/MT6 È GRATUITO.">EXS/MT6 IS FREE.</h2>
+    <p data-en="If you enjoy the project, you can support its development. Donation is optional. The firmware is identical either way." data-it="Se apprezzi il progetto, puoi sostenere lo sviluppo. La donazione è facoltativa. Il firmware è identico in entrambi i casi.">If you enjoy the project, you can support its development. Donation is optional. The firmware is identical either way.</p>
+    <div class="modal-actions"><button class="btn inverse" type="button" id="donateDownload" data-en="SUPPORT / PAYPAL" data-it="SOSTIENI / PAYPAL">SUPPORT / PAYPAL</button>
+      <button class="btn" type="button" id="freeDownload" data-en="NO THANKS / FREE DOWNLOAD" data-it="NO GRAZIE / DOWNLOAD GRATUITO">NO THANKS / FREE DOWNLOAD</button>
+      <button class="btn" type="button" id="cancelDownload" data-en="CANCEL" data-it="ANNULLA">CANCEL</button></div>
+  </div>
+</div>
+<script type="module" src="./site.mjs"></script><script type="module" src="./flash.mjs?v=p7696"></script><script type="module" src="./stats.mjs"></script>
+</body></html>
