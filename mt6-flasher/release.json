@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "flash_enabled": true,
+  "ota_enabled": true,
+  "release": "EXS/MT6 v0.30 P7.7.1.0 GOLD",
+  "product": "FM-1_910",
+  "size": 610201,
+  "sha256": "fc9c52601f07ed3ecab3ece493b855c3781f8606b3541b65873db74fa846fc6e",
+  "firmware_url": "../mt6/EXS_MT6_P7710_GOLD.fwsc",
+  "notes": "EXS/MT6 GOLD: six Macro synth/sample engines, six Turing Machines, six sequencers (1–16 steps), 12 LFOs, six filters and ADSRs, original TTG samples and stereo filter BUS. GLO makes varying ambient phrases, editable decay and clock divisions from 2 to 16. HYBRID splits M1–M3 TECHNO and M4–M6 AMBIENT. Software CI passed; there is no new physical FM-1 listening or CPU test report for this release. Bluetooth remains disabled.",
+  "designation": "Owner-designated GOLD on 2026-11-15; CI verified",
+  "source_ref": "stable/mt6-p7710-gold",
+  "source_recipe": "311f54d96080f0522b402c3ad85921dc50fe5c32",
+  "ci_url": "https://github.com/exsiderurgica/EXS-MT4/actions/runs/43760688804",
+  "fallback_url": "../mt6/EXS_MT4_P7708_GOLD.fwsc",
+  "hardware_validation_reported": false,
+  "bluetooth_enabled": false,
+  "previous_stable_ref": "stable/mt4-p7708-gold"
+}
