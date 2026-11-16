@@ -6,8 +6,8 @@ import {Updater,OUR_LOADER,FM1_PORT} from '../fm1-test-a03/fm1ota.js';
 import {inspectFwsc,compatibleDevice} from '../mt6-flasher/fwsc-check.mjs';
 
 const $=id=>document.getElementById(id);
-const SHA='fc9c52601f07ed3ecab3ece493b855c3781f8606b3541b65873db74fa846fc6e';
-const NAME='EXS_MT6_P7710_GOLD.fwsc';
+const SHA='9023ca2a3495fa579b18e4371f3757e21afbd9d8af0416b7c71bc0f4a753841a';
+const NAME='EXS_MT6_P7713_GOLD.fwsc';
 const FW_URL=new URL('./'+NAME,import.meta.url).href;
 const i=(en,it)=>document.documentElement.lang==='it'?it:en;
 let loaded=null,access=null,identity=null,busy=false,wake=null;
@@ -34,7 +34,7 @@ async function getGold(){
   const raw=new Uint8Array(await response.arrayBuffer());
   const meta=inspectFwsc(raw,NAME);
   const hash=await sha256hex(raw);
-  if(meta.product!=='FM-1_910'||raw.length!==610201||hash!==SHA)
+  if(meta.product!=='FM-1_912'||raw.length!==610201||hash!==SHA)
     throw new Error(i('GOLD firmware hash, size or model mismatch. Nothing will be flashed.','Hash, dimensione o modello GOLD non corrispondenti. Flash bloccato.'));
   loaded={raw,meta,hash};
   log('GOLD verified / '+raw.length+' bytes / '+hash);
@@ -46,7 +46,7 @@ async function loadGold(){
   try{
     status('fileStatus','Downloading and verifying GOLD…','Scarico e verifico GOLD…','warn');
     await getGold();
-    status('fileStatus','P7.7.1.0 GOLD verified / SHA-256 OK','P7.7.1.0 GOLD verificata / SHA-256 OK','ok');
+    status('fileStatus','P7.7.1.3 GOLD verified / SHA-256 OK','P7.7.1.3 GOLD verificata / SHA-256 OK','ok');
   }catch(e){status('fileStatus',e.message,e.message,'err');log('GOLD: '+e.message)}
   finally{busy=false;controls()}
 }
@@ -116,15 +116,15 @@ $('flashBtn').addEventListener('click',async()=>{
   if(busy||!loaded||!identity||!compatibleDevice(identity,loaded.meta)||
      !$('ack1').checked||!$('ack2').checked)return;
   const message=i(
-    'FLASH EXS/MT6 P7.7.1.0 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
-    'INSTALLA EXS/MT6 P7.7.1.0 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
+    'FLASH EXS/MT6 P7.7.1.3 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nA backup is ready. Keep power and USB connected throughout the update. Continue?',
+    'INSTALLA EXS/MT6 P7.7.1.3 GOLD\nSHA-256: '+SHA.slice(0,16)+'…\n\nBackup disponibile. Mantieni alimentazione e USB collegate. Continuare?'
   );
   if(!window.confirm(message))return;
   busy=true;controls();bar(2);
   try{
     try{wake=await navigator.wakeLock?.request('screen')}catch(e){log('WakeLock: '+e.message)}
     const meta=inspectFwsc(loaded.raw,NAME);
-    if(meta.product!=='FM-1_910'||await sha256hex(loaded.raw)!==SHA)
+    if(meta.product!=='FM-1_912'||await sha256hex(loaded.raw)!==SHA)
       throw Error(i('GOLD failed final integrity check.','GOLD non supera la verifica finale.'));
     const m=await midi(),updater=new Updater(m,log),current=await updater.find();
     if(!current)throw Error(i('OTA identity no longer available.','Identità OTA non più disponibile.'));
