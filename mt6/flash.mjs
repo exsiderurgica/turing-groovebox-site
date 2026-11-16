@@ -34,7 +34,7 @@ async function getGold(){
   const raw=new Uint8Array(await response.arrayBuffer());
   const meta=inspectFwsc(raw,NAME);
   const hash=await sha256hex(raw);
-  if(meta.product!=='FM-1_912'||raw.length!==610201||hash!==SHA)
+  if(meta.product!=='FM-1_913'||raw.length!==610201||hash!==SHA)
     throw new Error(i('GOLD firmware hash, size or model mismatch. Nothing will be flashed.','Hash, dimensione o modello GOLD non corrispondenti. Flash bloccato.'));
   loaded={raw,meta,hash};
   log('GOLD verified / '+raw.length+' bytes / '+hash);
@@ -124,7 +124,7 @@ $('flashBtn').addEventListener('click',async()=>{
   try{
     try{wake=await navigator.wakeLock?.request('screen')}catch(e){log('WakeLock: '+e.message)}
     const meta=inspectFwsc(loaded.raw,NAME);
-    if(meta.product!=='FM-1_912'||await sha256hex(loaded.raw)!==SHA)
+    if(meta.product!=='FM-1_913'||await sha256hex(loaded.raw)!==SHA)
       throw Error(i('GOLD failed final integrity check.','GOLD non supera la verifica finale.'));
     const m=await midi(),updater=new Updater(m,log),current=await updater.find();
     if(!current)throw Error(i('OTA identity no longer available.','Identità OTA non più disponibile.'));

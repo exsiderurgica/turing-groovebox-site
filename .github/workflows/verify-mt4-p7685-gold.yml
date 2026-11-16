@@ -34,12 +34,18 @@ jobs:
           prev7710=Path('mt6/EXS_MT6_P7710_GOLD.fwsc')
           assert len(prev7710.read_bytes())==610201
           assert hashlib.sha256(prev7710.read_bytes()).hexdigest()=='fc9c52601f07ed3ecab3ece493b855c3781f8606b3541b65873db74fa846fc6e'
+          # Parse the identity embedded in the actual FWSC header, never infer it
+          # from a release number or from metadata copied into release.json.
+          raw=fw.read_bytes()
+          identity=''.join(chr((raw[i*0x30+0x2f]-i-1)&0xff)
+                           for i in range(20) if raw[i*0x30+0x2f]!=0x7d)
+          assert identity=='FM-1_913',f'Embedded product mismatch: {identity}'
           assert len(fw.read_bytes())==610201
           assert hashlib.sha256(fw.read_bytes()).hexdigest()=='9023ca2a3495fa579b18e4371f3757e21afbd9d8af0416b7c71bc0f4a753841a'
           assert len(prev.read_bytes())==610201
           assert hashlib.sha256(prev.read_bytes()).hexdigest()=='e21586d0fcb3921a63693f756867abd77b4ac926f0c22565070dbd94294cceae'
           rel=json.loads(Path('mt6-flasher/release.json').read_text())
-          assert rel['product']=='FM-1_912' and rel['sha256']==hashlib.sha256(fw.read_bytes()).hexdigest()
+          assert rel['product']=='FM-1_913' and rel['sha256']==hashlib.sha256(fw.read_bytes()).hexdigest()
           assert rel['firmware_url']=='../mt6/EXS_MT6_P7713_GOLD.fwsc'
           for page in ('mt6/index.html','mt6/manual/index.html'):
            src=Path(page).read_text()
@@ -47,13 +53,13 @@ jobs:
            assert '12× LFO' in src or '12 LFO' in src
            assert 'P7.6.9.7' not in src and '32-step' not in src
           page=Path('mt6/index.html').read_text()
-          assert '<text x="417"' in page and '>EXS/MT6</text>' in page
+          assert '<text x="417"' in page and '>MT6</text>' in page
           assert '6× Macro' in page and '6× Turing' in page and '6× Sequencer' in page
           assert 'id="downloadBtn"' in page and 'id="flashBtn"' in page
           flash=Path('mt6/flash.mjs').read_text()
           assert "const SHA='"+rel['sha256']+"'" in flash
           assert "const NAME='EXS_MT6_P7713_GOLD.fwsc'" in flash
-          assert "FM-1_912" in flash and 'allowUnverifiedFelucca:false' in flash
+          assert "FM-1_913" in flash and 'allowUnverifiedFelucca:false' in flash
           assert 'href="mt6/">EXS/MT6 / FM1' in Path('index.html').read_text()
           print('PASS: MT6 P7713 GOLD, P7710/P7708 rollback, bilingual specs and safe OTA')
           PY_CHECK
