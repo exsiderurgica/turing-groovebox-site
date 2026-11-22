@@ -72,8 +72,8 @@ function refreshMessage(){
   if(unavailable){
     const cached=TYPES.some(type=>!fresh[type]&&shown[type]);
     message.textContent=it()
-      ? (cached?'Servizio statistiche non raggiungibile. I valori non aggiornati sono quelli salvati su questo dispositivo.':'Servizio statistiche non raggiungibile. Riprova per aggiornare i contatori.')
-      : (cached?'Stats service unavailable. Older figures are saved on this device.':'Stats service unavailable. Retry to refresh the counters.');
+      ? (cached?'Statistiche temporaneamente non disponibili. I valori non aggiornati sono quelli salvati su questo dispositivo.':'Statistiche temporaneamente non disponibili. Riprova per aggiornare i contatori.')
+      : (cached?'Stats temporarily unavailable. Older figures are saved on this device.':'Stats temporarily unavailable. Retry to refresh the counters.');
   }else if(failedHit){
     message.textContent=it()
       ? 'Contatori aggiornati, ma non è stato possibile confermare la registrazione di un accesso o download.'
@@ -89,7 +89,8 @@ async function request(type,action){
     const response=await fetch(API+'/'+action+'/'+NS+'/'+KEYS[type],{
       cache:'no-store',signal:controller.signal
     });
-    if(action==='get'&&response.status===404)return 0;
+    // A missing historic key is an outage/data-loss signal, not a real zero.
+    if(action==='get'&&response.status===404)throw new Error('Abacus counter missing');
     if(!response.ok)throw new Error('Abacus HTTP '+response.status);
     const data=await response.json();
     const number=valid(data?.value);
