@@ -1,0 +1,83 @@
+name: Backup EXS MT6 public counters
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mt6-counter-backup.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mt6-counter-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Read and validate existing Abacus totals
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://abacus.jasoncameron.dev/get/exsiderurgica-hidden-site-stats-93f6c1b0'
+          if ! curl --fail --silent --show-error --location --retry 2 --connect-timeout 4 --max-time 14 "$base/mt4-visits" -o "$RUNNER_TEMP/mt6-visits.json"; then
+            echo '::warning::Cannot read original visit counter; keeping last snapshot.'
+            exit 0
+          fi
+          if ! curl --fail --silent --show-error --location --retry 2 --connect-timeout 4 --max-time 14 "$base/mt4-downloads" -o "$RUNNER_TEMP/mt6-downloads.json"; then
+            echo '::warning::Cannot read original download counter; keeping last snapshot.'
+            exit 0
+          fi
+          validate_value() {
+            jq -er '.value | (if type == "string" then tonumber else . end) | select(type == "number" and . >= 0 and floor == .)' "$1"
+          }
+          if ! visits="$(validate_value "$RUNNER_TEMP/mt6-visits.json")"; then
+            echo '::warning::Invalid visit count; keeping last snapshot.'
+            exit 0
+          fi
+          if ! downloads="$(validate_value "$RUNNER_TEMP/mt6-downloads.json")"; then
+            echo '::warning::Invalid download count; keeping last snapshot.'
+            exit 0
+          fi
+
+          # Do not replace an existing valid snapshot with unexpectedly lower
+          # totals (for example if a third-party service loses its database).
+          if [ -f mt6/stats-snapshot.json ]; then
+            old_visits="$(jq -r '.visits // 0' mt6/stats-snapshot.json)"
+            old_downloads="$(jq -r '.downloads // 0' mt6/stats-snapshot.json)"
+            if [ "$visits" -lt "$old_visits" ] || [ "$downloads" -lt "$old_downloads" ]; then
+              echo '::warning::Third-party counters decreased; keeping previous public snapshot.'
+              exit 0
+            fi
+            if [ "$visits" -eq "$old_visits" ] && [ "$downloads" -eq "$old_downloads" ]; then
+              echo 'MT6 counters unchanged.'
+              exit 0
+            fi
+          fi
+
+          updated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          jq -n --argjson visits "$visits" --argjson downloads "$downloads" --arg updated_at "$updated_at" \
+            '{visits:$visits,downloads:$downloads,updated_at:$updated_at}' > mt6/stats-snapshot.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add mt6/stats-snapshot.json
+          git commit -m 'chore(mt6): back up historical public counters [skip ci]'
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              echo 'MT6 public snapshot updated.'
+              exit 0
+            fi
+            sleep 2
+          done
+          echo '::error::Could not publish MT6 counter snapshot.'
+          exit 1
