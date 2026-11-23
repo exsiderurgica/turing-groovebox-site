@@ -147,19 +147,27 @@ async function read(type){
 // GitHub Pages serves the most recently backed-up public totals when Abacus
 // cannot be reached. A backup is never treated as a new or confirmed hit.
 async function showSnapshot(){
-  try{
-    const response=await fetch('./stats-snapshot.json?ts='+Date.now(),{cache:'no-store'});
-    if(!response.ok)return;
-    const snapshot=await response.json();
-    for(const type of TYPES){
-      const value=valid(snapshot[type]);
-      if(value===null||fresh[type])continue;
-      const el=document.getElementById(IDS[type]);
-      const current=shown[type]&&el?valid(el.textContent.replace(/[^0-9]/g,'')):null;
-      if(current===null||value>current)display(type,value,false);
-    }
-    refreshMessage();
-  }catch(_){/* Optional snapshot unavailable; retain browser cache. */}
+  // GH Actions writes the backup with GITHUB_TOKEN, which does not trigger
+  // a GitHub Pages rebuild. Also read raw main (CORS enabled) to get updates.
+  const locations=[
+    './stats-snapshot.json?ts='+Date.now(),
+    'https://raw.githubusercontent.com/exsiderurgica/turing-groovebox-site/main/mt6/stats-snapshot.json?ts='+Date.now()
+  ];
+  for(const url of locations){
+    try{
+      const response=await fetch(url,{cache:'no-store'});
+      if(!response.ok)continue;
+      const snapshot=await response.json();
+      for(const type of TYPES){
+        const value=valid(snapshot[type]);
+        if(value===null||fresh[type])continue;
+        const el=document.getElementById(IDS[type]);
+        const current=shown[type]&&el?valid(el.textContent.replace(/[^0-9]/g,'')):null;
+        if(current===null||value>current)display(type,value,false);
+      }
+      refreshMessage();
+    }catch(_){/* An unavailable backup never changes displayed totals. */}
+  }
 }
 async function registerVisit(){
   let counted=false;
