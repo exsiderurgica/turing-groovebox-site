@@ -84,7 +84,7 @@ function refreshMessage(){
 }
 async function request(type,action){
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),8000);
+  const timer=setTimeout(()=>controller.abort(),action==='get'?3500:8000);
   try{
     const response=await fetch(API+'/'+action+'/'+NS+'/'+KEYS[type],{
       cache:'no-store',signal:controller.signal
@@ -100,17 +100,66 @@ async function request(type,action){
     clearTimeout(timer);
   }
 }
+// Abacus documents JSONP for read-only queries. This bypasses browser CORS
+// failures without creating or resetting historic counters.
+let jsonpSerial=0;
+function jsonpGet(type){
+  return new Promise((resolve,reject)=>{
+    const callback='__exsMt6Counter_'+Date.now().toString(36)+'_'+(++jsonpSerial);
+    const script=document.createElement('script');
+    let finished=false;
+    let timeout;
+    function finish(error,value){
+      if(finished)return;
+      finished=true;
+      clearTimeout(timeout);
+      script.remove();
+      try{delete window[callback];}catch(_){window[callback]=undefined;}
+      if(error)reject(error);else resolve(value);
+    }
+    window[callback]=(data)=>{
+      const value=valid(data?.value);
+      if(value===null)finish(new Error('Invalid Abacus JSONP response'));
+      else finish(null,value);
+    };
+    script.onerror=()=>finish(new Error('Abacus JSONP unavailable'));
+    timeout=setTimeout(()=>finish(new Error('Abacus JSONP timeout')),5000);
+    script.src=API+'/get/'+encodeURIComponent(NS)+'/'+encodeURIComponent(KEYS[type])
+      +'?callback='+encodeURIComponent(callback)+'&_='+Date.now();
+    document.head.appendChild(script);
+  });
+}
 async function read(type){
   fresh[type]=false;
-  for(let attempt=0;attempt<3;attempt++){
-    if(attempt)await new Promise(resolve=>setTimeout(resolve,attempt*700));
+  for(let attempt=0;attempt<2;attempt++){
+    if(attempt)await new Promise(resolve=>setTimeout(resolve,700));
     try{
-      display(type,await request(type,'get'),true);
+      let value;
+      try{value=await request(type,'get');}
+      catch(_){value=await jsonpGet(type);}
+      display(type,value,true);
       refreshMessage();
       return;
-    }catch(_){/* Reads are safe to retry; never retry a hit blindly. */}
+    }catch(_){/* A failed read never overwrites the last known count. */}
   }
   refreshMessage();
+}
+// GitHub Pages serves the most recently backed-up public totals when Abacus
+// cannot be reached. A backup is never treated as a new or confirmed hit.
+async function showSnapshot(){
+  try{
+    const response=await fetch('./stats-snapshot.json?ts='+Date.now(),{cache:'no-store'});
+    if(!response.ok)return;
+    const snapshot=await response.json();
+    for(const type of TYPES){
+      const value=valid(snapshot[type]);
+      if(value===null||fresh[type])continue;
+      const el=document.getElementById(IDS[type]);
+      const current=shown[type]&&el?valid(el.textContent.replace(/[^0-9]/g,'')):null;
+      if(current===null||value>current)display(type,value,false);
+    }
+    refreshMessage();
+  }catch(_){/* Optional snapshot unavailable; retain browser cache. */}
 }
 async function registerVisit(){
   let counted=false;
@@ -158,6 +207,7 @@ window.addEventListener('mt6-language-change',()=>{
   refreshMessage();
 });
 showCached();
+void showSnapshot();
 refreshMessage();
 void Promise.all([registerVisit(),read('downloads')]).then(()=>{
   initialLoading=false;
